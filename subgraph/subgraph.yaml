@@ -1,0 +1,70 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SimpleBudgetWallet
+    network: base-sepolia
+    source:
+      address: "0xD729Ed1682Bff761c3808469c6BDd99A7280742d"
+      abi: SimpleBudgetWallet
+      startBlock: 19500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Bucket
+        - Transaction
+        - Deposit
+        - Withdrawal
+        - Delegate
+      abis:
+        - name: SimpleBudgetWallet
+          file: ./abis/SimpleBudgetWallet.json
+      eventHandlers:
+        - event: BucketCreated(indexed address,string,uint256)
+          handler: handleBucketCreated
+        - event: BucketUpdated(indexed address,string,uint256,bool)
+          handler: handleBucketUpdated
+        - event: BucketFunded(indexed address,string,uint256,address)
+          handler: handleBucketFunded
+        - event: SpentFromBucket(indexed address,string,uint256,address,address)
+          handler: handleSpentFromBucket
+        - event: BucketTransfer(indexed address,string,string,uint256,address)
+          handler: handleBucketTransfer
+        - event: FundsDeposited(indexed address,uint256,address)
+          handler: handleFundsDeposited
+        - event: MonthlyLimitReset(indexed address,string)
+          handler: handleMonthlyLimitReset
+        - event: DelegateAdded(indexed address,indexed address,string)
+          handler: handleDelegateAdded
+        - event: DelegateRemoved(indexed address,indexed address,string)
+          handler: handleDelegateRemoved
+        - event: EmergencyWithdraw(indexed address,address,uint256)
+          handler: handleEmergencyWithdraw
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: SimpleBudgetWalletFactory
+    network: base-sepolia
+    source:
+      address: "0xf26404Dc9c23241b7b596EdD66a7cD3bcafB948a"
+      abi: SimpleBudgetWalletFactory
+      startBlock: 19500000
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - WalletCreated
+      abis:
+        - name: SimpleBudgetWalletFactory
+          file: ./abis/SimpleBudgetWalletFactory.json
+      eventHandlers:
+        - event: WalletCreated(indexed address,indexed address,uint256)
+          handler: handleWalletCreated
+        - event: WalletRegistered(indexed address,indexed address)
+          handler: handleWalletRegistered
+      file: ./src/factory-mapping.ts

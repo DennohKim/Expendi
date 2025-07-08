@@ -1,0 +1,177 @@
+# User entity representing a wallet user
+type User @entity(immutable: false) {
+  id: ID! # User's address
+  address: Bytes!
+  walletsCreated: [WalletCreated!]! @derivedFrom(field: "user")
+  buckets: [Bucket!]! @derivedFrom(field: "user")
+  transactions: [Transaction!]! @derivedFrom(field: "user")
+  deposits: [Deposit!]! @derivedFrom(field: "user")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "user")
+  delegates: [Delegate!]! @derivedFrom(field: "user")
+  delegatedBuckets: [Delegate!]! @derivedFrom(field: "delegate")
+  totalBalance: BigInt!
+  totalSpent: BigInt!
+  bucketsCount: Int!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+# Bucket entity representing spending buckets
+type Bucket @entity(immutable: false) {
+  id: ID! # user_address-bucket_name
+  user: User!
+  name: String!
+  balance: BigInt!
+  monthlySpent: BigInt!
+  monthlyLimit: BigInt!
+  active: Boolean!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  lastResetTimestamp: BigInt!
+  
+  # Token balances in this bucket
+  tokenBalances: [TokenBalance!]! @derivedFrom(field: "bucket")
+  
+  # Transactions related to this bucket
+  transactions: [Transaction!]! @derivedFrom(field: "bucket")
+  deposits: [Deposit!]! @derivedFrom(field: "bucket")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "bucket")
+  transfers: [BucketTransfer!]! @derivedFrom(field: "fromBucket")
+  receivedTransfers: [BucketTransfer!]! @derivedFrom(field: "toBucket")
+  
+  # Delegates for this bucket
+  delegates: [Delegate!]! @derivedFrom(field: "bucket")
+}
+
+# Token balance in a specific bucket
+type TokenBalance @entity(immutable: false) {
+  id: ID! # bucket_id-token_address
+  bucket: Bucket!
+  token: Token!
+  balance: BigInt!
+  updatedAt: BigInt!
+}
+
+# Token entity
+type Token @entity(immutable: false) {
+  id: ID! # token address (0x0 for ETH)
+  address: Bytes!
+  name: String!
+  symbol: String!
+  decimals: Int!
+  totalVolume: BigInt!
+  balances: [TokenBalance!]! @derivedFrom(field: "token")
+}
+
+# Base transaction type
+interface Transaction {
+  id: ID!
+  user: User!
+  bucket: Bucket!
+  amount: BigInt!
+  token: Token!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Deposit transaction
+type Deposit implements Transaction @entity(immutable: true) {
+  id: ID! # transaction_hash-log_index
+  user: User!
+  bucket: Bucket!
+  amount: BigInt!
+  token: Token!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # Deposit-specific fields
+  type: DepositType!
+}
+
+enum DepositType {
+  DIRECT_DEPOSIT
+  BUCKET_FUNDING
+}
+
+# Withdrawal/Spending transaction
+type Withdrawal implements Transaction @entity(immutable: true) {
+  id: ID! # transaction_hash-log_index
+  user: User!
+  bucket: Bucket!
+  amount: BigInt!
+  token: Token!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # Withdrawal-specific fields
+  recipient: Bytes!
+  type: WithdrawalType!
+}
+
+enum WithdrawalType {
+  BUCKET_SPENDING
+  EMERGENCY_WITHDRAW
+}
+
+# Bucket transfer transaction
+type BucketTransfer implements Transaction @entity(immutable: true) {
+  id: ID! # transaction_hash-log_index
+  user: User!
+  bucket: Bucket! # This will be the fromBucket
+  amount: BigInt!
+  token: Token!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  
+  # Transfer-specific fields
+  fromBucket: Bucket!
+  toBucket: Bucket!
+}
+
+# Delegate entity
+type Delegate @entity(immutable: false) {
+  id: ID! # user_address-delegate_address-bucket_name
+  user: User!
+  delegate: User!
+  bucket: Bucket!
+  active: Boolean!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+# Wallet creation from factory
+type WalletCreated @entity(immutable: true) {
+  id: ID! # transaction_hash-log_index
+  user: User!
+  wallet: Bytes!
+  salt: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Monthly limit reset event
+type MonthlyLimitReset @entity(immutable: true) {
+  id: ID! # transaction_hash-log_index
+  user: User!
+  bucket: Bucket!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+# Global statistics
+type GlobalStats @entity(immutable: false) {
+  id: ID! # Always "global"
+  totalUsers: Int!
+  totalBuckets: Int!
+  totalWalletsCreated: Int!
+  totalVolume: BigInt!
+  totalDeposits: BigInt!
+  totalWithdrawals: BigInt!
+  updatedAt: BigInt!
+}
