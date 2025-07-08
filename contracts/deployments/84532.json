@@ -1,0 +1,12 @@
+{
+  "budgetWallet": "0xD729Ed1682Bff761c3808469c6BDd99A7280742d",
+  "factory": "0xf26404Dc9c23241b7b596EdD66a7cD3bcafB948a",
+  "chainId": 84532,
+  "network": "Base Sepolia",
+  "deployedAt": 1751954284,
+  "deployer": "0x5A6528b24d4aBE30c8c64672B00ccD2B9dD6ba33",
+  "transactions": {
+    "budgetWallet": "0xa87b174002795cf9aab36dedf9ec8694a4f8b0d808ab24f66225db1aa7136b32",
+    "factory": "0x1ea08177b6d9125e51740344a81407282683634a439a56f35100ecc59477fae4"
+  }
+}
