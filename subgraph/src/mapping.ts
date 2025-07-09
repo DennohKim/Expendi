@@ -41,8 +41,8 @@ function getOrCreateUser(address: Address): User {
     user.updatedAt = BigInt.fromI32(0)
     user.save()
     
-    // Update global stats
-    updateGlobalStats()
+    // Update global stats only when creating a new user
+    updateGlobalUserStats()
   }
   return user
 }
@@ -105,8 +105,8 @@ function getOrCreateTokenBalance(bucket: Bucket, token: Token): TokenBalance {
   return tokenBalance
 }
 
-// Helper function to update global stats
-function updateGlobalStats(): void {
+// Helper function to update global user stats
+function updateGlobalUserStats(): void {
   let stats = GlobalStats.load(GLOBAL_STATS_ID)
   if (stats == null) {
     stats = new GlobalStats(GLOBAL_STATS_ID)

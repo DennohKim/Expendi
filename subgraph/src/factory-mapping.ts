@@ -1,4 +1,4 @@
-import { BigInt, Address } from '@graphprotocol/graph-ts'
+import { BigInt, Address, log } from '@graphprotocol/graph-ts'
 import {
   WalletCreated,
   WalletRegistered
@@ -13,7 +13,7 @@ import {
 const GLOBAL_STATS_ID = 'global'
 
 // Helper function to get or create user
-function getOrCreateUser(address: Address): User {
+function getOrCreateUser(address: Address, timestamp: BigInt): User {
   let user = User.load(address.toHex())
   if (user == null) {
     user = new User(address.toHex())
@@ -21,9 +21,12 @@ function getOrCreateUser(address: Address): User {
     user.totalBalance = BigInt.fromI32(0)
     user.totalSpent = BigInt.fromI32(0)
     user.bucketsCount = 0
-    user.createdAt = BigInt.fromI32(0)
-    user.updatedAt = BigInt.fromI32(0)
+    user.createdAt = timestamp
+    user.updatedAt = timestamp
     user.save()
+    
+    // Update global stats only when creating a new user
+    updateGlobalStats()
   }
   return user
 }
@@ -42,12 +45,30 @@ function updateGlobalStats(): void {
     stats.updatedAt = BigInt.fromI32(0)
   }
   
+  stats.totalUsers = stats.totalUsers + 1
+  stats.save()
+}
+
+// Helper function to update wallet creation stats
+function updateWalletCreationStats(): void {
+  let stats = GlobalStats.load(GLOBAL_STATS_ID)
+  if (stats == null) {
+    stats = new GlobalStats(GLOBAL_STATS_ID)
+    stats.totalUsers = 0
+    stats.totalBuckets = 0
+    stats.totalWalletsCreated = 0
+    stats.totalVolume = BigInt.fromI32(0)
+    stats.totalDeposits = BigInt.fromI32(0)
+    stats.totalWithdrawals = BigInt.fromI32(0)
+    stats.updatedAt = BigInt.fromI32(0)
+  }
+  
   stats.totalWalletsCreated = stats.totalWalletsCreated + 1
   stats.save()
 }
 
 export function handleWalletCreated(event: WalletCreated): void {
-  let user = getOrCreateUser(event.params.user)
+  let user = getOrCreateUser(event.params.user, event.block.timestamp)
   
   // Create wallet created record
   let walletCreatedId = event.transaction.hash.toHex() + '-' + event.logIndex.toString()
@@ -60,17 +81,16 @@ export function handleWalletCreated(event: WalletCreated): void {
   walletCreated.transactionHash = event.transaction.hash
   walletCreated.save()
   
-  // Update user
-  user.createdAt = event.block.timestamp
+  // Update user timestamp only (don't overwrite createdAt)
   user.updatedAt = event.block.timestamp
   user.save()
   
-  // Update global stats
-  updateGlobalStats()
+  // Update wallet creation stats
+  updateWalletCreationStats()
 }
 
 export function handleWalletRegistered(event: WalletRegistered): void {
-  let user = getOrCreateUser(event.params.user)
+  let user = getOrCreateUser(event.params.user, event.block.timestamp)
   
   // Create wallet created record (for registered wallets)
   let walletCreatedId = event.transaction.hash.toHex() + '-' + event.logIndex.toString()
@@ -83,11 +103,10 @@ export function handleWalletRegistered(event: WalletRegistered): void {
   walletCreated.transactionHash = event.transaction.hash
   walletCreated.save()
   
-  // Update user
-  user.createdAt = event.block.timestamp
+  // Update user timestamp only (don't overwrite createdAt)
   user.updatedAt = event.block.timestamp
   user.save()
   
-  // Update global stats
-  updateGlobalStats()
+  // Update wallet creation stats
+  updateWalletCreationStats()
 }

@@ -8,7 +8,7 @@ dataSources:
     source:
       address: "0xD729Ed1682Bff761c3808469c6BDd99A7280742d"
       abi: SimpleBudgetWallet
-      startBlock: 19500000
+      startBlock: 28096050
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -49,9 +49,9 @@ dataSources:
     name: SimpleBudgetWalletFactory
     network: base-sepolia
     source:
-      address: "0xf26404Dc9c23241b7b596EdD66a7cD3bcafB948a"
+      address: "0x488B7a8c4431F9Ba1b86f44Ccb5b2Bf2825f1031"
       abi: SimpleBudgetWalletFactory
-      startBlock: 19500000
+      startBlock: 28096050
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
