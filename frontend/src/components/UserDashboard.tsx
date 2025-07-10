@@ -4,6 +4,19 @@ import { useWalletUser } from '@/hooks/useWalletUser';
 import { formatEther } from 'viem';
 import { Bell, Wallet, TrendingUp, DollarSign, Target } from 'lucide-react';
 
+// Helper function to safely convert to BigInt
+const safeBigInt = (value: string | undefined | null): bigint => {
+  if (!value || value === '' || value === 'undefined' || value === 'null') {
+    return BigInt(0);
+  }
+  try {
+    return BigInt(value);
+  } catch (error) {
+    console.warn('Failed to convert to BigInt:', value, error);
+    return BigInt(0);
+  }
+};
+
 export function UserDashboard() {
   const {
     ready,
@@ -135,7 +148,7 @@ export function UserDashboard() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Balance</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {parseFloat(formatEther(BigInt(totalBalance || '0'))).toFixed(4)} ETH
+                {parseFloat(formatEther(safeBigInt(totalBalance))).toFixed(4)} ETH
               </p>
             </div>
           </div>
@@ -147,7 +160,7 @@ export function UserDashboard() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Monthly Spent</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {parseFloat(formatEther(BigInt(monthlySpent || '0'))).toFixed(4)} ETH
+                {parseFloat(formatEther(safeBigInt(monthlySpent))).toFixed(4)} ETH
               </p>
             </div>
           </div>
@@ -206,7 +219,7 @@ export function UserDashboard() {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Balance:</span>
                         <span className="font-medium">
-                          {parseFloat(formatEther(BigInt(bucket.balance))).toFixed(4)} ETH
+                          {parseFloat(formatEther(safeBigInt(bucket.balance))).toFixed(4)} ETH
                         </span>
                       </div>
                       
@@ -215,14 +228,14 @@ export function UserDashboard() {
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Monthly Limit:</span>
                             <span className="font-medium">
-                              {parseFloat(formatEther(BigInt(bucket.monthlyLimit))).toFixed(4)} ETH
+                              {parseFloat(formatEther(safeBigInt(bucket.monthlyLimit))).toFixed(4)} ETH
                             </span>
                           </div>
                           
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Spent:</span>
                             <span className="font-medium">
-                              {parseFloat(formatEther(BigInt(bucket.monthlySpent))).toFixed(4)} ETH
+                              {parseFloat(formatEther(safeBigInt(bucket.monthlySpent))).toFixed(4)} ETH
                             </span>
                           </div>
                           
@@ -302,13 +315,13 @@ export function UserDashboard() {
               <div>
                 <p className="text-sm text-gray-500">Total Deposited</p>
                 <p className="text-lg font-semibold">
-                  {parseFloat(formatEther(BigInt(analytics.total_deposited))).toFixed(4)} ETH
+                  {parseFloat(formatEther(safeBigInt(analytics.total_deposited))).toFixed(4)} ETH
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total Spent</p>
                 <p className="text-lg font-semibold">
-                  {parseFloat(formatEther(BigInt(analytics.total_spent))).toFixed(4)} ETH
+                  {parseFloat(formatEther(safeBigInt(analytics.total_spent))).toFixed(4)} ETH
                 </p>
               </div>
               <div>
@@ -316,7 +329,7 @@ export function UserDashboard() {
                 <p className={`text-lg font-semibold ${
                   parseFloat(analytics.net_flow) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {parseFloat(formatEther(BigInt(analytics.net_flow))).toFixed(4)} ETH
+                  {parseFloat(formatEther(safeBigInt(analytics.net_flow))).toFixed(4)} ETH
                 </p>
               </div>
               <div>

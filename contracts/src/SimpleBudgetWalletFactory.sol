@@ -13,6 +13,10 @@ import "./SimpleBudgetWallet.sol";
  */
 contract SimpleBudgetWalletFactory is Ownable, ReentrancyGuard {
     
+    // Constants
+    // Standard EntryPoint contract address (ERC-4337)
+    address public constant ENTRY_POINT = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
+    
     // Events
     event WalletCreated(address indexed user, address indexed wallet, uint256 salt);
     event WalletRegistered(address indexed user, address indexed wallet);
@@ -23,39 +27,91 @@ contract SimpleBudgetWalletFactory is Ownable, ReentrancyGuard {
     address[] public allWallets;                       // All created wallets
     
     uint256 public totalWalletsCreated;
-    uint256 public creationFee;                        // Fee to create wallet (optional)
+    // Removed creation fee - wallet creation is now free
     
-    constructor(uint256 _creationFee) Ownable(msg.sender) {
-        creationFee = _creationFee;
+    constructor() Ownable(msg.sender) {
+        // No fee initialization needed
+    }
+    
+    /**
+     * @dev Check if the caller is the EntryPoint contract (for ERC-4337 smart accounts)
+     */
+    function _isEntryPoint(address caller) internal pure returns (bool) {
+        return caller == ENTRY_POINT;
     }
     
     /**
      * @dev Create a budget wallet for the caller
      */
-    function createWallet() external payable nonReentrant returns (address wallet) {
-        require(userWallets[msg.sender] == address(0), "Wallet already exists");
-        require(msg.value >= creationFee, "Insufficient creation fee");
+    function createWallet() external nonReentrant returns (address wallet) {
+        return _createWallet(msg.sender);
+    }
+    
+    /**
+     * @dev Create a budget wallet for a specific user (for smart accounts)
+     * @param user The address that will own the wallet (smart account address)
+     */
+    function createWallet(address user) external nonReentrant returns (address wallet) {
+        require(user != address(0), "Invalid user address");
+        
+        // For EOA calls, ensure msg.sender matches user
+        // For smart account calls via EntryPoint, skip this check
+        if (!_isEntryPoint(msg.sender)) {
+            require(msg.sender == user, "User address mismatch");
+        }
+        
+        return _createWallet(user);
+    }
+    
+    /**
+     * @dev Internal function to create wallet for a user
+     */
+    function _createWallet(address user) internal returns (address wallet) {
+        require(userWallets[user] == address(0), "Wallet already exists");
         
         // Deploy new wallet
         SimpleBudgetWallet newWallet = new SimpleBudgetWallet();
         wallet = address(newWallet);
         
         // Register wallet
-        userWallets[msg.sender] = wallet;
-        walletOwners[wallet] = msg.sender;
+        userWallets[user] = wallet;
+        walletOwners[wallet] = user;
         allWallets.push(wallet);
         totalWalletsCreated++;
         
-        emit WalletCreated(msg.sender, wallet, 0);
+        emit WalletCreated(user, wallet, 0);
         return wallet;
     }
     
     /**
      * @dev Create a wallet with deterministic address using CREATE2
      */
-    function createWalletDeterministic(uint256 salt) external payable nonReentrant returns (address wallet) {
-        require(userWallets[msg.sender] == address(0), "Wallet already exists");
-        require(msg.value >= creationFee, "Insufficient creation fee");
+    function createWalletDeterministic(uint256 salt) external nonReentrant returns (address wallet) {
+        return _createWalletDeterministic(msg.sender, salt);
+    }
+    
+    /**
+     * @dev Create a wallet with deterministic address using CREATE2 for a specific user
+     * @param user The address that will own the wallet (smart account address)
+     * @param salt The salt for deterministic address generation
+     */
+    function createWalletDeterministic(address user, uint256 salt) external nonReentrant returns (address wallet) {
+        require(user != address(0), "Invalid user address");
+        
+        // For EOA calls, ensure msg.sender matches user
+        // For smart account calls via EntryPoint, skip this check
+        if (!_isEntryPoint(msg.sender)) {
+            require(msg.sender == user, "User address mismatch");
+        }
+        
+        return _createWalletDeterministic(user, salt);
+    }
+    
+    /**
+     * @dev Internal function to create deterministic wallet for a user
+     */
+    function _createWalletDeterministic(address user, uint256 salt) internal returns (address wallet) {
+        require(userWallets[user] == address(0), "Wallet already exists");
         
         // Calculate deterministic address
         bytes memory bytecode = type(SimpleBudgetWallet).creationCode;
@@ -70,12 +126,12 @@ contract SimpleBudgetWalletFactory is Ownable, ReentrancyGuard {
         wallet = Create2.deploy(0, saltBytes, bytecode);
         
         // Register wallet
-        userWallets[msg.sender] = wallet;
-        walletOwners[wallet] = msg.sender;
+        userWallets[user] = wallet;
+        walletOwners[wallet] = user;
         allWallets.push(wallet);
         totalWalletsCreated++;
         
-        emit WalletCreated(msg.sender, wallet, salt);
+        emit WalletCreated(user, wallet, salt);
         return wallet;
     }
     
@@ -101,26 +157,17 @@ contract SimpleBudgetWalletFactory is Ownable, ReentrancyGuard {
         emit WalletRegistered(user, wallet);
     }
     
-    /**
-     * @dev Update creation fee
-     */
-    function setCreationFee(uint256 _creationFee) external onlyOwner {
-        creationFee = _creationFee;
-    }
-    
-    /**
-     * @dev Withdraw collected fees
-     */
-    function withdrawFees(address payable recipient) external onlyOwner {
-        require(recipient != address(0), "Invalid recipient");
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No fees to withdraw");
-        
-        recipient.transfer(balance);
-    }
+    // Removed fee-related functions since wallet creation is now free
     
     /**
      * @dev Get wallet for user
+     */
+    function getUserWallet(address user) external view returns (address) {
+        return userWallets[user];
+    }
+    
+    /**
+     * @dev Get wallet for user (legacy function name)
      */
     function getWallet(address user) external view returns (address) {
         return userWallets[user];
@@ -172,12 +219,10 @@ contract SimpleBudgetWalletFactory is Ownable, ReentrancyGuard {
      */
     function getStats() external view returns (
         uint256 totalWallets,
-        uint256 currentFee,
         uint256 contractBalance
     ) {
         return (
             totalWalletsCreated,
-            creationFee,
             address(this).balance
         );
     }

@@ -6,6 +6,9 @@ import { WagmiProvider } from '@privy-io/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { config } from './wagmi-config';
 import { privyConfig } from './config';
+import { useEffect } from 'react';
+import { setupConsoleFilters } from '../utils/console-filter';
+import { PrivyErrorBoundary, DefaultPrivyFallback } from './ErrorBoundary';
 
 const queryClient = new QueryClient();
 
@@ -14,6 +17,11 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  // Setup console filters for development warnings
+  useEffect(() => {
+    setupConsoleFilters();
+  }, []);
+
   // Check if Privy app ID is configured
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
   
@@ -41,15 +49,17 @@ export function Providers({ children }: ProvidersProps) {
   }
 
   return (
-    <PrivyProvider
-      appId={privyAppId}
-      config={privyConfig}
-    >
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config} reconnectOnMount={false}>
-          {children}
-        </WagmiProvider>
-      </QueryClientProvider>
-    </PrivyProvider>
+    <PrivyErrorBoundary fallback={DefaultPrivyFallback}>
+      <PrivyProvider
+        appId={privyAppId}
+        config={privyConfig}
+      >
+        <QueryClientProvider client={queryClient}>
+          <WagmiProvider config={config} reconnectOnMount={false}>
+            {children}
+          </WagmiProvider>
+        </QueryClientProvider>
+      </PrivyProvider>
+    </PrivyErrorBoundary>
   );
 }

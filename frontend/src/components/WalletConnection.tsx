@@ -2,9 +2,17 @@
 import React from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Wallet, LogOut, User, Mail } from 'lucide-react';
+import { useWalletUser } from '@/hooks/useWalletUser';
+import { BudgetWalletCreationStatus } from './BudgetWalletCreationProgress';
 
 export function WalletConnection() {
   const { ready, authenticated, user, login, logout } = usePrivy();
+  const { 
+    isCreatingBudgetWallet, 
+    budgetWalletCreationStep, 
+    budgetWalletCreationError,
+    retryWalletCreation
+  } = useWalletUser();
 
   if (!ready) {
     return (
@@ -44,6 +52,14 @@ export function WalletConnection() {
           </>
         )}
       </div>
+
+      {/* Budget Wallet Creation Status */}
+      <BudgetWalletCreationStatus 
+        isCreating={isCreatingBudgetWallet}
+        step={budgetWalletCreationStep}
+        error={budgetWalletCreationError}
+        onRetry={retryWalletCreation}
+      />
 
       {/* Logout Button */}
       <button

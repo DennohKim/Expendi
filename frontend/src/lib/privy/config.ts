@@ -3,11 +3,8 @@ import { base, baseSepolia } from 'viem/chains';
 import type { PrivyClientConfig } from '@privy-io/react-auth';
 
 export const privyConfig: PrivyClientConfig = {
-  // Supported login methods
-  loginMethods: ['wallet', 'email', 'sms'],
-  
-  // Wallet configuration
-  walletConnectCloudProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+  // Supported login methods - ONLY email, no wallet options
+  loginMethods: ['email'],
   
   // Supported chains
   supportedChains: [baseSepolia, base],
@@ -19,15 +16,17 @@ export const privyConfig: PrivyClientConfig = {
   appearance: {
     theme: 'light',
     accentColor: '#ff7e5f',
-    logo: '/images/logo/logo.svg',
-    walletList: ['metamask', 'coinbase_wallet', 'wallet_connect'],
-    showWalletLoginFirst: true,
+    logo: '/images/logo/logo.svg',    
+    showWalletLoginFirst: false, // Never show wallet login first
+    walletChainType: 'ethereum-only',
   },
   
-  // Embedded wallet configuration
+  // Embedded wallet configuration - force embedded wallet creation
   embeddedWallets: {
-    createOnLogin: 'users-without-wallets',
-    requireUserPasswordOnCreate: false,
+    createOnLogin: "all-users", // Force embedded wallet for all users
+    requireUserPasswordOnCreate: true, // Keep password requirement
+    noPromptOnSignature: false,
+    showWalletUIs: true, // Show embedded wallet UI
   },
   
   // MFA configuration

@@ -40,7 +40,7 @@ contract SimpleBudgetWalletTest is Test {
     function setUp() public {
         // Deploy contracts
         wallet = new SimpleBudgetWallet();
-        factory = new SimpleBudgetWalletFactory(0); // No creation fee
+        factory = new SimpleBudgetWalletFactory(); // No creation fee
         token = new MockToken();
         
         // Fund accounts

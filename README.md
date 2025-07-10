@@ -68,15 +68,16 @@ The Expendi system consists of two main smart contracts that work together to pr
 ## 🚀 Deployed Contracts (Base Sepolia)
 
 ### Factory Contract
-- **Address**: [`0x488B7a8c4431F9Ba1b86f44Ccb5b2Bf2825f1031`](https://sepolia.basescan.org/address/0x488B7a8c4431F9Ba1b86f44Ccb5b2Bf2825f1031)
+- **Address**: [`0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a`](https://sepolia.basescan.org/address/0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a)
 - **Status**: ✅ Verified
 - **Creation Fee**: 0 ETH
+- **Block Number**: 28209133
 
-### Example Individual Wallet
-- **Address**: [`0x316f0eB615C799e4Bb0BaB7c6026E952f25F3a92`](https://sepolia.basescan.org/address/0x316f0eB615C799e4Bb0BaB7c6026E952f25F3a92)  
-- **Owner**: `0x5A6528b24d4aBE30c8c64672B00ccD2B9dD6ba33`
-- **Created Via**: Factory deployment
-- **Features**: Active budget with groceries bucket (0.05 ETH limit)
+### Budget Wallet Template
+- **Address**: [`0xA2f565Db75B32Dac366666621633b2259bF332D6`](https://sepolia.basescan.org/address/0xA2f565Db75B32Dac366666621633b2259bF332D6)  
+- **Status**: ✅ Verified
+- **Template Contract**: Used by factory for wallet creation
+- **Block Number**: 28209133
 
 ## 🛠️ Development Setup
 
@@ -216,7 +217,7 @@ forge verify-contract \
     --constructor-args $(cast abi-encode "constructor(uint256)" 0) \
     --etherscan-api-key $ETHERSCAN_API_KEY \
     --compiler-version v0.8.19+commit.7dd6d404 \
-    0x488B7a8c4431F9Ba1b86f44Ccb5b2Bf2825f1031 \
+    0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a \
     src/SimpleBudgetWalletFactory.sol:SimpleBudgetWalletFactory
 ```
 
@@ -323,7 +324,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🔗 Links
 
-- **Factory Contract**: [0x488B7a8c4431F9Ba1b86f44Ccb5b2Bf2825f1031](https://sepolia.basescan.org/address/0x488B7a8c4431F9Ba1b86f44Ccb5b2Bf2825f1031)
-- **Example Wallet**: [0x316f0eB615C799e4Bb0BaB7c6026E952f25F3a92](https://sepolia.basescan.org/address/0x316f0eB615C799e4Bb0BaB7c6026E952f25F3a92)
+- **Factory Contract**: [0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a](https://sepolia.basescan.org/address/0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a)
+- **Budget Wallet Template**: [0xA2f565Db75B32Dac366666621633b2259bF332D6](https://sepolia.basescan.org/address/0xA2f565Db75B32Dac366666621633b2259bF332D6)
 - **Base Sepolia Explorer**: https://sepolia.basescan.org
 - **Base Sepolia Bridge**: https://bridge.base.org/deposit

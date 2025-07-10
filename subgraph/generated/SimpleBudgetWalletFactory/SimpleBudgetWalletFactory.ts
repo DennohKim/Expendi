@@ -83,19 +83,16 @@ export class WalletRegistered__Params {
 export class SimpleBudgetWalletFactory__getStatsResult {
   value0: BigInt;
   value1: BigInt;
-  value2: BigInt;
 
-  constructor(value0: BigInt, value1: BigInt, value2: BigInt) {
+  constructor(value0: BigInt, value1: BigInt) {
     this.value0 = value0;
     this.value1 = value1;
-    this.value2 = value2;
   }
 
   toMap(): TypedMap<string, ethereum.Value> {
     let map = new TypedMap<string, ethereum.Value>();
     map.set("value0", ethereum.Value.fromUnsignedBigInt(this.value0));
     map.set("value1", ethereum.Value.fromUnsignedBigInt(this.value1));
-    map.set("value2", ethereum.Value.fromUnsignedBigInt(this.value2));
     return map;
   }
 
@@ -103,12 +100,8 @@ export class SimpleBudgetWalletFactory__getStatsResult {
     return this.value0;
   }
 
-  getCurrentFee(): BigInt {
-    return this.value1;
-  }
-
   getContractBalance(): BigInt {
-    return this.value2;
+    return this.value1;
   }
 }
 
@@ -142,6 +135,21 @@ export class SimpleBudgetWalletFactory extends ethereum.SmartContract {
     return new SimpleBudgetWalletFactory("SimpleBudgetWalletFactory", address);
   }
 
+  ENTRY_POINT(): Address {
+    let result = super.call("ENTRY_POINT", "ENTRY_POINT():(address)", []);
+
+    return result[0].toAddress();
+  }
+
+  try_ENTRY_POINT(): ethereum.CallResult<Address> {
+    let result = super.tryCall("ENTRY_POINT", "ENTRY_POINT():(address)", []);
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
   allWallets(param0: BigInt): Address {
     let result = super.call("allWallets", "allWallets(uint256):(address)", [
       ethereum.Value.fromUnsignedBigInt(param0),
@@ -161,19 +169,95 @@ export class SimpleBudgetWalletFactory extends ethereum.SmartContract {
     return ethereum.CallResult.fromValue(value[0].toAddress());
   }
 
-  creationFee(): BigInt {
-    let result = super.call("creationFee", "creationFee():(uint256)", []);
+  createWallet(): Address {
+    let result = super.call("createWallet", "createWallet():(address)", []);
 
-    return result[0].toBigInt();
+    return result[0].toAddress();
   }
 
-  try_creationFee(): ethereum.CallResult<BigInt> {
-    let result = super.tryCall("creationFee", "creationFee():(uint256)", []);
+  try_createWallet(): ethereum.CallResult<Address> {
+    let result = super.tryCall("createWallet", "createWallet():(address)", []);
     if (result.reverted) {
       return new ethereum.CallResult();
     }
     let value = result.value;
-    return ethereum.CallResult.fromValue(value[0].toBigInt());
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
+  createWallet1(user: Address): Address {
+    let result = super.call("createWallet", "createWallet(address):(address)", [
+      ethereum.Value.fromAddress(user),
+    ]);
+
+    return result[0].toAddress();
+  }
+
+  try_createWallet1(user: Address): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "createWallet",
+      "createWallet(address):(address)",
+      [ethereum.Value.fromAddress(user)],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
+  createWalletDeterministic(salt: BigInt): Address {
+    let result = super.call(
+      "createWalletDeterministic",
+      "createWalletDeterministic(uint256):(address)",
+      [ethereum.Value.fromUnsignedBigInt(salt)],
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_createWalletDeterministic(salt: BigInt): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "createWalletDeterministic",
+      "createWalletDeterministic(uint256):(address)",
+      [ethereum.Value.fromUnsignedBigInt(salt)],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
+  }
+
+  createWalletDeterministic1(user: Address, salt: BigInt): Address {
+    let result = super.call(
+      "createWalletDeterministic",
+      "createWalletDeterministic(address,uint256):(address)",
+      [
+        ethereum.Value.fromAddress(user),
+        ethereum.Value.fromUnsignedBigInt(salt),
+      ],
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_createWalletDeterministic1(
+    user: Address,
+    salt: BigInt,
+  ): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "createWalletDeterministic",
+      "createWalletDeterministic(address,uint256):(address)",
+      [
+        ethereum.Value.fromAddress(user),
+        ethereum.Value.fromUnsignedBigInt(salt),
+      ],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
   }
 
   getOwner(wallet: Address): Address {
@@ -196,25 +280,16 @@ export class SimpleBudgetWalletFactory extends ethereum.SmartContract {
   }
 
   getStats(): SimpleBudgetWalletFactory__getStatsResult {
-    let result = super.call(
-      "getStats",
-      "getStats():(uint256,uint256,uint256)",
-      [],
-    );
+    let result = super.call("getStats", "getStats():(uint256,uint256)", []);
 
     return new SimpleBudgetWalletFactory__getStatsResult(
       result[0].toBigInt(),
       result[1].toBigInt(),
-      result[2].toBigInt(),
     );
   }
 
   try_getStats(): ethereum.CallResult<SimpleBudgetWalletFactory__getStatsResult> {
-    let result = super.tryCall(
-      "getStats",
-      "getStats():(uint256,uint256,uint256)",
-      [],
-    );
+    let result = super.tryCall("getStats", "getStats():(uint256,uint256)", []);
     if (result.reverted) {
       return new ethereum.CallResult();
     }
@@ -223,9 +298,31 @@ export class SimpleBudgetWalletFactory extends ethereum.SmartContract {
       new SimpleBudgetWalletFactory__getStatsResult(
         value[0].toBigInt(),
         value[1].toBigInt(),
-        value[2].toBigInt(),
       ),
     );
+  }
+
+  getUserWallet(user: Address): Address {
+    let result = super.call(
+      "getUserWallet",
+      "getUserWallet(address):(address)",
+      [ethereum.Value.fromAddress(user)],
+    );
+
+    return result[0].toAddress();
+  }
+
+  try_getUserWallet(user: Address): ethereum.CallResult<Address> {
+    let result = super.tryCall(
+      "getUserWallet",
+      "getUserWallet(address):(address)",
+      [ethereum.Value.fromAddress(user)],
+    );
+    if (result.reverted) {
+      return new ethereum.CallResult();
+    }
+    let value = result.value;
+    return ethereum.CallResult.fromValue(value[0].toAddress());
   }
 
   getWallet(user: Address): Address {
@@ -429,10 +526,6 @@ export class ConstructorCall__Inputs {
   constructor(call: ConstructorCall) {
     this._call = call;
   }
-
-  get _creationFee(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
 }
 
 export class ConstructorCall__Outputs {
@@ -473,6 +566,40 @@ export class CreateWalletCall__Outputs {
   }
 }
 
+export class CreateWallet1Call extends ethereum.Call {
+  get inputs(): CreateWallet1Call__Inputs {
+    return new CreateWallet1Call__Inputs(this);
+  }
+
+  get outputs(): CreateWallet1Call__Outputs {
+    return new CreateWallet1Call__Outputs(this);
+  }
+}
+
+export class CreateWallet1Call__Inputs {
+  _call: CreateWallet1Call;
+
+  constructor(call: CreateWallet1Call) {
+    this._call = call;
+  }
+
+  get user(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+}
+
+export class CreateWallet1Call__Outputs {
+  _call: CreateWallet1Call;
+
+  constructor(call: CreateWallet1Call) {
+    this._call = call;
+  }
+
+  get wallet(): Address {
+    return this._call.outputValues[0].value.toAddress();
+  }
+}
+
 export class CreateWalletDeterministicCall extends ethereum.Call {
   get inputs(): CreateWalletDeterministicCall__Inputs {
     return new CreateWalletDeterministicCall__Inputs(this);
@@ -499,6 +626,44 @@ export class CreateWalletDeterministicCall__Outputs {
   _call: CreateWalletDeterministicCall;
 
   constructor(call: CreateWalletDeterministicCall) {
+    this._call = call;
+  }
+
+  get wallet(): Address {
+    return this._call.outputValues[0].value.toAddress();
+  }
+}
+
+export class CreateWalletDeterministic1Call extends ethereum.Call {
+  get inputs(): CreateWalletDeterministic1Call__Inputs {
+    return new CreateWalletDeterministic1Call__Inputs(this);
+  }
+
+  get outputs(): CreateWalletDeterministic1Call__Outputs {
+    return new CreateWalletDeterministic1Call__Outputs(this);
+  }
+}
+
+export class CreateWalletDeterministic1Call__Inputs {
+  _call: CreateWalletDeterministic1Call;
+
+  constructor(call: CreateWalletDeterministic1Call) {
+    this._call = call;
+  }
+
+  get user(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get salt(): BigInt {
+    return this._call.inputValues[1].value.toBigInt();
+  }
+}
+
+export class CreateWalletDeterministic1Call__Outputs {
+  _call: CreateWalletDeterministic1Call;
+
+  constructor(call: CreateWalletDeterministic1Call) {
     this._call = call;
   }
 
@@ -567,36 +732,6 @@ export class RenounceOwnershipCall__Outputs {
   }
 }
 
-export class SetCreationFeeCall extends ethereum.Call {
-  get inputs(): SetCreationFeeCall__Inputs {
-    return new SetCreationFeeCall__Inputs(this);
-  }
-
-  get outputs(): SetCreationFeeCall__Outputs {
-    return new SetCreationFeeCall__Outputs(this);
-  }
-}
-
-export class SetCreationFeeCall__Inputs {
-  _call: SetCreationFeeCall;
-
-  constructor(call: SetCreationFeeCall) {
-    this._call = call;
-  }
-
-  get _creationFee(): BigInt {
-    return this._call.inputValues[0].value.toBigInt();
-  }
-}
-
-export class SetCreationFeeCall__Outputs {
-  _call: SetCreationFeeCall;
-
-  constructor(call: SetCreationFeeCall) {
-    this._call = call;
-  }
-}
-
 export class TransferOwnershipCall extends ethereum.Call {
   get inputs(): TransferOwnershipCall__Inputs {
     return new TransferOwnershipCall__Inputs(this);
@@ -623,36 +758,6 @@ export class TransferOwnershipCall__Outputs {
   _call: TransferOwnershipCall;
 
   constructor(call: TransferOwnershipCall) {
-    this._call = call;
-  }
-}
-
-export class WithdrawFeesCall extends ethereum.Call {
-  get inputs(): WithdrawFeesCall__Inputs {
-    return new WithdrawFeesCall__Inputs(this);
-  }
-
-  get outputs(): WithdrawFeesCall__Outputs {
-    return new WithdrawFeesCall__Outputs(this);
-  }
-}
-
-export class WithdrawFeesCall__Inputs {
-  _call: WithdrawFeesCall;
-
-  constructor(call: WithdrawFeesCall) {
-    this._call = call;
-  }
-
-  get recipient(): Address {
-    return this._call.inputValues[0].value.toAddress();
-  }
-}
-
-export class WithdrawFeesCall__Outputs {
-  _call: WithdrawFeesCall;
-
-  constructor(call: WithdrawFeesCall) {
     this._call = call;
   }
 }

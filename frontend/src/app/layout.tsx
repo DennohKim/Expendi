@@ -4,10 +4,20 @@ import './globals.css';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { Providers } from '@/lib/privy/providers';
+import { Metadata } from 'next';
+import { SmartAccountProvider } from '@/context/SmartAccountContext';
+import { Toaster } from "@/components/ui/sonner"
+
 
 const outfit = Outfit({
   subsets: ["latin"],
 });
+
+export const metadata: Metadata = {
+  title:
+    "Expendi",
+  description: "",
+};
 
 export default function RootLayout({
   children,
@@ -19,7 +29,12 @@ export default function RootLayout({
       <body className={`${outfit.className} dark:bg-gray-900`}>
         <Providers>
           <ThemeProvider>
-            <SidebarProvider>{children}</SidebarProvider>
+            <SmartAccountProvider>
+              <SidebarProvider>
+                {children}
+                <Toaster />
+              </SidebarProvider>
+            </SmartAccountProvider>
           </ThemeProvider>
         </Providers>
       </body>
