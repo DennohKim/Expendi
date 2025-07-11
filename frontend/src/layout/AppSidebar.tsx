@@ -7,7 +7,7 @@ import {
   GridIcon,
   HorizontaLDots,
 } from "../icons/index";
-import { BadgeDollarSign, Vault } from "lucide-react";
+import { BadgeDollarSign, Vault, Wallet2Icon } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -31,7 +31,11 @@ const navItems: NavItem[] = [
     name: "Transactions",
     path: "/transactions",
   },
-
+  {
+    icon: <Wallet2Icon />,
+    name: "Wallet",
+    path: "/wallet",
+  },
 ];
 
 const AppSidebar: React.FC = () => {

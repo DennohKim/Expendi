@@ -16,6 +16,7 @@
     "db:generate": "supabase gen types typescript --local > lib/types/database.types.ts"
   },
   "dependencies": {
+    "@apollo/client": "^3.13.8",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
     "@fullcalendar/interaction": "^6.1.15",
