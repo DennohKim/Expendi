@@ -10,6 +10,9 @@ export const BUDGET_WALLET_ABI = BudgetWalletABI.abi as Abi;
 // ETH address constant (used in the contract)
 export const ETH_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
+// MockUSDC token address
+export const MOCK_USDC_ADDRESS = '0x5c6df8de742863d997083097e02a789f6b84bF38' as const;
+
 // Create clients for Base Sepolia
 export const publicClient = createPublicClient({
   chain: baseSepolia,

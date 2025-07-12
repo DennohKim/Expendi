@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAccount, useReadContract } from 'wagmi';
 import { FACTORY_CONTRACT_ADDRESS, FACTORY_ABI } from '@/lib/contracts/factory';
-import { ETH_ADDRESS } from '@/lib/contracts/budget-wallet';
+import { ETH_ADDRESS, MOCK_USDC_ADDRESS } from '@/lib/contracts/budget-wallet';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { formatEther } from 'viem';
 
@@ -94,7 +94,7 @@ export function useUserBudgetWallet(): UseUserBudgetWalletReturn {
       }
     ],
     functionName: 'getTotalBalance',
-    args: queryAddress && walletAddress ? [queryAddress, ETH_ADDRESS] : undefined,
+    args: queryAddress && walletAddress ? [queryAddress, MOCK_USDC_ADDRESS] : undefined,
     query: {
       enabled: !!walletAddress && !!queryAddress,
     }
@@ -121,7 +121,7 @@ export function useUserBudgetWallet(): UseUserBudgetWalletReturn {
       }
     ],
     functionName: 'getUnallocatedBalance',
-    args: queryAddress && walletAddress ? [queryAddress, ETH_ADDRESS] : undefined,
+    args: queryAddress && walletAddress ? [queryAddress, MOCK_USDC_ADDRESS] : undefined,
     query: {
       enabled: !!walletAddress && !!queryAddress,
     }
