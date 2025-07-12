@@ -7,6 +7,8 @@ import { Providers } from '@/lib/privy/providers';
 import { Metadata } from 'next';
 import { SmartAccountProvider } from '@/context/SmartAccountContext';
 import { Toaster } from "@/components/ui/sonner"
+import { ApolloWrapper } from '@/lib/services/apollo-wrapper';
+import { cookies } from 'next/headers';
 
 
 const outfit = Outfit({
@@ -19,11 +21,15 @@ export const metadata: Metadata = {
   description: "",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const cookieStore = await cookies();
+  const delay = Number(cookieStore.get("apollo-x-custom-delay")?.value ?? 1000);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.className} dark:bg-gray-900`}>
@@ -31,7 +37,9 @@ export default function RootLayout({
           <ThemeProvider>
             <SmartAccountProvider>
               <SidebarProvider>
-                {children}
+                <ApolloWrapper delay={delay}>
+                  {children}
+                </ApolloWrapper>
                 <Toaster />
               </SidebarProvider>
             </SmartAccountProvider>
