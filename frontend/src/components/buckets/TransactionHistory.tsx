@@ -1,11 +1,4 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -91,7 +84,7 @@ const transactionData: Transaction[] = [
 ];
 
 export default function TransactionHistory() {
-  const getAmountColor = (type: string, amount: string) => {
+  const getAmountColor = (type: string) => {
     if (type === "spend") return "text-red-500";
     if (type === "fund") return "text-green-500";
     if (type === "transfer") return "text-blue-500";
@@ -221,7 +214,7 @@ export default function TransactionHistory() {
 
               {/* Amount and Time */}
               <div className="flex flex-col items-end gap-1">
-                <span className={`font-medium ${getAmountColor(transaction.type, transaction.amount)}`}>
+                <span className={`font-medium ${getAmountColor(transaction.type)}`}>
                   {transaction.type === "transfer" ? "↗" : transaction.type === "spend" ? "↓" : "↑"} {transaction.amount}
                 </span>
                 <span className="text-sm text-gray-500 dark:text-gray-400">

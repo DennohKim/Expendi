@@ -21,8 +21,16 @@ export const publicClient = createPublicClient({
 });
 
 // Budget Wallet utility functions
+interface WriteContractArgs {
+  address: `0x${string}`;
+  abi: Abi;
+  functionName: string;
+  args: unknown[];
+  value?: bigint;
+}
+
 export const createBucket = (walletAddress: `0x${string}`) => async (
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   bucketName: string,
   monthlyLimit: bigint,
   smartAccountClient?: SmartAccountClient
@@ -49,7 +57,7 @@ export const createBucket = (walletAddress: `0x${string}`) => async (
 };
 
 export const depositETH = (walletAddress: `0x${string}`) => async (
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   amount: bigint
 ) => {
   return await writeContractAsync({
@@ -61,7 +69,7 @@ export const depositETH = (walletAddress: `0x${string}`) => async (
 };
 
 export const fundBucket = (walletAddress: `0x${string}`) => async (
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   bucketName: string,
   amount: bigint,
   token: `0x${string}` = ETH_ADDRESS
@@ -135,7 +143,7 @@ export const getTotalBalance = (walletAddress: `0x${string}`) => async (
 };
 
 export const spendFromBucket = (walletAddress: `0x${string}`) => async (
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   user: `0x${string}`,
   bucketName: string,
   amount: bigint,
@@ -152,7 +160,7 @@ export const spendFromBucket = (walletAddress: `0x${string}`) => async (
 };
 
 export const updateBucket = (walletAddress: `0x${string}`) => async (
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   bucketName: string,
   newMonthlyLimit: bigint,
   active: boolean

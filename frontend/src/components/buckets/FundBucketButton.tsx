@@ -7,13 +7,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { parseUnits, formatUnits } from "viem";
+import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
-import { createBudgetWalletUtils, MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
+import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
 import { formatBalance } from "@/lib/utils";
+
+interface TokenBalance {
+  balance: string;
+}
+
+interface Bucket {
+  name: string;
+  tokenBalances?: TokenBalance[];
+}
 
 interface FundBucketButtonProps {
   bucketName: string;
@@ -34,8 +43,8 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
     [smartAccountReady, smartAccountAddress, address]
   );
-  const { data: walletData } = useUserBudgetWallet(queryAddress);
-  const { data: bucketsData,refetch: refetchBuckets } = useUserBuckets(queryAddress);
+  const { data: walletData, refetch: refetchWalletData } = useUserBudgetWallet(queryAddress);
+  const { refetch: refetchBuckets } = useUserBuckets(queryAddress);
 
    // Calculate allocated balance (total - unallocated) - using user data structure
    const userData = walletData?.user;
@@ -43,10 +52,10 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
    console.log("User data:", userData)
    
    // Calculate allocated balance from all token balances in buckets except UNALLOCATED
-   const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: any) => {
+   const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: Bucket) => {
      if (bucket.name !== 'UNALLOCATED') {
        // Sum all token balances in this bucket
-       const bucketTokenBalance = bucket.tokenBalances?.reduce((tokenSum: bigint, tokenBalance: any) => {
+       const bucketTokenBalance = bucket.tokenBalances?.reduce((tokenSum: bigint, tokenBalance: TokenBalance) => {
          return tokenSum + BigInt(tokenBalance.balance || '0');
        }, BigInt(0)) || BigInt(0);
        return sum + bucketTokenBalance;
@@ -106,6 +115,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
       // Refetch buckets to update the UI
       setTimeout(() => {
         refetchBuckets();
+        refetchWalletData();
       }, 1000); // Delay refetch to avoid rate limiting
 
     } catch (error) {
@@ -116,9 +126,6 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
     }
   };
 
-  const balanceFormatted = walletData?.unallocatedBalance 
-    ? formatUnits(walletData.unallocatedBalance, 6)
-    : '0.00';
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

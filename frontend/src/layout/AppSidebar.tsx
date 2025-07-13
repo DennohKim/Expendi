@@ -7,7 +7,7 @@ import {
   GridIcon,
   HorizontaLDots,
 } from "../icons/index";
-import { BadgeDollarSign, Vault, Wallet2Icon } from "lucide-react";
+import { BadgeDollarSign, Wallet2Icon } from "lucide-react";
 
 type NavItem = {
   name: string;

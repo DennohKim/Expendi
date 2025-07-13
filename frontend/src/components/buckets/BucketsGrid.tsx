@@ -6,6 +6,27 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { useAccount } from 'wagmi';
 
+interface Bucket {
+  id: string;
+  name: string;
+  balance: string;
+  monthlyLimit: string;
+  monthlySpent: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  tokenBalances: Array<{
+    id: string;
+    balance: string;
+    token: {
+      id: string;
+      name: string;
+      symbol: string;
+      decimals: number;
+    };
+  }>;
+}
+
 export function BucketsGrid() {
   const { address: eoaAddress } = useAccount();
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
@@ -67,8 +88,8 @@ export function BucketsGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {buckets
-        .filter((bucket: any) => bucket.name !== 'UNALLOCATED') // Filter out UNALLOCATED bucket
-        .map((bucket: any) => (
+        .filter((bucket: Bucket) => bucket.name !== 'UNALLOCATED') // Filter out UNALLOCATED bucket
+        .map((bucket: Bucket) => (
           <BucketCard
             key={bucket.id}
             bucket={bucket}

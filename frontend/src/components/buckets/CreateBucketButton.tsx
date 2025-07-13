@@ -1,13 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { parseUnits, formatUnits } from "viem";
+import { parseUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
@@ -40,7 +40,7 @@ export function CreateBucketButton() {
 
   // Get user's current USDC balance
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : address
-  const { data: usdcBalance } = useBalance({
+  useBalance({
     address: queryAddress,
     token: MOCK_USDC_ADDRESS,
   })

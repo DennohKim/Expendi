@@ -15,3 +15,7 @@ export const formatBalance = (balance: string | bigint) => {
   const formatted = parseFloat(balance).toFixed(2);
   return Number(formatted).toLocaleString();
 };
+
+export const formatAddress = (addr: string) => {
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+};

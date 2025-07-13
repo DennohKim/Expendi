@@ -8,9 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { formatEther, formatUnits, parseUnits, encodeFunctionData } from 'viem';
+import {  formatUnits, parseUnits, encodeFunctionData } from 'viem';
 import { useBalance, useAccount } from 'wagmi';
 import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wallet';
 import { useSmartAccount } from '@/context/SmartAccountContext';
@@ -21,7 +21,6 @@ const WalletPage = () => {
   const [copied, setCopied] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const { smartAccountClient } = useSmartAccount();
   
@@ -45,13 +44,10 @@ const WalletPage = () => {
       setCopied(true);
       toast.success('Address copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast.error('Failed to copy address');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toast.error('Failed to copy address: ' + errorMessage);
     }
-  };
-
-  const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
   const formatBalance = (balance: string | bigint) => {
@@ -70,10 +66,10 @@ const WalletPage = () => {
   console.log("User data:", userData)
   
   // Calculate allocated balance from all token balances in buckets except UNALLOCATED
-  const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: any) => {
+  const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: { name: string; tokenBalances?: Array<{ balance: string }> }) => {
     if (bucket.name !== 'UNALLOCATED') {
       // Sum all token balances in this bucket
-      const bucketTokenBalance = bucket.tokenBalances?.reduce((tokenSum: bigint, tokenBalance: any) => {
+      const bucketTokenBalance = bucket.tokenBalances?.reduce((tokenSum: bigint, tokenBalance: { balance: string }) => {
         return tokenSum + BigInt(tokenBalance.balance || '0');
       }, BigInt(0)) || BigInt(0);
       return sum + bucketTokenBalance;
@@ -190,34 +186,33 @@ const WalletPage = () => {
       refetch();
       refetchWalletBalance();
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Batch deposit process failed:', error);
       
       // Enhanced error handling
-      if (error.message?.includes('User rejected') || 
-          error.message?.includes('rejected') ||
-          error.message?.includes('User exited') ||
-          error.message?.includes('user rejected')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('User rejected') || 
+          errorMessage.includes('rejected') ||
+          errorMessage.includes('User exited') ||
+          errorMessage.includes('user rejected')) {
         toast.error('Transaction was cancelled by user');
-      } else if (error.message?.includes('timeout') || 
-                 error.message?.includes('timed out')) {
+      } else if (errorMessage.includes('timeout') || 
+                 errorMessage.includes('timed out')) {
         toast.error('Transaction is taking longer than expected. Please check your wallet or try again.');
         // Still try to refresh in case it went through
         setTimeout(() => {
           refetch();
           refetchWalletBalance();
         }, 5000);
-      } else if (error.message?.includes('0xe450d38c') || 
-                 error.message?.includes('ERC20InsufficientBalance') ||
-                 error.message?.includes('insufficient funds') || 
-                 error.message?.includes('insufficient balance')) {
+      } else if (errorMessage.includes('0xe450d38c') || 
+                 errorMessage.includes('ERC20InsufficientBalance') ||
+                 errorMessage.includes('insufficient funds') || 
+                 errorMessage.includes('insufficient balance')) {
         toast.error('Insufficient USDC balance in your smart account for this deposit');
       } else {
-        toast.error('Batch transaction failed: ' + (error.message || 'Unknown error'));
+        toast.error('Batch transaction failed: ' + (errorMessage || 'Unknown error'));
       }
-    } finally {
-      setIsApproving(false);
-      setIsDepositing(false);
     }
   };
 
@@ -324,7 +319,7 @@ const WalletPage = () => {
                   No Budget Wallet Found
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  You don't have a budget wallet yet. Create one to get started.
+                  You don&apos;t have a budget wallet yet. Create one to get started.
                 </p>
               </div>
             </CardContent>

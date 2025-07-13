@@ -5,6 +5,14 @@ import FactoryABI from './SimpleBudgetWalletFactory.json';
 import type { SmartAccountClient } from 'permissionless';
 import type { Abi } from 'viem';
 
+interface WriteContractArgs {
+  address: `0x${string}`;
+  abi: Abi;
+  functionName: string;
+  args: unknown[];
+  value?: bigint;
+}
+
 // Factory contract details
 export const FACTORY_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS as `0x${string}`) || ('0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a' as const);
 
@@ -32,7 +40,7 @@ export function getCreationFee(): bigint {
 
 // Create or get budget wallet for user using their connected wallet address
 export async function createOrGetBudgetWallet(
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   connectedWalletAddress: `0x${string}`,
   smartAccountClient?: SmartAccountClient // Optional smart account client for gas sponsorship
 ): Promise<{
@@ -193,7 +201,7 @@ export async function createOrGetBudgetWallet(
 
 // Create deterministic budget wallet for user using wagmi
 export async function createDeterministicBudgetWallet(
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   userAddress: `0x${string}`, 
   salt: bigint,
   smartAccountClient?: SmartAccountClient // Optional smart account client
@@ -344,7 +352,7 @@ export async function checkExistingBudgetWallet(userAddress: string): Promise<st
 
 // Legacy alias for the main function
 export async function createBudgetWallet(
-  writeContractAsync: (args: any) => Promise<`0x${string}`>,
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   connectedWalletAddress: `0x${string}`,
   smartAccountClient?: SmartAccountClient
 ) {

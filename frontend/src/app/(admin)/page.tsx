@@ -1,12 +1,12 @@
 "use client"
 
-import { BucketWalletMetrics } from "@/components/buckets/BucketWalletMetrics";
+// import { BucketWalletMetrics } from "@/components/buckets/BucketWalletMetrics";
 import React from "react";
-import WalletBalance from "@/components/buckets/WalletBalance";
-import SpendingSummaryChart from "@/components/buckets/SpendingSummaryChart";
-import TransactionHistory from "@/components/buckets/TransactionHistory";
+// import WalletBalance from "@/components/buckets/WalletBalance";
+// import SpendingSummaryChart from "@/components/buckets/SpendingSummaryChart";
+// import TransactionHistory from "@/components/buckets/TransactionHistory";
 import { useAccount } from "wagmi";
-import { TestGasSponsorship } from "@/components/test-gas-sponsorship";
+// import { TestGasSponsorship } from "@/components/test-gas-sponsorship";
 import { CreateBucketButton } from "@/components/buckets/CreateBucketButton";
 import { BucketsGrid } from "@/components/buckets/BucketsGrid";
 

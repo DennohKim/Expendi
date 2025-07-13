@@ -1,4 +1,4 @@
-import TransactionHistory from '@/components/buckets/TransactionHistory'
+// import TransactionHistory from '@/components/buckets/TransactionHistory'
 import Transactions from '@/components/Transactions'
 import React from 'react'
 

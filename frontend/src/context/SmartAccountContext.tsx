@@ -128,7 +128,7 @@ export const SmartAccountProvider = ({
     };
 
     if (embeddedWallet) createSmartWallet(embeddedWallet);
-  }, [embeddedWallet?.address]);
+  }, [embeddedWallet?.address, embeddedWallet]);
 
   return (
     <SmartAccountContext.Provider

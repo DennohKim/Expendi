@@ -1,6 +1,6 @@
 "use client";
 
-import { formatEther, formatUnits } from 'viem';
+import { formatUnits } from 'viem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FundBucketButton } from './FundBucketButton';
@@ -38,7 +38,6 @@ export function BucketCard({ bucket }: BucketCardProps) {
   // USDC has 6 decimals, ETH has 18 decimals
   const limitInTokens = parseFloat(bucket.monthlyLimit) / 1e6; // USDC has 6 decimals
   const spentInTokens = parseFloat(bucket.monthlySpent) / 1e6; // USDC has 6 decimals
-  const ethBalance = parseFloat(bucket.balance) / 1e18; // ETH has 18 decimals
   
   const spentPercentage = limitInTokens > 0 ? (spentInTokens / limitInTokens) * 100 : 0;
   
@@ -47,12 +46,6 @@ export function BucketCard({ bucket }: BucketCardProps) {
     const balance = BigInt(tokenBalance.balance);
     return total + balance;
   }, BigInt(0));
-  
-  // Convert to display number for UI
-  const totalTokenBalance = bucket.tokenBalances.reduce((total, tokenBalance) => {
-    const balance = parseFloat(tokenBalance.balance) / Math.pow(10, tokenBalance.token.decimals);
-    return total + balance;
-  }, 0);
 
   const availableBalance = formatUnits(totalTokenBalanceRaw, 6);
 

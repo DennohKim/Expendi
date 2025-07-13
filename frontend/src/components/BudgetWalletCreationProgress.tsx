@@ -88,7 +88,7 @@ export function BudgetWalletCreationProgress({
             const StepIcon = stepItem.icon;
             const isCompleted = index < currentStepIndex;
             const isCurrent = index === currentStepIndex;
-            const isPending = index > currentStepIndex;
+            // const isPending = index > currentStepIndex;
 
             return (
               <div key={stepItem.id} className="flex items-center space-x-3">
@@ -126,7 +126,7 @@ export function BudgetWalletCreationProgress({
         
         {step === 'creating' && (
           <div className="text-xs text-blue-600 bg-blue-100 rounded p-2 mt-3">
-            <strong>Note:</strong> You'll need to confirm this transaction in your wallet.
+            <strong>Note:</strong> You&apos;ll need to confirm this transaction in your wallet.
           </div>
         )}
         
@@ -140,9 +140,8 @@ export function BudgetWalletCreationProgress({
 export function BudgetWalletCreationStatus({ 
   isCreating, 
   step, 
-  error,
   onRetry
-}: BudgetWalletCreationProgressProps) {
+}: Omit<BudgetWalletCreationProgressProps, 'error'>) {
   if (!isCreating && step === 'checking') {
     return null;
   }

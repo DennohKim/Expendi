@@ -25,7 +25,7 @@ export function setupConsoleFilters() {
     // Add more specific Privy patterns as needed
   ];
 
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     const message = args.join(' ');
     
     // Check if this is a Privy-related React 19 warning we want to suppress
@@ -42,7 +42,7 @@ export function setupConsoleFilters() {
     }
   };
 
-  console.warn = (...args: any[]) => {
+  console.warn = (...args: unknown[]) => {
     const message = args.join(' ');
     
     // Check if this is a Privy-related React 19 warning we want to suppress

@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import { ArrowDownIcon, ArrowUpIcon } from "@/icons";
 import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
 
