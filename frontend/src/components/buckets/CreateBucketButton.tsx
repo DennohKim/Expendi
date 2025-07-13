@@ -1,0 +1,171 @@
+"use client"
+
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { parseUnits, formatUnits } from "viem";
+import { useAccount, useBalance } from "wagmi";
+import { useUserBudgetWallet } from "@/hooks/contract-queries/getUserBudgetWallet";
+import { useUserBuckets } from "@/hooks/contract-queries/useUserBuckets";
+import { useSmartAccount } from "@/context/SmartAccountContext";
+import { createBudgetWalletUtils, MOCK_USDC_ADDRESS } from "@/lib/contracts/budget-wallet";
+// import { useSessionKeys } from "@/hooks/useSessionKeys";
+// import { useSessionKeyClient } from "@/hooks/useSessionKeyClient";
+
+export function CreateBucketButton() {
+  const { address } = useAccount()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [bucketName, setBucketName] = useState('')
+  const [monthlyLimit, setMonthlyLimit] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const { data: walletData, refetch } = useUserBudgetWallet()
+  const { refetch: refetchBuckets } = useUserBuckets()
+  const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount()
+  
+  // const { 
+  //   sessionKey, 
+  //   createSessionKey, 
+  //   loadSessionKey, 
+  //   isSessionKeyValid 
+  // } = useSessionKeys()
+  
+  // const sessionKeyClient = useSessionKeyClient(sessionKey)
+
+  // // Load session key on mount
+  // useEffect(() => {
+  //   loadSessionKey()
+  // }, [loadSessionKey])
+
+  // Get user's current USDC balance
+  const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : address
+  const { data: usdcBalance } = useBalance({
+    address: queryAddress,
+    token: MOCK_USDC_ADDRESS,
+  })
+
+
+  const handleCreateBucket = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!walletData?.address) {
+      toast.error('Budget wallet not found')
+      return
+    }
+
+    // // Automatically create session key if none exists or if it's for a different wallet
+    // if (!sessionKey || !isSessionKeyValid() || sessionKey.permissions.allowedContract !== walletData.address) {
+    //   toast.info('Setting up gasless transactions...')
+    //   const newSessionKey = await createSessionKey(
+    //     walletData.address as `0x${string}`,
+    //     24,
+    //     "1000"
+    //   )
+    //   if (!newSessionKey) {
+    //     // Fallback to regular smart account if session key creation fails
+    //     toast.info('Using regular transaction mode')
+    //   }
+    // }
+
+    // Use smart account directly
+    const clientToUse = smartAccountClient
+
+    if (!clientToUse?.account) {
+      toast.error('Smart account not available')
+      return
+    }
+
+    try {
+      setIsCreating(true)
+      toast.info('Creating bucket...')
+
+      const limitInUsdc = parseUnits(monthlyLimit, 6) // USDC has 6 decimals
+
+      // Create budget wallet utils instance and use createBucket method
+      const walletUtils = createBudgetWalletUtils(walletData.address as `0x${string}`)
+      const txHash = await walletUtils.createBucket(
+        () => Promise.reject(new Error('Account not available')),
+        bucketName,
+        limitInUsdc,
+        clientToUse
+      )
+
+      toast.success('Bucket created successfully!')
+      console.log('Bucket created with transaction hash:', txHash)
+
+      // Reset form and close dialog
+      setBucketName('')
+      setMonthlyLimit('')
+      setIsDialogOpen(false)
+      
+      // Refetch wallet data and buckets to update the UI
+      await Promise.all([
+        refetch(),
+        refetchBuckets()
+      ])
+
+    } catch (error) {
+      console.error('Error creating bucket:', error)
+      toast.error('Failed to create bucket')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+
+  return (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button variant="primary">
+          <Plus />
+          Create Bucket
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Bucket</DialogTitle>
+        </DialogHeader>
+        
+
+        <form onSubmit={handleCreateBucket} className="space-y-4">
+          <div>
+            <Label htmlFor="bucketName" className="pb-2">Bucket Name</Label>
+            <Input
+              id="bucketName"
+              value={bucketName}
+              onChange={(e) => setBucketName(e.target.value)}
+              placeholder="Enter bucket name"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="monthlyLimit" className="pb-2">Monthly Limit (USDC)</Label>
+            <Input
+              id="monthlyLimit"
+              type="number"
+              step="0.01"
+              value={monthlyLimit}
+              onChange={(e) => setMonthlyLimit(e.target.value)}
+              placeholder="100.00"
+              required
+            />
+            <div className="text-sm text-muted-foreground mt-1">
+              Your current balance: {usdcBalance ? formatUnits(usdcBalance.value, 6) : '0.00'} USDC
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isCreating}>
+              {isCreating ? 'Creating...' : 'Create Bucket'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

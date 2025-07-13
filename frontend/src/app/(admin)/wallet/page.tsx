@@ -61,6 +61,17 @@ const WalletPage = () => {
     return Number(formatted).toLocaleString();
   };
 
+  // Calculate allocated balance (total - unallocated)
+  const allocatedBalance = data ? data.totalBalance - data.unallocatedBalance : BigInt(0);
+  
+  // Debug logging
+  console.log("🔍 Balance Debug:", {
+    totalBalance: data?.totalBalance?.toString(),
+    unallocatedBalance: data?.unallocatedBalance?.toString(),
+    allocatedBalance: allocatedBalance.toString(),
+    hasData: !!data
+  });
+
   // Handle the complete deposit process using smart account batch transaction
   const handleDeposit = async () => {
     if (!depositAmount || parseFloat(depositAmount) <= 0) {
@@ -495,13 +506,21 @@ const WalletPage = () => {
             </div>
 
             {/* Additional Stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                   Unallocated
                 </p>
                 <p className="text-xl font-semibold text-gray-900 dark:text-white">
                   {formatBalance(data.unallocatedBalance)} USDC
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  Allocated
+                </p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {formatBalance(allocatedBalance)} USDC
                 </p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">

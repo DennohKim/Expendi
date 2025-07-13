@@ -7,6 +7,8 @@ import SpendingSummaryChart from "@/components/buckets/SpendingSummaryChart";
 import TransactionHistory from "@/components/buckets/TransactionHistory";
 import { useAccount } from "wagmi";
 import { TestGasSponsorship } from "@/components/test-gas-sponsorship";
+import { CreateBucketButton } from "@/components/buckets/CreateBucketButton";
+import { BucketsGrid } from "@/components/buckets/BucketsGrid";
 
 
 
@@ -18,6 +20,14 @@ export default function DashboardPage() {
 
   return (
     <div className="grid grid-cols-12 gap-4 md:gap-6">
+      <div className="col-span-12 flex justify-end">
+        <CreateBucketButton />
+      </div>
+      
+      {/* User Buckets Grid */}
+      <div className="col-span-12">
+        <BucketsGrid />
+      </div>
       {/* TODO: This will be an overview of the budget wallet */}
       {/* <div className="col-span-12 space-y-6 xl:col-span-7">
         <BucketWalletMetrics />
