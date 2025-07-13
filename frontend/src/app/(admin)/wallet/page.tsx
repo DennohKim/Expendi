@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useUserBudgetWallet } from '@/hooks/contract-queries/getUserBudgetWallet';
+import { useUserBudgetWallet } from '@/hooks/subgraph-queries/useUserBudgetWallet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,6 @@ import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wal
 import { useSmartAccount } from '@/context/SmartAccountContext';
 
 const WalletPage = () => {
-  const { data, loading, error, refetch } = useUserBudgetWallet();
   const { address: eoaAddress } = useAccount();
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
   const [copied, setCopied] = useState(false);
@@ -29,12 +28,15 @@ const WalletPage = () => {
   // Use smart account address if available, fallback to EOA
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
   
+  const { data, loading, error, refetch } = useUserBudgetWallet(queryAddress);
+  console.log("Wallet data", data?.user?.walletsCreated[0].wallet)
+
+
   // Get user's MockUSDC balance from their smart account wallet
   const { data: walletBalance, isLoading: walletBalanceLoading, refetch: refetchWalletBalance } = useBalance({
     address: queryAddress,
     token: MOCK_USDC_ADDRESS,
   });
-  console.log("wallet data", data);
   console.log("Query address being used:", data?.queryAddress);
 
   const copyToClipboard = async (text: string) => {
@@ -62,15 +64,32 @@ const WalletPage = () => {
     return Number(formatted).toLocaleString();
   };
 
-  // Calculate allocated balance (total - unallocated)
-  const allocatedBalance = data ? data.totalBalance - data.unallocatedBalance : BigInt(0);
+  // Calculate allocated balance (total - unallocated) - using user data structure
+  const userData = data?.user;
+  const totalBalance = BigInt(userData?.totalBalance || '0');
+  
+  // Calculate allocated balance from all token balances in buckets except UNALLOCATED
+  const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: any) => {
+    if (bucket.name !== 'UNALLOCATED') {
+      // Sum all token balances in this bucket
+      const bucketTokenBalance = bucket.tokenBalances?.reduce((tokenSum: bigint, tokenBalance: any) => {
+        return tokenSum + BigInt(tokenBalance.balance || '0');
+      }, BigInt(0)) || BigInt(0);
+      return sum + bucketTokenBalance;
+    }
+    return sum;
+  }, BigInt(0)) || BigInt(0);
+  
+  // Unallocated is total minus allocated
+  const unallocatedBalance = totalBalance - allocatedBalance;
   
   // Debug logging
   console.log("🔍 Balance Debug:", {
-    totalBalance: data?.totalBalance?.toString(),
-    unallocatedBalance: data?.unallocatedBalance?.toString(),
+    totalBalance: userData?.totalBalance?.toString(),
+    unallocatedBalance: unallocatedBalance.toString(),
     allocatedBalance: allocatedBalance.toString(),
-    hasData: !!data
+    hasData: !!userData,
+    walletsCreated: userData?.walletsCreated?.length
   });
 
   // Handle the complete deposit process using smart account batch transaction
@@ -80,7 +99,7 @@ const WalletPage = () => {
       return;
     }
 
-    if (!data?.address) {
+    if (!userData?.walletsCreated?.[0]?.wallet) {
       toast.error('Budget wallet not found');
       return;
     }
@@ -122,7 +141,7 @@ const WalletPage = () => {
           }
         ],
         functionName: 'approve',
-        args: [data.address as `0x${string}`, amount],
+        args: [userData?.walletsCreated?.[0]?.wallet as `0x${string}`, amount],
       });
 
       // Encode deposit function call
@@ -139,7 +158,7 @@ const WalletPage = () => {
           data: approveCallData,
         },
         {
-          to: data.address as `0x${string}`,
+          to: userData?.walletsCreated?.[0]?.wallet as `0x${string}`,
           data: depositCallData,
         }
       ];
@@ -273,7 +292,7 @@ const WalletPage = () => {
     );
   }
 
-  if (!data || !data.hasWallet || !data.address) {
+  if (!data || !userData || !userData.walletsCreated?.[0]?.wallet) {
     return (
       <div className="container mx-auto p-6">
         <div className="max-w-2xl mx-auto space-y-6">
@@ -397,7 +416,7 @@ const WalletPage = () => {
                   Budget Wallet Balance
                 </div>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                  {formatBalance(data.totalBalance)} USDC
+                  {formatBalance(totalBalance)} USDC
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Available for budgeting
@@ -427,7 +446,7 @@ const WalletPage = () => {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => copyToClipboard(data.address!)}
+                onClick={() => copyToClipboard(userData?.walletsCreated?.[0]?.wallet || '')}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
                   <path d="M8 4v12a2 2 0 002 2h8a2 2 0 002-2V7.242a2 2 0 00-.602-1.43L16.083 2.57A2 2 0 0014.685 2H10a2 2 0 00-2 2z" stroke="currentColor" strokeWidth="2"/>
@@ -513,7 +532,7 @@ const WalletPage = () => {
                   Unallocated
                 </p>
                 <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {formatBalance(data.unallocatedBalance)} USDC
+                  {formatBalance(unallocatedBalance)} USDC
                 </p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">

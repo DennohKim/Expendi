@@ -1,11 +1,22 @@
 "use client";
 
-import { useUserBuckets } from '@/hooks/contract-queries/useUserBuckets';
+import { useUserBuckets } from '@/hooks/subgraph-queries/getUserBuckets';
 import { BucketCard } from './BucketCard';
 import { Card, CardContent } from '@/components/ui/card';
+import { useSmartAccount } from '@/context/SmartAccountContext';
+import { useAccount } from 'wagmi';
 
 export function BucketsGrid() {
-  const { buckets, loading, error } = useUserBuckets();
+  const { address: eoaAddress } = useAccount();
+  const { smartAccountAddress, smartAccountReady } = useSmartAccount();
+  
+  // Use smart account address if available, fallback to EOA address
+  const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
+  
+  const { data, loading, error } = useUserBuckets(queryAddress);
+  
+  
+  const buckets = data?.user?.buckets || [];
 
   console.log("buckets", buckets);
 
@@ -33,7 +44,7 @@ export function BucketsGrid() {
         <CardContent className="p-6">
           <div className="text-center text-red-600">
             <p className="font-medium">Error loading buckets</p>
-            <p className="text-sm mt-1">{error}</p>
+            <p className="text-sm mt-1">{error.message}</p>
           </div>
         </CardContent>
       </Card>
@@ -55,17 +66,14 @@ export function BucketsGrid() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {buckets.map((bucket) => (
-        <BucketCard
-          key={bucket.name}
-          name={bucket.name}
-          monthlyLimit={bucket.monthlyLimit}
-          currentSpent={bucket.currentSpent}
-          isActive={bucket.isActive}
-          ethBalance={bucket.ethBalance}
-          usdcBalance={bucket.usdcBalance}
-        />
-      ))}
+      {buckets
+        .filter((bucket: any) => bucket.name !== 'UNALLOCATED') // Filter out UNALLOCATED bucket
+        .map((bucket: any) => (
+          <BucketCard
+            key={bucket.id}
+            bucket={bucket}
+          />
+        ))}
     </div>
   );
 }

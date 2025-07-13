@@ -6,38 +6,74 @@ import { Badge } from '@/components/ui/badge';
 import { FundBucketButton } from './FundBucketButton';
 import { SpendBucketButton } from './SpendBucketButton';
 
-interface BucketCardProps {
-  name: string;
-  monthlyLimit: bigint;
-  currentSpent: bigint;
-  isActive: boolean;
-  ethBalance: bigint;
-  usdcBalance: bigint;
+interface TokenBalance {
+  id: string;
+  balance: string;
+  token: {
+    id: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
 }
 
-export function BucketCard({
-  name,
-  monthlyLimit,
-  currentSpent,
-  isActive,
-  ethBalance,
-  usdcBalance
-}: BucketCardProps) {
-  const limitInUsdc = parseFloat(formatUnits(monthlyLimit, 6));
-  const spentInUsdc = parseFloat(formatUnits(currentSpent, 6));
-  const spentPercentage = limitInUsdc > 0 ? (spentInUsdc / limitInUsdc) * 100 : 0;
+interface Bucket {
+  id: string;
+  name: string;
+  balance: string;
+  monthlyLimit: string;
+  monthlySpent: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  tokenBalances: TokenBalance[];
+}
+
+interface BucketCardProps {
+  bucket: Bucket;
+}
+
+export function BucketCard({ bucket }: BucketCardProps) {
+  // Convert string values to numbers for display
+  // USDC has 6 decimals, ETH has 18 decimals
+  const limitInTokens = parseFloat(bucket.monthlyLimit) / 1e6; // USDC has 6 decimals
+  const spentInTokens = parseFloat(bucket.monthlySpent) / 1e6; // USDC has 6 decimals
+  const ethBalance = parseFloat(bucket.balance) / 1e18; // ETH has 18 decimals
   
-  const ethBalanceFormatted = parseFloat(formatEther(ethBalance));
+  const spentPercentage = limitInTokens > 0 ? (spentInTokens / limitInTokens) * 100 : 0;
   
-  const usdcBalanceFormatted = parseFloat(formatUnits(usdcBalance, 6));
+  // Calculate total token balances (keep as raw BigInt for accuracy)
+  const totalTokenBalanceRaw = bucket.tokenBalances.reduce((total, tokenBalance) => {
+    const balance = BigInt(tokenBalance.balance);
+    return total + balance;
+  }, BigInt(0));
+  
+  // Convert to display number for UI
+  const totalTokenBalance = bucket.tokenBalances.reduce((total, tokenBalance) => {
+    const balance = parseFloat(tokenBalance.balance) / Math.pow(10, tokenBalance.token.decimals);
+    return total + balance;
+  }, 0);
+
+  const availableBalance = formatUnits(totalTokenBalanceRaw, 6);
+
+  
+  // Get the primary token for display (first token balance, or show "No tokens" if empty)
+  const primaryToken = bucket.tokenBalances[0];
+  
+  const formatTokenAmount = (amount: number, isUSDC = true) => {
+    // USDC: show 2 decimal places (like currency)
+    // Other tokens: show up to 6 decimal places
+    const decimals = isUSDC ? 2 : 6;
+    return amount.toFixed(decimals).replace(/\.?0+$/, '');
+  };
 
   return (
-    <Card className={`${!isActive ? 'opacity-60' : ''}`}>
+    <Card className={`${!bucket.active ? 'opacity-60' : ''}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">{name}</CardTitle>
-          <Badge variant={isActive ? "default" : "secondary"}>
-            {isActive ? "Active" : "Inactive"}
+          <CardTitle className="text-lg font-semibold">{bucket.name}</CardTitle>
+          <Badge variant={bucket.active ? "success" : "secondary"}>
+            {bucket.active ? "Active" : "Inactive"}
           </Badge>
         </div>
       </CardHeader>
@@ -47,7 +83,10 @@ export function BucketCard({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Monthly Spending</span>
-            <span>{spentInUsdc.toFixed(2)} / {limitInUsdc.toFixed(2)} USDC</span>
+            <span>
+              {formatTokenAmount(spentInTokens)} / {formatTokenAmount(limitInTokens)} 
+              {primaryToken ? ` ${primaryToken.token.symbol}` : ' USDC'}
+            </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
@@ -64,34 +103,37 @@ export function BucketCard({
           </div>
         </div>
 
-        {/* Balances */}
-        <div className="grid grid-cols-3 gap-4">
-        
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Available Balance</p>
-            <p className="text-sm font-medium">{usdcBalanceFormatted.toFixed(2)} USDC</p>
-
-          </div>
-        </div>
+      
 
         {/* Remaining Budget */}
-        <div className="pt-2 border-t">
+        {/* <div className="pt-2 border-t">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Remaining Budget</span>
             <span className="text-sm font-medium text-green-600">
-              {Math.max(0, limitInUsdc - spentInUsdc).toFixed(2)} USDC
+              {formatTokenAmount(Math.max(0, limitInTokens - spentInTokens))}
+              {primaryToken?.token.symbol === 'UNKNOWN' ? ' USDC' : ` ${primaryToken?.token.symbol || 'USDC'}`}
             </span>
+          </div>
+        </div> */}
+
+        <div className="pt-2 border-t">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Available Balance</span>
+            <p className="font-medium">{availableBalance} USDC</p>
+
           </div>
         </div>
 
+       
+
         {/* Action Buttons */}
         <div className="pt-2 flex gap-2">
-          <FundBucketButton bucketName={name} />
+          <FundBucketButton bucketName={bucket.name} />
           <SpendBucketButton 
-            bucketName={name}
-            currentSpent={currentSpent}
-            monthlyLimit={monthlyLimit}
-            usdcBalance={usdcBalance}
+            bucketName={bucket.name}
+            currentSpent={BigInt(bucket.monthlySpent)}
+            monthlyLimit={BigInt(bucket.monthlyLimit)}
+            usdcBalance={totalTokenBalanceRaw} // Use raw BigInt value directly
           />
         </div>
       </CardContent>

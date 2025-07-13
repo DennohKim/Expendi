@@ -68,3 +68,45 @@ dataSources:
         - event: WalletRegistered(indexed address,indexed address)
           handler: handleWalletRegistered
       file: ./src/factory-mapping.ts
+templates:
+  - kind: ethereum/contract
+    name: SimpleBudgetWallet
+    network: base-sepolia
+    source:
+      abi: SimpleBudgetWallet
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Bucket
+        - Transaction
+        - Deposit
+        - Withdrawal
+        - Delegate
+      abis:
+        - name: SimpleBudgetWallet
+          file: ./abis/SimpleBudgetWallet.json
+      eventHandlers:
+        - event: BucketCreated(indexed address,string,uint256)
+          handler: handleBucketCreated
+        - event: BucketUpdated(indexed address,string,uint256,bool)
+          handler: handleBucketUpdated
+        - event: BucketFunded(indexed address,string,uint256,address)
+          handler: handleBucketFunded
+        - event: SpentFromBucket(indexed address,string,uint256,address,address)
+          handler: handleSpentFromBucket
+        - event: BucketTransfer(indexed address,string,string,uint256,address)
+          handler: handleBucketTransfer
+        - event: FundsDeposited(indexed address,uint256,address)
+          handler: handleFundsDeposited
+        - event: MonthlyLimitReset(indexed address,string)
+          handler: handleMonthlyLimitReset
+        - event: DelegateAdded(indexed address,indexed address,string)
+          handler: handleDelegateAdded
+        - event: DelegateRemoved(indexed address,indexed address,string)
+          handler: handleDelegateRemoved
+        - event: EmergencyWithdraw(indexed address,address,uint256)
+          handler: handleEmergencyWithdraw
+      file: ./src/mapping.ts

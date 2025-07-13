@@ -8,6 +8,7 @@ import {
   WalletCreated as WalletCreatedEntity,
   GlobalStats
 } from '../generated/schema'
+import { SimpleBudgetWallet as SimpleBudgetWalletTemplate } from '../generated/templates'
 
 // Constants
 const GLOBAL_STATS_ID = 'global'
@@ -70,6 +71,9 @@ function updateWalletCreationStats(): void {
 export function handleWalletCreated(event: WalletCreated): void {
   let user = getOrCreateUser(event.params.user, event.block.timestamp)
   
+  // Create template instance to track events from this specific wallet
+  SimpleBudgetWalletTemplate.create(event.params.wallet)
+  
   // Create wallet created record
   let walletCreatedId = event.transaction.hash.toHex() + '-' + event.logIndex.toString()
   let walletCreated = new WalletCreatedEntity(walletCreatedId)
@@ -91,6 +95,9 @@ export function handleWalletCreated(event: WalletCreated): void {
 
 export function handleWalletRegistered(event: WalletRegistered): void {
   let user = getOrCreateUser(event.params.user, event.block.timestamp)
+  
+  // Create template instance to track events from this specific wallet
+  SimpleBudgetWalletTemplate.create(event.params.wallet)
   
   // Create wallet created record (for registered wallets)
   let walletCreatedId = event.transaction.hash.toHex() + '-' + event.logIndex.toString()

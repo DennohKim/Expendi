@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits, formatUnits } from "viem";
 import { useAccount } from "wagmi";
-import { useUserBudgetWallet } from "@/hooks/contract-queries/getUserBudgetWallet";
-import { useUserBuckets } from "@/hooks/contract-queries/useUserBuckets";
+import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
+import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
 import { createBudgetWalletUtils, MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
 
@@ -26,20 +26,21 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   const [amount, setAmount] = useState('');
   const [tokenType] = useState<'USDC'>('USDC');
   const [isFunding, setIsFunding] = useState(false);
-  const { data: walletData } = useUserBudgetWallet();
-  const { refetch: refetchBuckets } = useUserBuckets();
+
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
   const queryAddress = useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
     [smartAccountReady, smartAccountAddress, address]
   );
+  const { data: walletData } = useUserBudgetWallet(queryAddress);
+  const { refetch: refetchBuckets } = useUserBuckets(queryAddress);
 
 
   const handleFundBucket = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!walletData?.address) {
+    if (!walletData?.user?.walletsCreated[0].wallet) {
       toast.error('Budget wallet not found');
       return;
     }
@@ -66,7 +67,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
 
       // Use smart account client directly for gas sponsorship
       const txHash = await clientToUse.writeContract({
-        address: walletData.address as `0x${string}`,
+        address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
         abi: BUDGET_WALLET_ABI,
         functionName: 'fundBucket',
         args: [bucketName, parsedAmount, tokenAddress],

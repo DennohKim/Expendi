@@ -5,8 +5,8 @@
   "scripts": {
     "build": "graph build",
     "codegen": "graph codegen",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ expendiv-2",
-    "deploy-studio": "graph deploy --studio expendiv-2",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a expendiv-3",
+    "deploy-studio": "graph deploy expendiv-3 --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a --node https://api.studio.thegraph.com/deploy/",
     "create-local": "graph create --node http://localhost:8020/",
     "remove-local": "graph remove --node http://localhost:8020/",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001",

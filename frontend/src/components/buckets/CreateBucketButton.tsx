@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits, formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
-import { useUserBudgetWallet } from "@/hooks/contract-queries/getUserBudgetWallet";
-import { useUserBuckets } from "@/hooks/contract-queries/useUserBuckets";
+import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
+import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
 import { createBudgetWalletUtils, MOCK_USDC_ADDRESS } from "@/lib/contracts/budget-wallet";
 // import { useSessionKeys } from "@/hooks/useSessionKeys";
@@ -22,8 +22,6 @@ export function CreateBucketButton() {
   const [bucketName, setBucketName] = useState('')
   const [monthlyLimit, setMonthlyLimit] = useState('')
   const [isCreating, setIsCreating] = useState(false)
-  const { data: walletData, refetch } = useUserBudgetWallet()
-  const { refetch: refetchBuckets } = useUserBuckets()
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount()
   
   // const { 
@@ -47,11 +45,17 @@ export function CreateBucketButton() {
     token: MOCK_USDC_ADDRESS,
   })
 
+  const { refetch: refetchBuckets } = useUserBuckets(queryAddress)
+  const { data: walletData, refetch } = useUserBudgetWallet(queryAddress)
+  console.log("walletData", walletData)
+
+
+
 
   const handleCreateBucket = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!walletData?.address) {
+    if (!walletData?.user?.walletsCreated[0].wallet) {
       toast.error('Budget wallet not found')
       return
     }
@@ -85,7 +89,7 @@ export function CreateBucketButton() {
       const limitInUsdc = parseUnits(monthlyLimit, 6) // USDC has 6 decimals
 
       // Create budget wallet utils instance and use createBucket method
-      const walletUtils = createBudgetWalletUtils(walletData.address as `0x${string}`)
+      const walletUtils = createBudgetWalletUtils(walletData.user.walletsCreated[0].wallet as `0x${string}`)
       const txHash = await walletUtils.createBucket(
         () => Promise.reject(new Error('Account not available')),
         bucketName,
@@ -152,9 +156,6 @@ export function CreateBucketButton() {
               placeholder="100.00"
               required
             />
-            <div className="text-sm text-muted-foreground mt-1">
-              Your current balance: {usdcBalance ? formatUnits(usdcBalance.value, 6) : '0.00'} USDC
-            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
