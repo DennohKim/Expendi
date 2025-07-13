@@ -57,7 +57,6 @@ export function WalletConnection() {
       <BudgetWalletCreationStatus 
         isCreating={isCreatingBudgetWallet}
         step={budgetWalletCreationStep}
-        error={budgetWalletCreationError}
         onRetry={retryWalletCreation}
       />
 
