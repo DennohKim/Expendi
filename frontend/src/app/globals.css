@@ -841,7 +841,7 @@ span.flatpickr-weekday,
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(1 0 0 / 10%);
-  --button-primary:  oklch(0.646 0.222 41.116);
+  --button-primary: oklch(0.646 0.222 41.116) ;
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);

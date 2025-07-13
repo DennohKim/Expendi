@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { formatEther, formatUnits, parseUnits, encodeFunctionData } from 'viem';
 import { useBalance, useAccount } from 'wagmi';
@@ -530,39 +531,6 @@ const WalletPage = () => {
                 <p className="text-xl font-semibold text-gray-900 dark:text-white">
                   Active
                 </p>
-              </div>
-            </div>
-
-            {/* Debug Info */}
-            {data?.queryAddress && (
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Query Address (for debugging):</span>
-                  <div className="font-mono text-xs text-gray-700 dark:text-gray-300 mt-1 p-2 bg-gray-100 dark:bg-gray-800 rounded">
-                    {data.queryAddress}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {data.queryAddress.length > 42 ? 'Smart Account' : 'EOA'} address being used for queries
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Wallet Info */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Contract:</span>
-                  <div className="font-medium text-gray-900 dark:text-white">
-                    Budget Wallet
-                  </div>
-                </div>
-                <div>
-                  <span className="text-gray-500 dark:text-gray-400">Network:</span>
-                  <div className="font-medium text-gray-900 dark:text-white">
-                    Base Sepolia
-                  </div>
-                </div>
               </div>
             </div>
           </CardContent>
