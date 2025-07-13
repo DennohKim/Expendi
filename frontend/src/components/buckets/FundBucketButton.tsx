@@ -14,6 +14,7 @@ import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
 import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
 import { formatBalance } from "@/lib/utils";
+import { useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
 
 interface TokenBalance {
   balance: string;
@@ -45,6 +46,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   );
   const { data: walletData, refetch: refetchWalletData } = useUserBudgetWallet(queryAddress);
   const { refetch: refetchBuckets } = useUserBuckets(queryAddress);
+  const { refetch: refetchTransactions } = useAllTransactions(queryAddress);
 
    // Calculate allocated balance (total - unallocated) - using user data structure
    const userData = walletData?.user;
@@ -116,6 +118,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
       setTimeout(() => {
         refetchBuckets();
         refetchWalletData();
+        refetchTransactions();
       }, 1000); // Delay refetch to avoid rate limiting
 
     } catch (error) {

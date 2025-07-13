@@ -13,6 +13,7 @@ import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWalle
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
 import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
+import { useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
 
 interface SpendBucketButtonProps {
   bucketName: string;
@@ -46,6 +47,8 @@ export function SpendBucketButton({
 
   const { data: walletData } = useUserBudgetWallet(queryAddress);
   const { refetch: refetchBuckets } = useUserBuckets(queryAddress);
+  const { refetch: refetchTransactions } = useAllTransactions(queryAddress);
+
 
   const handleSpendFromBucket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +131,7 @@ export function SpendBucketButton({
       // Refetch buckets to update the UI
       setTimeout(() => {
         refetchBuckets();
+        refetchTransactions();
       }, 1000); // Delay refetch to avoid rate limiting
 
     } catch (error) {
