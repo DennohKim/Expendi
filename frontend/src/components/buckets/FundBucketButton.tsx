@@ -7,12 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { parseUnits, formatUnits, parseEther } from "viem";
-import { useAccount, useBalance } from "wagmi";
+import { parseUnits, formatUnits } from "viem";
+import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/contract-queries/getUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/contract-queries/useUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
-import { createBudgetWalletUtils, MOCK_USDC_ADDRESS, ETH_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
+import { createBudgetWalletUtils, MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
 
 interface FundBucketButtonProps {
   bucketName: string;
@@ -24,7 +24,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   const { address } = useAccount();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [amount, setAmount] = useState('');
-  const [tokenType, setTokenType] = useState<'ETH' | 'USDC'>('ETH');
+  const [tokenType] = useState<'USDC'>('USDC');
   const [isFunding, setIsFunding] = useState(false);
   const { data: walletData } = useUserBudgetWallet();
   const { refetch: refetchBuckets } = useUserBuckets();
@@ -35,21 +35,6 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
     [smartAccountReady, smartAccountAddress, address]
   );
 
-  // Get user's current balances - only when dialog is open
-  const { data: ethBalance } = useBalance({
-    address: queryAddress,
-    query: {
-      enabled: isDialogOpen && !!queryAddress,
-    }
-  });
-  
-  const { data: usdcBalance } = useBalance({
-    address: queryAddress,
-    token: MOCK_USDC_ADDRESS,
-    query: {
-      enabled: isDialogOpen && !!queryAddress,
-    }
-  });
 
   const handleFundBucket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,18 +61,8 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
       setIsFunding(true);
       toast.info(`Funding bucket with ${amount} ${tokenType}...`);
 
-      const walletUtils = createBudgetWalletUtils(walletData.address as `0x${string}`);
-      
-      let parsedAmount: bigint;
-      let tokenAddress: `0x${string}`;
-      
-      if (tokenType === 'ETH') {
-        parsedAmount = parseEther(amount);
-        tokenAddress = ETH_ADDRESS;
-      } else {
-        parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
-        tokenAddress = MOCK_USDC_ADDRESS;
-      }
+      const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
+      const tokenAddress = MOCK_USDC_ADDRESS;
 
       // Use smart account client directly for gas sponsorship
       const txHash = await clientToUse.writeContract({
@@ -119,11 +94,8 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
     }
   };
 
-  const currentBalance = tokenType === 'ETH' ? ethBalance : usdcBalance;
-  const balanceFormatted = currentBalance 
-    ? (tokenType === 'ETH' 
-        ? formatUnits(currentBalance.value, 18) 
-        : formatUnits(currentBalance.value, 6))
+  const balanceFormatted = walletData?.unallocatedBalance 
+    ? formatUnits(walletData.unallocatedBalance, 6)
     : '0.00';
 
   return (
@@ -140,32 +112,20 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
         </DialogHeader>
         
         <form onSubmit={handleFundBucket} className="space-y-4">
-          <div>
-            <Label htmlFor="tokenType" className="pb-2">Token Type</Label>
-            <select
-              id="tokenType"
-              value={tokenType}
-              onChange={(e) => setTokenType(e.target.value as 'ETH' | 'USDC')}
-              className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <option value="ETH">ETH</option>
-              <option value="USDC">USDC</option>
-            </select>
-          </div>
           
           <div>
-            <Label htmlFor="amount" className="pb-2">Amount ({tokenType})</Label>
+            <Label htmlFor="amount" className="pb-2">Amount (USDC)</Label>
             <Input
               id="amount"
               type="number"
-              step={tokenType === 'ETH' ? '0.000001' : '0.01'}
+              step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={tokenType === 'ETH' ? '0.001' : '10.00'}
+              placeholder="10.00"
               required
             />
             <div className="text-sm text-muted-foreground mt-1">
-              Your current balance: {balanceFormatted} {tokenType}
+              Unallocated Budget wallet balance: {balanceFormatted} USDC
             </div>
           </div>
           
@@ -174,7 +134,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
               Cancel
             </Button>
             <Button type="submit" disabled={isFunding || !amount}>
-              {isFunding ? 'Funding...' : `Fund with ${tokenType}`}
+              {isFunding ? 'Funding...' : 'Fund with USDC'}
             </Button>
           </div>
         </form>
