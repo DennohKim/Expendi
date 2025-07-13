@@ -28,7 +28,8 @@ export function BucketCard({
   const spentPercentage = limitInUsdc > 0 ? (spentInUsdc / limitInUsdc) * 100 : 0;
   
   const ethBalanceFormatted = parseFloat(formatEther(ethBalance));
-  const usdcBalanceFormatted = parseFloat(formatEther(usdcBalance));
+  
+  const usdcBalanceFormatted = parseFloat(formatUnits(usdcBalance, 6));
 
   return (
     <Card className={`${!isActive ? 'opacity-60' : ''}`}>
@@ -64,14 +65,12 @@ export function BucketCard({
         </div>
 
         {/* Balances */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
+        
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">ETH Balance</p>
-            <p className="text-sm font-medium">{ethBalanceFormatted.toFixed(6)} ETH</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">USDC Balance</p>
+            <p className="text-xs text-muted-foreground">Available Balance</p>
             <p className="text-sm font-medium">{usdcBalanceFormatted.toFixed(2)} USDC</p>
+
           </div>
         </div>
 
