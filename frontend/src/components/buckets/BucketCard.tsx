@@ -56,9 +56,7 @@ export function BucketCard({ bucket }: BucketCardProps) {
 
   const availableBalance = formatUnits(totalTokenBalanceRaw, 6);
 
-  
-  // Get the primary token for display (first token balance, or show "No tokens" if empty)
-  const primaryToken = bucket.tokenBalances[0];
+
   
   const formatTokenAmount = (amount: number, isUSDC = true) => {
     // USDC: show 2 decimal places (like currency)
@@ -85,7 +83,7 @@ export function BucketCard({ bucket }: BucketCardProps) {
             <span className="text-muted-foreground">Monthly Spending</span>
             <span>
               {formatTokenAmount(spentInTokens)} / {formatTokenAmount(limitInTokens)} 
-              {primaryToken ? ` ${primaryToken.token.symbol}` : ' USDC'}
+              {' USDC'}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">

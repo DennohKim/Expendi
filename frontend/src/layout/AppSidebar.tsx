@@ -21,11 +21,11 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     path: "/",
   },
-  {
-    icon: <Vault />,
-    name: "Buckets",
-    path: "/buckets",
-  },
+  // {
+  //   icon: <Vault />,
+  //   name: "Buckets",
+  //   path: "/buckets",
+  // },
   {
     icon: <BadgeDollarSign />,
     name: "Transactions",

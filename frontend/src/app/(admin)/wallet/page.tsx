@@ -67,6 +67,7 @@ const WalletPage = () => {
   // Calculate allocated balance (total - unallocated) - using user data structure
   const userData = data?.user;
   const totalBalance = BigInt(userData?.totalBalance || '0');
+  console.log("User data:", userData)
   
   // Calculate allocated balance from all token balances in buckets except UNALLOCATED
   const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: any) => {
