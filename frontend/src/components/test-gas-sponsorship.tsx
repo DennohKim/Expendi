@@ -3,6 +3,7 @@
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { useWalletUser } from '@/hooks/useWalletUser';
 import { useState } from 'react';
+import { Account } from 'viem';
 
 export const TestGasSponsorship = () => {
   const { smartAccountClient, smartAccountReady, smartAccountAddress } = useSmartAccount();
@@ -29,7 +30,7 @@ export const TestGasSponsorship = () => {
           type: 'function'
         }],
         functionName: 'nonExistentFunction',
-        account: smartAccountClient.account,
+        account: smartAccountClient.account as Account,
         chain: smartAccountClient.chain,
         value: BigInt(0)
       });
