@@ -25,7 +25,7 @@ export default function DashboardPage() {
   
 
 
-  const { data } = useUserBuckets(queryAddress);
+  const { data, loading, error } = useUserBuckets(queryAddress);
   
   
   const buckets = data?.user?.buckets || [];
@@ -45,7 +45,7 @@ export default function DashboardPage() {
       
       {/* User Buckets Grid - Below QuickSpend on small/medium, left side on large */}
       <div className="col-span-12 h-[calc(100vh-120px)] overflow-y-auto pr-2 xl:col-span-8 xl:order-1">
-        <BucketsGrid />
+        <BucketsGrid buckets={buckets} loading={loading} error={error || null} />
       </div>
       
       {/* TODO: This will be an overview of the budget wallet */}
