@@ -25,7 +25,7 @@ export default function DashboardPage() {
   
 
 
-  const { data, loading, error } = useUserBuckets(queryAddress);
+  const { data } = useUserBuckets(queryAddress);
   
   
   const buckets = data?.user?.buckets || [];
