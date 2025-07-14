@@ -10,7 +10,6 @@ export function WalletConnection() {
   const { 
     isCreatingBudgetWallet, 
     budgetWalletCreationStep, 
-    budgetWalletCreationError,
     retryWalletCreation
   } = useWalletUser();
 
