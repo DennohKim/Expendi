@@ -7,17 +7,30 @@ import React from "react";
 // import TransactionHistory from "@/components/buckets/TransactionHistory";
 import { useAccount } from "wagmi";
 // import { TestGasSponsorship } from "@/components/test-gas-sponsorship";
-import { CreateBucketButton } from "@/components/buckets/CreateBucketButton";
+// import { CreateBucketButton } from "@/components/buckets/CreateBucketButton";
 import { BucketsGrid } from "@/components/buckets/BucketsGrid";
 import QuickSpendTab from "@/components/buckets/QuickSpendTab";
+import { useSmartAccount } from "@/context/SmartAccountContext";
+import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 
 
 
 
 export default function DashboardPage() {
-  const {address} = useAccount()
+  const {address: eoaAddress} = useAccount()
+  const { smartAccountAddress, smartAccountReady } = useSmartAccount();
+  
+  // Use smart account address if available, fallback to EOA address
+  const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
+  
 
-  console.log("address", address)
+
+  const { data, loading, error } = useUserBuckets(queryAddress);
+  
+  
+  const buckets = data?.user?.buckets || [];
+
+  console.log("buckets", buckets);
 
   return (
     <div className="grid grid-cols-12 gap-4 md:gap-6">
@@ -32,7 +45,7 @@ export default function DashboardPage() {
       
       {/* Quick Spend Tab - Fixed */}
       <div className="col-span-4 h-[calc(100vh-120px)] w-full">
-        <QuickSpendTab />
+        <QuickSpendTab bucket={buckets} />
       </div>
       
       {/* TODO: This will be an overview of the budget wallet */}
