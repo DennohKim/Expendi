@@ -142,6 +142,7 @@ export async function createOrGetBudgetWallet(
         address: FACTORY_CONTRACT_ADDRESS,
         abi: FACTORY_ABI,
         functionName: 'createWallet',
+        args: [connectedWalletAddress],
         // No value parameter - wallet creation is free
       });
     }

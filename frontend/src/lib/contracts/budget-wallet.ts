@@ -15,7 +15,7 @@ export const ETH_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 export const MOCK_USDC_ADDRESS = '0x5c6df8de742863d997083097e02a789f6b84bF38' as const;
 
 // Create clients for Base Sepolia
-export const publicClient = createPublicClient({
+export const budgetWalletPublicClient = createPublicClient({
   chain: baseSepolia,
   transport: http()
 });
@@ -86,7 +86,7 @@ export const fundBucket = (walletAddress: `0x${string}`) => async (
 export const getUserBuckets = (walletAddress: `0x${string}`) => async (
   userAddress: `0x${string}`
 ): Promise<string[]> => {
-  return await publicClient.readContract({
+  return await budgetWalletPublicClient.readContract({
     address: walletAddress,
     abi: BUDGET_WALLET_ABI,
     functionName: 'getUserBuckets',
@@ -98,7 +98,7 @@ export const getBucket = (walletAddress: `0x${string}`) => async (
   userAddress: `0x${string}`,
   bucketName: string
 ) => {
-  return await publicClient.readContract({
+  return await budgetWalletPublicClient.readContract({
     address: walletAddress,
     abi: BUDGET_WALLET_ABI,
     functionName: 'getBucket',
@@ -111,7 +111,7 @@ export const getBucketBalance = (walletAddress: `0x${string}`) => async (
   token: `0x${string}`,
   bucketName: string
 ): Promise<bigint> => {
-  return await publicClient.readContract({
+  return await budgetWalletPublicClient.readContract({
     address: walletAddress,
     abi: BUDGET_WALLET_ABI,
     functionName: 'getBucketBalance',
@@ -123,7 +123,7 @@ export const getUnallocatedBalance = (walletAddress: `0x${string}`) => async (
   userAddress: `0x${string}`,
   token: `0x${string}` = ETH_ADDRESS
 ): Promise<bigint> => {
-  return await publicClient.readContract({
+  return await budgetWalletPublicClient.readContract({
     address: walletAddress,
     abi: BUDGET_WALLET_ABI,
     functionName: 'getUnallocatedBalance',
@@ -135,7 +135,7 @@ export const getTotalBalance = (walletAddress: `0x${string}`) => async (
   userAddress: `0x${string}`,
   token: `0x${string}` = ETH_ADDRESS
 ): Promise<bigint> => {
-  return await publicClient.readContract({
+  return await budgetWalletPublicClient.readContract({
     address: walletAddress,
     abi: BUDGET_WALLET_ABI,
     functionName: 'getTotalBalance',
