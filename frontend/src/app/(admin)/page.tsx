@@ -38,14 +38,14 @@ export default function DashboardPage() {
         <CreateBucketButton />
       </div> */}
       
-      {/* User Buckets Grid - Scrollable */}
-      <div className="col-span-8 h-[calc(100vh-120px)] overflow-y-auto pr-2">
-        <BucketsGrid />
+      {/* Quick Spend Tab - Above buckets on small/medium, right side on large */}
+      <div className="col-span-12 h-auto mb-4 w-full xl:col-span-4 xl:order-2 xl:h-[calc(100vh-120px)] xl:mb-0">
+        <QuickSpendTab bucket={buckets} />
       </div>
       
-      {/* Quick Spend Tab - Fixed */}
-      <div className="col-span-4 h-[calc(100vh-120px)] w-full">
-        <QuickSpendTab bucket={buckets} />
+      {/* User Buckets Grid - Below QuickSpend on small/medium, left side on large */}
+      <div className="col-span-12 h-[calc(100vh-120px)] overflow-y-auto pr-2 xl:col-span-8 xl:order-1">
+        <BucketsGrid />
       </div>
       
       {/* TODO: This will be an overview of the budget wallet */}

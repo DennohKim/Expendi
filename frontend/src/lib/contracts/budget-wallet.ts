@@ -61,10 +61,11 @@ export const depositETH = (walletAddress: `0x${string}`) => async (
   amount: bigint
 ) => {
   return await writeContractAsync({
-    address: walletAddress,
+    address: walletAddress as `0x${string}`,
     abi: BUDGET_WALLET_ABI,
     functionName: 'depositETH',
-    value: amount
+    value: amount,
+    args: []
   });
 };
 
