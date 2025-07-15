@@ -9,6 +9,7 @@ import {
   MonthlyLimitReset,
   DelegateAdded,
   DelegateRemoved,
+  UnallocatedWithdraw,
   EmergencyWithdraw
 } from '../generated/SimpleBudgetWallet/SimpleBudgetWallet'
 import {
@@ -166,6 +167,7 @@ export function handleBucketUpdated(event: BucketUpdated): void {
 export function handleBucketFunded(event: BucketFunded): void {
   let user = getOrCreateUser(event.params.user)
   let bucket = getOrCreateBucket(event.params.user, event.params.bucketName)
+  let unallocatedBucket = getOrCreateBucket(event.params.user, 'UNALLOCATED')
   let token = getOrCreateToken(event.params.token)
   
   // Create deposit record
@@ -181,10 +183,20 @@ export function handleBucketFunded(event: BucketFunded): void {
   deposit.type = 'BUCKET_FUNDING'
   deposit.save()
   
-  // Update token balance
+  // Update token balances - move from UNALLOCATED to target bucket
   if (event.params.token.equals(ETH_ADDRESS)) {
+    // Reduce UNALLOCATED balance
+    unallocatedBucket.balance = unallocatedBucket.balance.minus(event.params.amount)
+    // Increase target bucket balance
     bucket.balance = bucket.balance.plus(event.params.amount)
   } else {
+    // Reduce UNALLOCATED token balance
+    let unallocatedTokenBalance = getOrCreateTokenBalance(unallocatedBucket, token)
+    unallocatedTokenBalance.balance = unallocatedTokenBalance.balance.minus(event.params.amount)
+    unallocatedTokenBalance.updatedAt = event.block.timestamp
+    unallocatedTokenBalance.save()
+    
+    // Increase target bucket token balance
     let tokenBalance = getOrCreateTokenBalance(bucket, token)
     tokenBalance.balance = tokenBalance.balance.plus(event.params.amount)
     tokenBalance.updatedAt = event.block.timestamp
@@ -194,8 +206,10 @@ export function handleBucketFunded(event: BucketFunded): void {
   bucket.updatedAt = event.block.timestamp
   bucket.save()
   
-  // Update user stats
-  user.totalBalance = user.totalBalance.plus(event.params.amount)
+  unallocatedBucket.updatedAt = event.block.timestamp
+  unallocatedBucket.save()
+  
+  // Note: Don't update user.totalBalance here as funds are just moving between buckets
   user.updatedAt = event.block.timestamp
   user.save()
   
@@ -332,6 +346,19 @@ export function handleFundsDeposited(event: FundsDeposited): void {
   deposit.type = 'DIRECT_DEPOSIT'
   deposit.save()
   
+  // Update token balance for UNALLOCATED bucket
+  if (event.params.token.equals(ETH_ADDRESS)) {
+    unallocatedBucket.balance = unallocatedBucket.balance.plus(event.params.amount)
+  } else {
+    let tokenBalance = getOrCreateTokenBalance(unallocatedBucket, token)
+    tokenBalance.balance = tokenBalance.balance.plus(event.params.amount)
+    tokenBalance.updatedAt = event.block.timestamp
+    tokenBalance.save()
+  }
+  
+  unallocatedBucket.updatedAt = event.block.timestamp
+  unallocatedBucket.save()
+  
   // Update user stats
   user.totalBalance = user.totalBalance.plus(event.params.amount)
   user.updatedAt = event.block.timestamp
@@ -396,6 +423,43 @@ export function handleDelegateRemoved(event: DelegateRemoved): void {
     delegateEntity.active = false
     delegateEntity.updatedAt = event.block.timestamp
     delegateEntity.save()
+  }
+}
+
+export function handleUnallocatedWithdraw(event: UnallocatedWithdraw): void {
+  let user = getOrCreateUser(event.params.user)
+  let token = getOrCreateToken(event.params.token)
+  
+  // Create withdrawal record
+  let withdrawalId = event.transaction.hash.toHex() + '-' + event.logIndex.toString()
+  let withdrawal = new Withdrawal(withdrawalId)
+  withdrawal.user = user.id
+  withdrawal.bucket = null // No bucket for unallocated withdrawals
+  withdrawal.amount = event.params.amount
+  withdrawal.token = token.id
+  withdrawal.timestamp = event.block.timestamp
+  withdrawal.blockNumber = event.block.number
+  withdrawal.transactionHash = event.transaction.hash
+  withdrawal.recipient = event.params.recipient
+  withdrawal.type = 'UNALLOCATED_WITHDRAW'
+  withdrawal.save()
+  
+  // Update user stats
+  user.totalBalance = user.totalBalance.minus(event.params.amount)
+  user.updatedAt = event.block.timestamp
+  user.save()
+  
+  // Update token stats
+  token.totalVolume = token.totalVolume.plus(event.params.amount)
+  token.save()
+  
+  // Update global stats
+  let stats = GlobalStats.load(GLOBAL_STATS_ID)
+  if (stats != null) {
+    stats.totalWithdrawals = stats.totalWithdrawals.plus(event.params.amount)
+    stats.totalVolume = stats.totalVolume.plus(event.params.amount)
+    stats.updatedAt = event.block.timestamp
+    stats.save()
   }
 }
 

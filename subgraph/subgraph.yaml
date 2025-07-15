@@ -6,9 +6,9 @@ dataSources:
     name: SimpleBudgetWallet
     network: base-sepolia
     source:
-      address: "0xA2f565Db75B32Dac366666621633b2259bF332D6"
+      address: "0x3300416DB028aE9eC43f32835aF652Fa87200874"
       abi: SimpleBudgetWallet
-      startBlock: 28209133
+      startBlock: 28388281
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -42,6 +42,8 @@ dataSources:
           handler: handleDelegateAdded
         - event: DelegateRemoved(indexed address,indexed address,string)
           handler: handleDelegateRemoved
+        - event: UnallocatedWithdraw(indexed address,address,uint256,address)
+          handler: handleUnallocatedWithdraw
         - event: EmergencyWithdraw(indexed address,address,uint256)
           handler: handleEmergencyWithdraw
       file: ./src/mapping.ts
@@ -49,9 +51,9 @@ dataSources:
     name: SimpleBudgetWalletFactory
     network: base-sepolia
     source:
-      address: "0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a"
+      address: "0xAf8fb11822deC6Df35e17255B1A6bbF268a6b4e4"
       abi: SimpleBudgetWalletFactory
-      startBlock: 28209133
+      startBlock: 28388281
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -107,6 +109,8 @@ templates:
           handler: handleDelegateAdded
         - event: DelegateRemoved(indexed address,indexed address,string)
           handler: handleDelegateRemoved
+        - event: UnallocatedWithdraw(indexed address,address,uint256,address)
+          handler: handleUnallocatedWithdraw
         - event: EmergencyWithdraw(indexed address,address,uint256)
           handler: handleEmergencyWithdraw
       file: ./src/mapping.ts

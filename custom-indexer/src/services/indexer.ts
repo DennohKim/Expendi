@@ -9,7 +9,10 @@ import {
   insertWallet,
   insertBucket,
   insertSpending,
-  getWalletsByUser
+  getWalletsByUser,
+  getAllWalletAddresses,
+  insertTransfer,
+  insertWithdrawal
 } from '../database/models';
 import { IndexedEvent } from '../types';
 
@@ -48,12 +51,15 @@ const initializeIndexerState = async (): Promise<void> => {
 // Load known wallets from database
 const loadKnownWallets = async (): Promise<void> => {
   try {
-    // This would require a query to get all wallet addresses
-    // For now, we'll build it dynamically as we process events
-    indexerState.knownWallets = new Set();
-    console.log('Known wallets loaded');
+    const walletAddresses = await getAllWalletAddresses();
+    indexerState.knownWallets = new Set(walletAddresses);
+    console.log(`Known wallets loaded: ${walletAddresses.length} wallets`);
+    if (walletAddresses.length > 0) {
+      console.log('Wallet addresses:', walletAddresses.join(', '));
+    }
   } catch (error) {
     console.error('Error loading known wallets:', error);
+    indexerState.knownWallets = new Set();
   }
 };
 
@@ -87,6 +93,9 @@ const processSpecificEvent = async (event: IndexedEvent): Promise<void> => {
       case 'WalletCreated':
         await processWalletCreated(event);
         break;
+      case 'WalletRegistered':
+        await processWalletRegistered(event);
+        break;
       case 'BucketCreated':
         await processBucketCreated(event);
         break;
@@ -95,6 +104,12 @@ const processSpecificEvent = async (event: IndexedEvent): Promise<void> => {
         break;
       case 'Transfer':
         await processTransfer(event);
+        break;
+      case 'UnallocatedWithdraw':
+        await processUnallocatedWithdraw(event);
+        break;
+      case 'EmergencyWithdraw':
+        await processEmergencyWithdraw(event);
         break;
       default:
         // Other events are just stored, no additional processing needed
@@ -107,39 +122,61 @@ const processSpecificEvent = async (event: IndexedEvent): Promise<void> => {
 
 // Process wallet creation events
 const processWalletCreated = async (event: IndexedEvent): Promise<void> => {
-  const { user, wallet, template } = event.eventData;
+  const { user, wallet, salt } = event.eventData;
   
   // Add wallet to known wallets
   indexerState.knownWallets.add(wallet);
   
-  // Insert wallet into registry
+  // Insert wallet into registry (using salt instead of template)
   await insertWallet(
     wallet,
     user,
-    template,
+    event.contractAddress, // factory address as template
     event.contractAddress,
     event.blockNumber,
     event.transactionHash
   );
   
-  console.log(`New wallet created: ${wallet} for user: ${user}`);
+  console.log(`🆕 New wallet created: ${wallet} for user: ${user} with salt: ${salt}`);
+  console.log(`📊 Now monitoring ${indexerState.knownWallets.size} wallet contracts`);
+};
+
+// Process wallet registration events
+const processWalletRegistered = async (event: IndexedEvent): Promise<void> => {
+  const { user, wallet } = event.eventData;
+  
+  // Add wallet to known wallets
+  indexerState.knownWallets.add(wallet);
+  
+  console.log(`Wallet registered: ${wallet} for user: ${user}`);
 };
 
 // Process bucket creation events
 const processBucketCreated = async (event: IndexedEvent): Promise<void> => {
-  const { bucketId, name, monthlyLimit, token } = event.eventData;
+  const { user, bucketName, monthlyLimit } = event.eventData;
   
-  await insertBucket(
-    event.contractAddress,
-    bucketId,
-    name,
-    monthlyLimit,
-    token,
-    event.blockNumber,
-    event.transactionHash
-  );
-  
-  console.log(`New bucket created: ${name} (ID: ${bucketId}) for wallet: ${event.contractAddress}`);
+  try {
+    // Since the new contract doesn't emit bucketId, we'll use bucketName hash as ID
+    // and default token to ETH (address zero for native ETH)
+    const nameHex = Buffer.from(bucketName).toString('hex').padEnd(16, '0').slice(0, 16);
+    const bucketId = BigInt(`0x${nameHex}`);
+    const defaultTokenAddress = '0x0000000000000000000000000000000000000000'; // ETH
+    
+    await insertBucket(
+      event.contractAddress,
+      bucketId,
+      bucketName,
+      BigInt(monthlyLimit),
+      defaultTokenAddress,
+      event.blockNumber,
+      event.transactionHash
+    );
+    
+    console.log(`🪣 New bucket created: "${bucketName}" for user: ${user} in wallet: ${event.contractAddress}`);
+    console.log(`   Monthly limit: ${monthlyLimit} - Saved to database with ID: ${bucketId}`);
+  } catch (error) {
+    console.error(`Error saving bucket "${bucketName}" to database:`, error);
+  }
 };
 
 // Process spending events
@@ -164,9 +201,131 @@ const processSpending = async (event: IndexedEvent): Promise<void> => {
 const processTransfer = async (event: IndexedEvent): Promise<void> => {
   const { from, to, value } = event.eventData;
   
-  // Additional processing for transfers involving our wallets
-  if (indexerState.knownWallets.has(from) || indexerState.knownWallets.has(to)) {
-    console.log(`Token transfer: ${value} from ${from} to ${to}`);
+  // Only process transfers involving our tracked wallets
+  if (!indexerState.knownWallets.has(from) && !indexerState.knownWallets.has(to)) {
+    return;
+  }
+  
+  try {
+    const { transferType, walletAddress, fromBucketId, toBucketId } = classifyTransfer(from, to);
+    
+    await insertTransfer(
+      event.contractAddress, // token address
+      from,
+      to,
+      BigInt(value),
+      transferType,
+      walletAddress,
+      fromBucketId,
+      toBucketId,
+      event.blockNumber,
+      event.transactionHash,
+      event.logIndex,
+      event.timestamp
+    );
+    
+    console.log(`💸 ${transferType}: ${value} ${event.contractAddress} from ${from} to ${to}`);
+    if (walletAddress) {
+      console.log(`   Wallet: ${walletAddress}`);
+    }
+  } catch (error) {
+    console.error(`Error processing transfer from ${from} to ${to}:`, error);
+  }
+};
+
+// Classify transfer type based on from/to addresses
+const classifyTransfer = (
+  from: Address, 
+  to: Address
+): {
+  transferType: 'deposit' | 'withdrawal' | 'bucket_transfer' | 'external';
+  walletAddress: Address | null;
+  fromBucketId: bigint | null;
+  toBucketId: bigint | null;
+} => {
+  const fromIsWallet = indexerState.knownWallets.has(from);
+  const toIsWallet = indexerState.knownWallets.has(to);
+  
+  if (fromIsWallet && toIsWallet) {
+    // Transfer between two budget wallets - could be bucket transfer
+    return {
+      transferType: 'bucket_transfer',
+      walletAddress: from, // Use sender as primary wallet
+      fromBucketId: null, // TODO: Need to determine from transaction context
+      toBucketId: null
+    };
+  } else if (toIsWallet && !fromIsWallet) {
+    // External address sending to budget wallet = deposit
+    return {
+      transferType: 'deposit',
+      walletAddress: to,
+      fromBucketId: null,
+      toBucketId: null
+    };
+  } else if (fromIsWallet && !toIsWallet) {
+    // Budget wallet sending to external address = withdrawal
+    return {
+      transferType: 'withdrawal',
+      walletAddress: from,
+      fromBucketId: null, // TODO: Need to determine from transaction context
+      toBucketId: null
+    };
+  } else {
+    // Shouldn't happen given our filter, but handle gracefully
+    return {
+      transferType: 'external',
+      walletAddress: null,
+      fromBucketId: null,
+      toBucketId: null
+    };
+  }
+};
+
+// Process unallocated withdrawal events
+const processUnallocatedWithdraw = async (event: IndexedEvent): Promise<void> => {
+  const { user, token, amount, recipient } = event.eventData;
+  
+  try {
+    await insertWithdrawal(
+      event.contractAddress, // wallet address
+      user,
+      recipient,
+      token,
+      BigInt(amount),
+      'unallocated',
+      event.blockNumber,
+      event.transactionHash,
+      event.logIndex,
+      event.timestamp
+    );
+    
+    console.log(`💸 Unallocated withdrawal: ${amount} ${token} from ${user} to ${recipient}`);
+  } catch (error) {
+    console.error(`Error processing unallocated withdrawal:`, error);
+  }
+};
+
+// Process emergency withdrawal events
+const processEmergencyWithdraw = async (event: IndexedEvent): Promise<void> => {
+  const { user, token, amount } = event.eventData;
+  
+  try {
+    await insertWithdrawal(
+      event.contractAddress, // wallet address
+      user,
+      user, // In emergency withdrawals, recipient is the user
+      token,
+      BigInt(amount),
+      'emergency',
+      event.blockNumber,
+      event.transactionHash,
+      event.logIndex,
+      event.timestamp
+    );
+    
+    console.log(`🚨 Emergency withdrawal: ${amount} ${token} for user ${user}`);
+  } catch (error) {
+    console.error(`Error processing emergency withdrawal:`, error);
   }
 };
 
@@ -176,9 +335,14 @@ const syncBlockRange = async (fromBlock: bigint, toBlock: bigint): Promise<void>
     console.log(`Syncing blocks ${fromBlock} to ${toBlock}`);
     
     const knownWalletAddresses = Array.from(indexerState.knownWallets);
+    if (knownWalletAddresses.length > 0) {
+      console.log(`Monitoring ${knownWalletAddresses.length} wallet contracts for events`);
+    }
+    
     const events = await getAllEvents(fromBlock, toBlock, knownWalletAddresses);
     
     if (events.length > 0) {
+      console.log(`Found ${events.length} events to process`);
       await processEvents(events);
     }
     
@@ -280,7 +444,7 @@ export const syncManual = async (fromBlock: bigint, toBlock: bigint): Promise<vo
     throw new Error('Cannot run manual sync while indexer is running');
   }
   
-  console.log(`Manual sync from block ${fromBlock} to ${toBlock}`);
+  console.log(`📊 Manual sync from block ${fromBlock} to ${toBlock}`);
   
   await initializeIndexerState();
   await loadKnownWallets();
@@ -297,5 +461,5 @@ export const syncManual = async (fromBlock: bigint, toBlock: bigint): Promise<vo
     console.log(`Progress: ${((batchStart - fromBlock) * 100n / (toBlock - fromBlock + 1n))}%`);
   }
   
-  console.log('Manual sync completed');
+  console.log('✅ Manual sync completed');
 };

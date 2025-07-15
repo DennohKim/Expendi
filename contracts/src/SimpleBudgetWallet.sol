@@ -29,6 +29,7 @@ contract SimpleBudgetWallet is AccessControl, ReentrancyGuard, Pausable {
     event MonthlyLimitReset(address indexed user, string bucketName);
     event DelegateAdded(address indexed user, address indexed delegate, string bucketName);
     event DelegateRemoved(address indexed user, address indexed delegate, string bucketName);
+    event UnallocatedWithdraw(address indexed user, address token, uint256 amount, address recipient);
     event EmergencyWithdraw(address indexed user, address token, uint256 amount);
     
     // Structs
@@ -112,6 +113,32 @@ contract SimpleBudgetWallet is AccessControl, ReentrancyGuard, Pausable {
         userTokenBalances[msg.sender][token].unallocated = 
             userTokenBalances[msg.sender][token].unallocated + amount;
         emit FundsDeposited(msg.sender, amount, token);
+    }
+    
+    /**
+     * @dev Withdraw unallocated funds back to user's wallet
+     */
+    function withdrawUnallocated(
+        address token,
+        uint256 amount,
+        address payable recipient
+    ) external nonReentrant whenNotPaused {
+        require(amount > 0, "Amount must be greater than 0");
+        require(recipient != address(0), "Invalid recipient");
+        require(userTokenBalances[msg.sender][token].unallocated >= amount, 
+            "Insufficient unallocated balance");
+        
+        userTokenBalances[msg.sender][token].unallocated = 
+            userTokenBalances[msg.sender][token].unallocated - amount;
+        
+        if (token == ETH_ADDRESS) {
+            (bool success, ) = recipient.call{value: amount}("");
+            require(success, "ETH transfer failed");
+        } else {
+            IERC20(token).safeTransfer(recipient, amount);
+        }
+        
+        emit UnallocatedWithdraw(msg.sender, token, amount, recipient);
     }
     
     // ============ BUCKET MANAGEMENT ============

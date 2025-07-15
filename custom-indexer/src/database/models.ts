@@ -2,6 +2,13 @@ import { Address, Hash } from 'viem';
 import { query, transaction } from './connection';
 import { IndexedEvent, IndexerStatus, ContractEvent, EventQueryParams } from '../types';
 
+// Helper function to serialize BigInt values for JSON
+const serializeEventData = (data: Record<string, any>): string => {
+  return JSON.stringify(data, (key, value) =>
+    typeof value === 'bigint' ? value.toString() : value
+  );
+};
+
 // Event operations
 export const insertEvent = async (event: Omit<IndexedEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> => {
   const sql = `
@@ -21,7 +28,7 @@ export const insertEvent = async (event: Omit<IndexedEvent, 'id' | 'createdAt' |
     event.transactionHash,
     event.transactionIndex,
     event.logIndex,
-    JSON.stringify(event.eventData),
+    serializeEventData(event.eventData),
     event.timestamp,
     event.processed
   ];
@@ -136,6 +143,17 @@ export const getWalletsByUser = async (userAddress: Address): Promise<any[]> => 
   return result.rows;
 };
 
+// Get all wallet addresses for indexing
+export const getAllWalletAddresses = async (): Promise<Address[]> => {
+  const sql = `
+    SELECT DISTINCT wallet_address FROM wallet_registry 
+    ORDER BY wallet_address
+  `;
+  
+  const result = await query(sql);
+  return result.rows.map((row: any) => row.wallet_address as Address);
+};
+
 // Bucket operations
 export const insertBucket = async (
   walletAddress: Address,
@@ -230,6 +248,85 @@ export const getSpendingByWallet = async (walletAddress: Address, limit = 100): 
   return result.rows;
 };
 
+// Transfer operations
+export const insertTransfer = async (
+  tokenAddress: Address,
+  fromAddress: Address,
+  toAddress: Address,
+  amount: bigint,
+  transferType: 'deposit' | 'withdrawal' | 'bucket_transfer' | 'external',
+  walletAddress: Address | null,
+  fromBucketId: bigint | null,
+  toBucketId: bigint | null,
+  blockNumber: bigint,
+  transactionHash: Hash,
+  logIndex: number,
+  timestamp: Date
+): Promise<number> => {
+  const sql = `
+    INSERT INTO transfers (
+      token_address, from_address, to_address, amount, transfer_type,
+      wallet_address, from_bucket_id, to_bucket_id, block_number,
+      transaction_hash, log_index, timestamp
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    RETURNING id
+  `;
+  
+  const values = [
+    tokenAddress,
+    fromAddress,
+    toAddress,
+    amount.toString(),
+    transferType,
+    walletAddress,
+    fromBucketId?.toString() || null,
+    toBucketId?.toString() || null,
+    blockNumber.toString(),
+    transactionHash,
+    logIndex,
+    timestamp
+  ];
+  
+  const result = await query(sql, values);
+  return result.rows[0].id;
+};
+
+export const getTransfersByWallet = async (walletAddress: Address, limit = 100): Promise<any[]> => {
+  const sql = `
+    SELECT * FROM transfers 
+    WHERE wallet_address = $1 OR from_address = $1 OR to_address = $1
+    ORDER BY timestamp DESC 
+    LIMIT $2
+  `;
+  
+  const result = await query(sql, [walletAddress, limit]);
+  return result.rows;
+};
+
+export const getTransfersByType = async (transferType: string, limit = 100): Promise<any[]> => {
+  const sql = `
+    SELECT * FROM transfers 
+    WHERE transfer_type = $1 
+    ORDER BY timestamp DESC 
+    LIMIT $2
+  `;
+  
+  const result = await query(sql, [transferType, limit]);
+  return result.rows;
+};
+
+export const getTransfersByToken = async (tokenAddress: Address, limit = 100): Promise<any[]> => {
+  const sql = `
+    SELECT * FROM transfers 
+    WHERE token_address = $1 
+    ORDER BY timestamp DESC 
+    LIMIT $2
+  `;
+  
+  const result = await query(sql, [tokenAddress, limit]);
+  return result.rows;
+};
+
 // Indexer status operations
 export const updateIndexerStatus = async (
   contractAddress: Address,
@@ -306,7 +403,7 @@ export const insertEventsBatch = async (events: Omit<IndexedEvent, 'id' | 'creat
         event.transactionHash,
         event.transactionIndex,
         event.logIndex,
-        JSON.stringify(event.eventData),
+        serializeEventData(event.eventData),
         event.timestamp,
         event.processed
       ];
@@ -317,4 +414,79 @@ export const insertEventsBatch = async (events: Omit<IndexedEvent, 'id' | 'creat
     
     return results;
   });
+};
+
+// Withdrawal operations
+export const insertWithdrawal = async (
+  walletAddress: Address,
+  userAddress: Address,
+  recipientAddress: Address,
+  tokenAddress: Address,
+  amount: bigint,
+  withdrawalType: 'unallocated' | 'emergency',
+  blockNumber: bigint,
+  transactionHash: Hash,
+  logIndex: number,
+  timestamp: Date
+): Promise<number> => {
+  const sql = `
+    INSERT INTO withdrawals (
+      wallet_address, user_address, recipient_address, token_address,
+      amount, withdrawal_type, block_number, transaction_hash, 
+      log_index, timestamp
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    RETURNING id
+  `;
+  
+  const values = [
+    walletAddress,
+    userAddress,
+    recipientAddress,
+    tokenAddress,
+    amount.toString(),
+    withdrawalType,
+    blockNumber.toString(),
+    transactionHash,
+    logIndex,
+    timestamp
+  ];
+  
+  const result = await query(sql, values);
+  return result.rows[0].id;
+};
+
+export const getWithdrawalsByWallet = async (walletAddress: Address, limit = 100, offset = 0): Promise<any[]> => {
+  const sql = `
+    SELECT * FROM withdrawals 
+    WHERE wallet_address = $1 
+    ORDER BY timestamp DESC, log_index DESC 
+    LIMIT $2 OFFSET $3
+  `;
+  
+  const result = await query(sql, [walletAddress, limit, offset]);
+  return result.rows;
+};
+
+export const getWithdrawalsByUser = async (userAddress: Address, limit = 100, offset = 0): Promise<any[]> => {
+  const sql = `
+    SELECT * FROM withdrawals 
+    WHERE user_address = $1 
+    ORDER BY timestamp DESC, log_index DESC 
+    LIMIT $2 OFFSET $3
+  `;
+  
+  const result = await query(sql, [userAddress, limit, offset]);
+  return result.rows;
+};
+
+export const getWithdrawalsByType = async (withdrawalType: 'unallocated' | 'emergency', limit = 100, offset = 0): Promise<any[]> => {
+  const sql = `
+    SELECT * FROM withdrawals 
+    WHERE withdrawal_type = $1 
+    ORDER BY timestamp DESC, log_index DESC 
+    LIMIT $2 OFFSET $3
+  `;
+  
+  const result = await query(sql, [withdrawalType, limit, offset]);
+  return result.rows;
 };

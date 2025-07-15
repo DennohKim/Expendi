@@ -9,16 +9,16 @@ export const config = {
   rpcUrl: process.env.RPC_URL || 'https://sepolia.base.org',
   chainId: parseInt(process.env.CHAIN_ID || '84532'),
 
-  // Contract Addresses (Frontend Latest)
+  // Contract Addresses (Updated July 15, 2025)
   contracts: {
-    factory: process.env.FACTORY_CONTRACT_ADDRESS || '0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a',
-    budgetWalletTemplate: process.env.BUDGET_WALLET_TEMPLATE_ADDRESS || '0xA2f565Db75B32Dac366666621633b2259bF332D6',
+    factory: process.env.FACTORY_CONTRACT_ADDRESS || '0xAf8fb11822deC6Df35e17255B1A6bbF268a6b4e4',
+    budgetWalletTemplate: process.env.BUDGET_WALLET_TEMPLATE_ADDRESS || '0x3300416DB028aE9eC43f32835aF652Fa87200874',
     mockUSDC: process.env.MOCK_USDC_ADDRESS || '0x5c6df8de742863d997083097e02a789f6b84bf38',
   },
 
-  // Starting Blocks
+  // Starting Blocks (Updated for new deployment)
   startBlocks: {
-    factory: parseInt(process.env.FACTORY_START_BLOCK || '28000000'),
+    factory: parseInt(process.env.FACTORY_START_BLOCK || '28388281'),
     mockUSDC: parseInt(process.env.MOCK_USDC_START_BLOCK || '28289876'),
   },
 

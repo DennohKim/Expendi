@@ -6,7 +6,23 @@ export const factoryAbi = [
     inputs: [
       { name: 'user', type: 'address', indexed: true },
       { name: 'wallet', type: 'address', indexed: true },
-      { name: 'template', type: 'address', indexed: false }
+      { name: 'salt', type: 'uint256', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'WalletRegistered',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'wallet', type: 'address', indexed: true }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true },
+      { name: 'newOwner', type: 'address', indexed: true }
     ]
   },
   {
@@ -21,43 +37,129 @@ export const factoryAbi = [
   }
 ] as const;
 
-// SimpleBudgetWallet ABI
+// SimpleBudgetWallet ABI - Updated to match actual contract
 export const budgetWalletAbi = [
   {
     type: 'event',
     name: 'BucketCreated',
     inputs: [
-      { name: 'bucketId', type: 'uint256', indexed: true },
-      { name: 'name', type: 'string', indexed: false },
-      { name: 'monthlyLimit', type: 'uint256', indexed: false },
-      { name: 'token', type: 'address', indexed: true }
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'bucketName', type: 'string', indexed: false },
+      { name: 'monthlyLimit', type: 'uint256', indexed: false }
     ]
   },
   {
     type: 'event',
-    name: 'Spending',
+    name: 'BucketUpdated',
     inputs: [
-      { name: 'bucketId', type: 'uint256', indexed: true },
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'bucketName', type: 'string', indexed: false },
+      { name: 'newLimit', type: 'uint256', indexed: false },
+      { name: 'active', type: 'bool', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'BucketFunded',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'bucketName', type: 'string', indexed: false },
       { name: 'amount', type: 'uint256', indexed: false },
-      { name: 'recipient', type: 'address', indexed: true },
-      { name: 'token', type: 'address', indexed: true }
+      { name: 'token', type: 'address', indexed: false }
     ]
   },
   {
     type: 'event',
-    name: 'BucketLimitUpdated',
+    name: 'SpentFromBucket',
     inputs: [
-      { name: 'bucketId', type: 'uint256', indexed: true },
-      { name: 'newLimit', type: 'uint256', indexed: false }
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'bucketName', type: 'string', indexed: false },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'recipient', type: 'address', indexed: false },
+      { name: 'token', type: 'address', indexed: false }
     ]
   },
   {
     type: 'event',
-    name: 'DelegatePermissionChanged',
+    name: 'BucketTransfer',
     inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'fromBucket', type: 'string', indexed: false },
+      { name: 'toBucket', type: 'string', indexed: false },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'token', type: 'address', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'FundsDeposited',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'token', type: 'address', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'MonthlyLimitReset',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'bucketName', type: 'string', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'DelegateAdded',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
       { name: 'delegate', type: 'address', indexed: true },
-      { name: 'bucketId', type: 'uint256', indexed: true },
-      { name: 'canSpend', type: 'bool', indexed: false }
+      { name: 'bucketName', type: 'string', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'DelegateRemoved',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'delegate', type: 'address', indexed: true },
+      { name: 'bucketName', type: 'string', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'UnallocatedWithdraw',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'token', type: 'address', indexed: false },
+      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'recipient', type: 'address', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'EmergencyWithdraw',
+    inputs: [
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'token', type: 'address', indexed: false },
+      { name: 'amount', type: 'uint256', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'RoleGranted',
+    inputs: [
+      { name: 'role', type: 'bytes32', indexed: true },
+      { name: 'account', type: 'address', indexed: true },
+      { name: 'sender', type: 'address', indexed: true }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'RoleRevoked',
+    inputs: [
+      { name: 'role', type: 'bytes32', indexed: true },
+      { name: 'account', type: 'address', indexed: true },
+      { name: 'sender', type: 'address', indexed: true }
     ]
   },
   {
@@ -82,6 +184,16 @@ export const budgetWalletAbi = [
       { name: 'token', type: 'address' }
     ],
     outputs: []
+  },
+  {
+    type: 'function',
+    name: 'withdrawUnallocated',
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+      { name: 'recipient', type: 'address' }
+    ],
+    outputs: []
   }
 ] as const;
 
@@ -103,6 +215,14 @@ export const erc20Abi = [
       { name: 'owner', type: 'address', indexed: true },
       { name: 'spender', type: 'address', indexed: true },
       { name: 'value', type: 'uint256', indexed: false }
+    ]
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      { name: 'previousOwner', type: 'address', indexed: true },
+      { name: 'newOwner', type: 'address', indexed: true }
     ]
   },
   {

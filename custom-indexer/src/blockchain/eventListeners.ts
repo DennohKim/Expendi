@@ -6,12 +6,24 @@ import { IndexedEvent } from '../types';
 
 // Event signature mappings
 const eventSignatures = {
-  WalletCreated: getEventSelector('WalletCreated(address,address,address)'),
-  BucketCreated: getEventSelector('BucketCreated(uint256,string,uint256,address)'),
-  Spending: getEventSelector('Spending(uint256,uint256,address,address)'),
-  BucketLimitUpdated: getEventSelector('BucketLimitUpdated(uint256,uint256)'),
-  DelegatePermissionChanged: getEventSelector('DelegatePermissionChanged(address,uint256,bool)'),
+  WalletCreated: getEventSelector('WalletCreated(address,address,uint256)'),
+  WalletRegistered: getEventSelector('WalletRegistered(address,address)'),
+  OwnershipTransferred: getEventSelector('OwnershipTransferred(address,address)'),
+  BucketCreated: getEventSelector('BucketCreated(address,string,uint256)'),
+  BucketUpdated: getEventSelector('BucketUpdated(address,string,uint256,bool)'),
+  BucketFunded: getEventSelector('BucketFunded(address,string,uint256,address)'),
+  SpentFromBucket: getEventSelector('SpentFromBucket(address,string,uint256,address,address)'),
+  BucketTransfer: getEventSelector('BucketTransfer(address,string,string,uint256,address)'),
+  FundsDeposited: getEventSelector('FundsDeposited(address,uint256,address)'),
+  MonthlyLimitReset: getEventSelector('MonthlyLimitReset(address,string)'),
+  DelegateAdded: getEventSelector('DelegateAdded(address,address,string)'),
+  DelegateRemoved: getEventSelector('DelegateRemoved(address,address,string)'),
+  UnallocatedWithdraw: getEventSelector('UnallocatedWithdraw(address,address,uint256,address)'),
+  EmergencyWithdraw: getEventSelector('EmergencyWithdraw(address,address,uint256)'),
+  RoleGranted: getEventSelector('RoleGranted(bytes32,address,address)'),
+  RoleRevoked: getEventSelector('RoleRevoked(bytes32,address,address)'),
   Transfer: getEventSelector('Transfer(address,address,uint256)'),
+  Approval: getEventSelector('Approval(address,address,uint256)'),
 } as const;
 
 // Get logs for a specific contract and block range
@@ -66,7 +78,7 @@ export const parseFactoryEvent = (log: Log): IndexedEvent | null => {
     });
 
     if (decoded.eventName === 'WalletCreated' && decoded.args) {
-      const args = decoded.args as unknown as { user: Address; wallet: Address; template: Address };
+      const args = decoded.args as unknown as { user: Address; wallet: Address; salt: bigint };
       return {
         contractAddress: log.address,
         eventName: 'WalletCreated',
@@ -78,7 +90,26 @@ export const parseFactoryEvent = (log: Log): IndexedEvent | null => {
         eventData: {
           user: args.user,
           wallet: args.wallet,
-          template: args.template,
+          salt: args.salt,
+        },
+        timestamp: new Date(),
+        processed: false,
+      };
+    }
+    
+    if (decoded.eventName === 'WalletRegistered' && decoded.args) {
+      const args = decoded.args as unknown as { user: Address; wallet: Address };
+      return {
+        contractAddress: log.address,
+        eventName: 'WalletRegistered',
+        blockNumber: log.blockNumber!,
+        blockHash: log.blockHash!,
+        transactionHash: log.transactionHash!,
+        transactionIndex: log.transactionIndex!,
+        logIndex: log.logIndex!,
+        eventData: {
+          user: args.user,
+          wallet: args.wallet,
         },
         timestamp: new Date(),
         processed: false,
@@ -115,26 +146,54 @@ export const parseBudgetWalletEvent = (log: Log): IndexedEvent | null => {
 
     switch (decoded.eventName) {
       case 'BucketCreated': {
-        const args = decoded.args as unknown as { bucketId: bigint; name: string; monthlyLimit: bigint; token: Address };
+        const args = decoded.args as unknown as { user: Address; bucketName: string; monthlyLimit: bigint };
         return {
           ...baseEvent,
           eventName: 'BucketCreated',
           eventData: {
-            bucketId: args.bucketId,
-            name: args.name,
+            user: args.user,
+            bucketName: args.bucketName,
             monthlyLimit: args.monthlyLimit,
+          },
+        };
+      }
+
+      case 'BucketUpdated': {
+        const args = decoded.args as unknown as { user: Address; bucketName: string; newLimit: bigint; active: boolean };
+        return {
+          ...baseEvent,
+          eventName: 'BucketUpdated',
+          eventData: {
+            user: args.user,
+            bucketName: args.bucketName,
+            newLimit: args.newLimit,
+            active: args.active,
+          },
+        };
+      }
+
+      case 'BucketFunded': {
+        const args = decoded.args as unknown as { user: Address; bucketName: string; amount: bigint; token: Address };
+        return {
+          ...baseEvent,
+          eventName: 'BucketFunded',
+          eventData: {
+            user: args.user,
+            bucketName: args.bucketName,
+            amount: args.amount,
             token: args.token,
           },
         };
       }
 
-      case 'Spending': {
-        const args = decoded.args as unknown as { bucketId: bigint; amount: bigint; recipient: Address; token: Address };
+      case 'SpentFromBucket': {
+        const args = decoded.args as unknown as { user: Address; bucketName: string; amount: bigint; recipient: Address; token: Address };
         return {
           ...baseEvent,
-          eventName: 'Spending',
+          eventName: 'SpentFromBucket',
           eventData: {
-            bucketId: args.bucketId,
+            user: args.user,
+            bucketName: args.bucketName,
             amount: args.amount,
             recipient: args.recipient,
             token: args.token,
@@ -142,27 +201,109 @@ export const parseBudgetWalletEvent = (log: Log): IndexedEvent | null => {
         };
       }
 
-      case 'BucketLimitUpdated': {
-        const args = decoded.args as unknown as { bucketId: bigint; newLimit: bigint };
+      case 'BucketTransfer': {
+        const args = decoded.args as unknown as { user: Address; fromBucket: string; toBucket: string; amount: bigint; token: Address };
         return {
           ...baseEvent,
-          eventName: 'BucketLimitUpdated',
+          eventName: 'BucketTransfer',
           eventData: {
-            bucketId: args.bucketId,
-            newLimit: args.newLimit,
+            user: args.user,
+            fromBucket: args.fromBucket,
+            toBucket: args.toBucket,
+            amount: args.amount,
+            token: args.token,
           },
         };
       }
 
-      case 'DelegatePermissionChanged': {
-        const args = decoded.args as unknown as { delegate: Address; bucketId: bigint; canSpend: boolean };
+      case 'FundsDeposited': {
+        const args = decoded.args as unknown as { user: Address; amount: bigint; token: Address };
         return {
           ...baseEvent,
-          eventName: 'DelegatePermissionChanged',
+          eventName: 'FundsDeposited',
           eventData: {
+            user: args.user,
+            amount: args.amount,
+            token: args.token,
+          },
+        };
+      }
+
+      case 'DelegateAdded': {
+        const args = decoded.args as unknown as { user: Address; delegate: Address; bucketName: string };
+        return {
+          ...baseEvent,
+          eventName: 'DelegateAdded',
+          eventData: {
+            user: args.user,
             delegate: args.delegate,
-            bucketId: args.bucketId,
-            canSpend: args.canSpend,
+            bucketName: args.bucketName,
+          },
+        };
+      }
+
+      case 'DelegateRemoved': {
+        const args = decoded.args as unknown as { user: Address; delegate: Address; bucketName: string };
+        return {
+          ...baseEvent,
+          eventName: 'DelegateRemoved',
+          eventData: {
+            user: args.user,
+            delegate: args.delegate,
+            bucketName: args.bucketName,
+          },
+        };
+      }
+
+      case 'RoleGranted': {
+        const args = decoded.args as unknown as { role: string; account: Address; sender: Address };
+        return {
+          ...baseEvent,
+          eventName: 'RoleGranted',
+          eventData: {
+            role: args.role,
+            account: args.account,
+            sender: args.sender,
+          },
+        };
+      }
+
+      case 'RoleRevoked': {
+        const args = decoded.args as unknown as { role: string; account: Address; sender: Address };
+        return {
+          ...baseEvent,
+          eventName: 'RoleRevoked',
+          eventData: {
+            role: args.role,
+            account: args.account,
+            sender: args.sender,
+          },
+        };
+      }
+
+      case 'UnallocatedWithdraw': {
+        const args = decoded.args as unknown as { user: Address; token: Address; amount: bigint; recipient: Address };
+        return {
+          ...baseEvent,
+          eventName: 'UnallocatedWithdraw',
+          eventData: {
+            user: args.user,
+            token: args.token,
+            amount: args.amount,
+            recipient: args.recipient,
+          },
+        };
+      }
+
+      case 'EmergencyWithdraw': {
+        const args = decoded.args as unknown as { user: Address; token: Address; amount: bigint };
+        return {
+          ...baseEvent,
+          eventName: 'EmergencyWithdraw',
+          eventData: {
+            user: args.user,
+            token: args.token,
+            amount: args.amount,
           },
         };
       }
@@ -185,6 +326,8 @@ export const parseTokenEvent = (log: Log): IndexedEvent | null => {
       topics: log.topics,
     });
 
+    if (!decoded.args || !decoded.eventName) return null;
+
     if (decoded.eventName === 'Transfer' && decoded.args) {
       const args = decoded.args as unknown as { from: Address; to: Address; value: bigint };
       return {
@@ -199,6 +342,25 @@ export const parseTokenEvent = (log: Log): IndexedEvent | null => {
           from: args.from,
           to: args.to,
           value: args.value,
+        },
+        timestamp: new Date(),
+        processed: false,
+      };
+    }
+    
+    if (decoded.eventName === 'OwnershipTransferred' && decoded.args) {
+      const args = decoded.args as unknown as { previousOwner: Address; newOwner: Address };
+      return {
+        contractAddress: log.address,
+        eventName: 'OwnershipTransferred',
+        blockNumber: log.blockNumber!,
+        blockHash: log.blockHash!,
+        transactionHash: log.transactionHash!,
+        transactionIndex: log.transactionIndex!,
+        logIndex: log.logIndex!,
+        eventData: {
+          previousOwner: args.previousOwner,
+          newOwner: args.newOwner,
         },
         timestamp: new Date(),
         processed: false,
@@ -220,7 +382,7 @@ export const getFactoryEvents = async (
     config.contracts.factory as Address,
     fromBlock,
     toBlock,
-    [eventSignatures.WalletCreated]
+    [eventSignatures.WalletCreated, eventSignatures.WalletRegistered]
   );
 
   const events: IndexedEvent[] = [];
@@ -245,9 +407,17 @@ export const getBudgetWalletEvents = async (
     toBlock,
     [
       eventSignatures.BucketCreated,
-      eventSignatures.Spending,
-      eventSignatures.BucketLimitUpdated,
-      eventSignatures.DelegatePermissionChanged,
+      eventSignatures.BucketUpdated,
+      eventSignatures.BucketFunded,
+      eventSignatures.SpentFromBucket,
+      eventSignatures.BucketTransfer,
+      eventSignatures.FundsDeposited,
+      eventSignatures.MonthlyLimitReset,
+      eventSignatures.DelegateAdded,
+      eventSignatures.DelegateRemoved,
+      eventSignatures.EmergencyWithdraw,
+      eventSignatures.RoleGranted,
+      eventSignatures.RoleRevoked,
     ]
   );
 

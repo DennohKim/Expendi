@@ -4,8 +4,8 @@ This subgraph indexes events from the Expendi budget wallet smart contracts depl
 
 ## Contract Addresses
 
-- **SimpleBudgetWallet**: `0xD729Ed1682Bff761c3808469c6BDd99A7280742d`
-- **SimpleBudgetWalletFactory**: `0xf26404Dc9c23241b7b596EdD66a7cD3bcafB948a`
+- **SimpleBudgetWallet**: `0x3300416DB028aE9eC43f32835aF652Fa87200874`
+- **SimpleBudgetWalletFactory**: `0xAf8fb11822deC6Df35e17255B1A6bbF268a6b4e4`
 - **Network**: Base Sepolia (Chain ID: 84532)
 
 ## Features
@@ -20,7 +20,7 @@ The subgraph tracks:
 
 ### Transactions
 - **Deposits**: Direct deposits and bucket funding
-- **Withdrawals**: Bucket spending and emergency withdrawals
+- **Withdrawals**: Bucket spending, unallocated withdrawals, and emergency withdrawals
 - **Transfers**: Between-bucket transfers
 - **Delegates**: Delegation permissions for bucket spending
 

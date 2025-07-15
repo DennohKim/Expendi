@@ -770,17 +770,21 @@ export class Withdrawal extends Entity {
     this.set("user", Value.fromString(value));
   }
 
-  get bucket(): string {
+  get bucket(): string | null {
     let value = this.get("bucket");
     if (!value || value.kind == ValueKind.NULL) {
-      throw new Error("Cannot return null for a required field.");
+      return null;
     } else {
       return value.toString();
     }
   }
 
-  set bucket(value: string) {
-    this.set("bucket", Value.fromString(value));
+  set bucket(value: string | null) {
+    if (!value) {
+      this.unset("bucket");
+    } else {
+      this.set("bucket", Value.fromString(<string>value));
+    }
   }
 
   get amount(): BigInt {

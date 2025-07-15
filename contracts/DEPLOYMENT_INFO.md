@@ -3,20 +3,20 @@
 ## Contract Addresses
 
 **Network:** Base Sepolia (Chain ID: 84532)
-**Deployed:** July 10, 2025
+**Deployed:** July 15, 2025 (Updated with withdrawUnallocated function)
 
 | Contract | Address | Explorer Link |
 |----------|---------|---------------|
-| SimpleBudgetWallet | `0x9b76D8eAdF1CA6e1cDc2ECb2Ac2df13Bf5CF068C` | [View on BaseScan](https://sepolia.basescan.org/address/0x9b76d8eadf1ca6e1cdc2ecb2ac2df13bf5cf068c) |
-| SimpleBudgetWalletFactory | `0x4525f41f2c49EB476E9e0f0fCac96Cc6eec16ea7` | [View on BaseScan](https://sepolia.basescan.org/address/0x4525f41f2c49eb476e9e0f0fcac96cc6eec16ea7) |
+| SimpleBudgetWallet | `0x3300416DB028aE9eC43f32835aF652Fa87200874` | [View on BaseScan](https://sepolia.basescan.org/address/0x3300416db028ae9ec43f32835af652fa87200874) |
+| SimpleBudgetWalletFactory | `0xAf8fb11822deC6Df35e17255B1A6bbF268a6b4e4` | [View on BaseScan](https://sepolia.basescan.org/address/0xaf8fb11822dec6df35e17255b1a6bbf268a6b4e4) |
 
 ## Frontend Environment Variables
 
 Add these to your frontend `.env.local`:
 
 ```env
-NEXT_PUBLIC_BUDGET_WALLET_ADDRESS=0x9b76D8eAdF1CA6e1cDc2ECb2Ac2df13Bf5CF068C
-NEXT_PUBLIC_FACTORY_ADDRESS=0x4525f41f2c49EB476E9e0f0fCac96Cc6eec16ea7
+NEXT_PUBLIC_BUDGET_WALLET_ADDRESS=0x3300416DB028aE9eC43f32835aF652Fa87200874
+NEXT_PUBLIC_FACTORY_ADDRESS=0xAf8fb11822deC6Df35e17255B1A6bbF268a6b4e4
 NEXT_PUBLIC_CHAIN_ID=84532
 NEXT_PUBLIC_NETWORK_NAME=Base Sepolia
 ```
@@ -35,6 +35,7 @@ NEXT_PUBLIC_NETWORK_NAME=Base Sepolia
 - Budget management with spending buckets
 - Monthly spending limits
 - Multi-token support (ETH + ERC20)
+- Unallocated funds withdrawal functionality
 - Delegate permissions
 - Emergency functions
 - Access control with admin/spender roles

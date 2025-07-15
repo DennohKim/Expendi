@@ -48,25 +48,14 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   const { refetch: refetchBuckets } = useUserBuckets(queryAddress);
   const { refetch: refetchTransactions } = useAllTransactions(queryAddress);
 
-   // Calculate allocated balance (total - unallocated) - using user data structure
+   // Calculate unallocated balance directly from UNALLOCATED bucket
    const userData = walletData?.user;
-   const totalBalance = BigInt(userData?.totalBalance || '0');
    console.log("User data:", userData)
    
-   // Calculate allocated balance from all token balances in buckets except UNALLOCATED
-   const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: Bucket) => {
-     if (bucket.name !== 'UNALLOCATED') {
-       // Sum all token balances in this bucket
-       const bucketTokenBalance = bucket.tokenBalances?.reduce((tokenSum: bigint, tokenBalance: TokenBalance) => {
-         return tokenSum + BigInt(tokenBalance.balance || '0');
-       }, BigInt(0)) || BigInt(0);
-       return sum + bucketTokenBalance;
-     }
-     return sum;
+   // Calculate unallocated balance from UNALLOCATED bucket
+   const unallocatedBalance = userData?.buckets?.find(bucket => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: TokenBalance) => {
+     return sum + BigInt(tokenBalance.balance || '0');
    }, BigInt(0)) || BigInt(0);
-   
-   // Unallocated is total minus allocated
-   const unallocatedBalance = totalBalance - allocatedBalance;
 
 
   const handleFundBucket = async (e: React.FormEvent) => {

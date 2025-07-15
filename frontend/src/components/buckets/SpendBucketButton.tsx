@@ -167,7 +167,7 @@ export function SpendBucketButton({
               <p className="font-medium">{availableBalance} USDC</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Monthly Limit</p>
+              <p className="text-sm text-muted-foreground">Remaining Budget</p>
               <p className="font-medium">{remainingBudget.toFixed(2)} USDC</p>
             </div>
           </div>

@@ -97,6 +97,22 @@ CREATE TABLE IF NOT EXISTS token_transfers (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Withdrawals table for unallocated and emergency withdrawals
+CREATE TABLE IF NOT EXISTS withdrawals (
+    id SERIAL PRIMARY KEY,
+    wallet_address VARCHAR(42) NOT NULL,
+    user_address VARCHAR(42) NOT NULL,
+    recipient_address VARCHAR(42) NOT NULL,
+    token_address VARCHAR(42) NOT NULL,
+    amount DECIMAL(78, 0) NOT NULL,
+    withdrawal_type VARCHAR(50) NOT NULL, -- 'unallocated' or 'emergency'
+    block_number BIGINT NOT NULL,
+    transaction_hash VARCHAR(66) NOT NULL,
+    log_index INTEGER NOT NULL,
+    timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_events_contract_address ON events(contract_address);
 CREATE INDEX IF NOT EXISTS idx_events_event_name ON events(event_name);
@@ -124,6 +140,14 @@ CREATE INDEX IF NOT EXISTS idx_token_transfers_token_address ON token_transfers(
 CREATE INDEX IF NOT EXISTS idx_token_transfers_from_address ON token_transfers(from_address);
 CREATE INDEX IF NOT EXISTS idx_token_transfers_to_address ON token_transfers(to_address);
 CREATE INDEX IF NOT EXISTS idx_token_transfers_block_number ON token_transfers(block_number);
+
+CREATE INDEX IF NOT EXISTS idx_withdrawals_wallet_address ON withdrawals(wallet_address);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_user_address ON withdrawals(user_address);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_recipient_address ON withdrawals(recipient_address);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_token_address ON withdrawals(token_address);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_withdrawal_type ON withdrawals(withdrawal_type);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_timestamp ON withdrawals(timestamp);
+CREATE INDEX IF NOT EXISTS idx_withdrawals_block_number ON withdrawals(block_number);
 
 -- Trigger function to update updated_at column
 CREATE OR REPLACE FUNCTION update_updated_at_column()

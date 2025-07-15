@@ -386,6 +386,36 @@ export class SpentFromBucket__Params {
   }
 }
 
+export class UnallocatedWithdraw extends ethereum.Event {
+  get params(): UnallocatedWithdraw__Params {
+    return new UnallocatedWithdraw__Params(this);
+  }
+}
+
+export class UnallocatedWithdraw__Params {
+  _event: UnallocatedWithdraw;
+
+  constructor(event: UnallocatedWithdraw) {
+    this._event = event;
+  }
+
+  get user(): Address {
+    return this._event.parameters[0].value.toAddress();
+  }
+
+  get token(): Address {
+    return this._event.parameters[1].value.toAddress();
+  }
+
+  get amount(): BigInt {
+    return this._event.parameters[2].value.toBigInt();
+  }
+
+  get recipient(): Address {
+    return this._event.parameters[3].value.toAddress();
+  }
+}
+
 export class Unpaused extends ethereum.Event {
   get params(): Unpaused__Params {
     return new Unpaused__Params(this);
@@ -1642,6 +1672,44 @@ export class UpdateBucketCall__Outputs {
   _call: UpdateBucketCall;
 
   constructor(call: UpdateBucketCall) {
+    this._call = call;
+  }
+}
+
+export class WithdrawUnallocatedCall extends ethereum.Call {
+  get inputs(): WithdrawUnallocatedCall__Inputs {
+    return new WithdrawUnallocatedCall__Inputs(this);
+  }
+
+  get outputs(): WithdrawUnallocatedCall__Outputs {
+    return new WithdrawUnallocatedCall__Outputs(this);
+  }
+}
+
+export class WithdrawUnallocatedCall__Inputs {
+  _call: WithdrawUnallocatedCall;
+
+  constructor(call: WithdrawUnallocatedCall) {
+    this._call = call;
+  }
+
+  get token(): Address {
+    return this._call.inputValues[0].value.toAddress();
+  }
+
+  get amount(): BigInt {
+    return this._call.inputValues[1].value.toBigInt();
+  }
+
+  get recipient(): Address {
+    return this._call.inputValues[2].value.toAddress();
+  }
+}
+
+export class WithdrawUnallocatedCall__Outputs {
+  _call: WithdrawUnallocatedCall;
+
+  constructor(call: WithdrawUnallocatedCall) {
     this._call = call;
   }
 }

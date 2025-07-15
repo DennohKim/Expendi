@@ -23,7 +23,15 @@ export interface WalletCreatedEvent extends IndexedEvent {
   eventData: {
     user: Address;
     wallet: Address;
-    template: Address;
+    salt: bigint;
+  };
+}
+
+export interface WalletRegisteredEvent extends IndexedEvent {
+  eventName: 'WalletRegistered';
+  eventData: {
+    user: Address;
+    wallet: Address;
   };
 }
 
@@ -65,6 +73,25 @@ export interface DelegatePermissionChangedEvent extends IndexedEvent {
   };
 }
 
+export interface UnallocatedWithdrawEvent extends IndexedEvent {
+  eventName: 'UnallocatedWithdraw';
+  eventData: {
+    user: Address;
+    token: Address;
+    amount: bigint;
+    recipient: Address;
+  };
+}
+
+export interface EmergencyWithdrawEvent extends IndexedEvent {
+  eventName: 'EmergencyWithdraw';
+  eventData: {
+    user: Address;
+    token: Address;
+    amount: bigint;
+  };
+}
+
 // USDC Transfer Events
 export interface TransferEvent extends IndexedEvent {
   eventName: 'Transfer';
@@ -78,10 +105,13 @@ export interface TransferEvent extends IndexedEvent {
 // Union type for all events
 export type ContractEvent = 
   | WalletCreatedEvent
+  | WalletRegisteredEvent
   | BucketCreatedEvent
   | SpendingEvent
   | BucketLimitUpdatedEvent
   | DelegatePermissionChangedEvent
+  | UnallocatedWithdrawEvent
+  | EmergencyWithdrawEvent
   | TransferEvent;
 
 // Indexer Status

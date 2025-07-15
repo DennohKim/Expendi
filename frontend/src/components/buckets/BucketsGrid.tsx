@@ -39,7 +39,7 @@ export function BucketsGrid( {buckets, loading, error}: BucketsProps ) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {[...Array(1)].map((_, i) => (
+        {[...Array(2)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
               <div className="space-y-4">

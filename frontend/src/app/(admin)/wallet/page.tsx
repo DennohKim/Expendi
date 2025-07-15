@@ -14,6 +14,7 @@ import {  formatUnits, parseUnits, encodeFunctionData } from 'viem';
 import { useBalance, useAccount } from 'wagmi';
 import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wallet';
 import { useSmartAccount } from '@/context/SmartAccountContext';
+import AllocateFunds from '@/components/wallet/AllocateFunds';
 
 const WalletPage = () => {
   const { address: eoaAddress } = useAccount();
@@ -62,7 +63,6 @@ const WalletPage = () => {
 
   // Calculate allocated balance (total - unallocated) - using user data structure
   const userData = data?.user;
-  const totalBalance = BigInt(userData?.totalBalance || '0');
   console.log("User data:", userData)
   
   // Calculate allocated balance from all token balances in buckets except UNALLOCATED
@@ -77,21 +77,29 @@ const WalletPage = () => {
     return sum;
   }, BigInt(0)) || BigInt(0);
   
-  // Unallocated is total minus allocated
-  const unallocatedBalance = totalBalance - allocatedBalance;
+  // Calculate unallocated balance from UNALLOCATED bucket
+  const unallocatedBalance = userData?.buckets?.find(bucket => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: { balance: string }) => {
+    return sum + BigInt(tokenBalance.balance || '0');
+  }, BigInt(0)) || BigInt(0);
+  
+  // Calculate actual total balance as sum of all bucket balances
+  const actualTotalBalance = allocatedBalance + unallocatedBalance;
   
   // Debug logging
   console.log("🔍 Balance Debug:", {
-    totalBalance: userData?.totalBalance?.toString(),
+    originalTotalBalance: userData?.totalBalance?.toString(),
+    actualTotalBalance: actualTotalBalance.toString(),
     unallocatedBalance: unallocatedBalance.toString(),
     allocatedBalance: allocatedBalance.toString(),
     hasData: !!userData,
-    walletsCreated: userData?.walletsCreated?.length
+    walletsCreated: userData?.walletsCreated?.length,
+    allBuckets: userData?.buckets?.map(b => ({ name: b.name, tokenBalances: b.tokenBalances })),
+    unallocatedBucket: userData?.buckets?.find(bucket => bucket.name === 'UNALLOCATED')
   });
 
   // Handle the complete deposit process using smart account batch transaction
-  const handleDeposit = async () => {
-    if (!depositAmount || parseFloat(depositAmount) <= 0) {
+  const handleDeposit = async (amount: string) => {
+    if (!amount || parseFloat(amount) <= 0) {
       toast.error('Please enter a valid amount');
       return;
     }
@@ -106,12 +114,12 @@ const WalletPage = () => {
       return;
     }
 
-    const amount = parseUnits(depositAmount, 6); // USDC has 6 decimals
+    const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
 
     // Check if user has sufficient balance
-    if (!walletBalance || walletBalance.value < amount) {
+    if (!walletBalance || walletBalance.value < parsedAmount) {
       const currentBalance = walletBalance ? formatBalance(walletBalance.value) : '0.00';
-      const neededAmount = formatBalance(amount);
+      const neededAmount = formatBalance(parsedAmount);
       toast.error(`Insufficient USDC balance. You have ${currentBalance} USDC but need ${neededAmount} USDC`);
       return;
     }
@@ -138,14 +146,14 @@ const WalletPage = () => {
           }
         ],
         functionName: 'approve',
-        args: [userData?.walletsCreated?.[0]?.wallet as `0x${string}`, amount],
+        args: [userData?.walletsCreated?.[0]?.wallet as `0x${string}`, parsedAmount],
       });
 
       // Encode deposit function call
       const depositCallData = encodeFunctionData({
         abi: BUDGET_WALLET_ABI,
         functionName: 'depositToken',
-        args: [MOCK_USDC_ADDRESS, amount],
+        args: [MOCK_USDC_ADDRESS, parsedAmount],
       });
 
       // Create batch calls array
@@ -179,12 +187,12 @@ const WalletPage = () => {
       
       // Success - now balances should be updated
       toast.success('Funds successfully allocated to budget wallet!');
-      setDepositAmount('');
-      setIsDepositDialogOpen(false);
       
       // Refresh balances after confirmation
-      refetch();
-      refetchWalletBalance();
+      setTimeout(() => {
+        refetch();
+        refetchWalletBalance();
+      }, 1000);
       
     } catch (error: unknown) {
       console.error('Batch deposit process failed:', error);
@@ -213,7 +221,16 @@ const WalletPage = () => {
       } else {
         toast.error('Batch transaction failed: ' + (errorMessage || 'Unknown error'));
       }
+    } finally {
+      setIsDepositing(false);
     }
+  };
+
+  // Handle dialog deposit
+  const handleDialogDeposit = async () => {
+    await handleDeposit(depositAmount);
+    setDepositAmount('');
+    setIsDepositDialogOpen(false);
   };
 
   if (loading) {
@@ -330,11 +347,13 @@ const WalletPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="grid grid-cols-12 gap-4 md:gap-6">
+
+         {/* Quick Spend Tab - Above buckets on small/medium, right side on large */}
+      <div className="col-span-12 h-auto mb-4 w-full xl:col-span-8 xl:h-[calc(100vh-120px)] xl:mb-0 overflow-y-auto pr-2">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Budget Wallet
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -406,13 +425,14 @@ const WalletPage = () => {
                 Balance Overview
               </span>
               
-              {/* Budget Wallet Balance */}
-              <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+ {/* Budget Wallet Balance */}
+ <div className="text-center p-6 bg-[#ff7e5f]/10 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg">
                 <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                   Budget Wallet Balance
                 </div>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                  {formatBalance(totalBalance)} USDC
+                  {formatBalance(actualTotalBalance)} USDC
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Available for budgeting
@@ -435,6 +455,8 @@ const WalletPage = () => {
                   Available to deposit
                 </div>
               </div>
+              </div>
+             
             </div>
 
             {/* Quick Actions */}
@@ -454,7 +476,7 @@ const WalletPage = () => {
               <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
                 <DialogTrigger asChild>
                   <Button 
-                    variant="default" 
+                    variant="primary" 
                     className="w-full"
                     disabled={!walletBalance || walletBalance.value === BigInt(0)}
                   >
@@ -496,7 +518,8 @@ const WalletPage = () => {
                       </Button>
                       <Button
                         className="flex-1"
-                        onClick={handleDeposit}
+                        variant="primary"
+                        onClick={handleDialogDeposit}
                         disabled={isDepositing || !depositAmount}
                       >
                         {isDepositing ? 'Processing...' : 'Deposit'}
@@ -551,7 +574,34 @@ const WalletPage = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+      
+      {/* User Buckets Grid - Below QuickSpend on small/medium, left side on large */}
+      <div className="col-span-12 h-[calc(100vh-120px)]  xl:col-span-4">
+      <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+           Control Funds 
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Allocate or withdraw funds from your budget wallet
+          </p>
+        </div>
+        <AllocateFunds 
+          walletBalance={walletBalance?.value || BigInt(0)} 
+          unallocatedBalance={unallocatedBalance || BigInt(0)}
+          handleDeposit={handleDeposit} 
+          isDepositing={isDepositing}
+          onDepositSuccess={() => {
+            // Refresh balances after successful deposit
+            setTimeout(() => {
+              refetch();
+              refetchWalletBalance();
+            }, 1000);
+          }}
+        />
+      </div>
+        
+      </div>
+
   );
 };
 

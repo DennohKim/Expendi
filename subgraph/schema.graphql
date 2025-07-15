@@ -96,10 +96,10 @@ enum DepositType {
 }
 
 # Withdrawal/Spending transaction
-type Withdrawal implements Transaction @entity(immutable: true) {
+type Withdrawal @entity(immutable: true) {
   id: ID! # transaction_hash-log_index
   user: User!
-  bucket: Bucket!
+  bucket: Bucket # Nullable for unallocated withdrawals
   amount: BigInt!
   token: Token!
   timestamp: BigInt!
@@ -113,6 +113,7 @@ type Withdrawal implements Transaction @entity(immutable: true) {
 
 enum WithdrawalType {
   BUCKET_SPENDING
+  UNALLOCATED_WITHDRAW
   EMERGENCY_WITHDRAW
 }
 

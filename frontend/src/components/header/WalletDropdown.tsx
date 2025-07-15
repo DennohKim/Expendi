@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Wallet, LogOut, User, Mail, Settings, HelpCircle, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
+import Link from "next/link";
 
 export default function WalletDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -137,8 +138,10 @@ export default function WalletDropdown() {
             onClick={closeDropdown}
             className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 cursor-pointer"
           >
-            <Settings className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300" />
-            Wallet Settings
+            <Link href="/wallet">
+              <Wallet className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300" />
+              Wallet 
+            </Link>
           </DropdownMenuItem>
 
           <DropdownMenuItem

@@ -7,7 +7,13 @@ import {
   getWalletsByUser, 
   getBucketsByWallet, 
   getSpendingByWallet,
-  getIndexerStatus
+  getIndexerStatus,
+  getTransfersByWallet,
+  getTransfersByType,
+  getTransfersByToken,
+  getWithdrawalsByWallet,
+  getWithdrawalsByUser,
+  getWithdrawalsByType
 } from '../database/models';
 import { getIndexerInfo } from '../services/indexer';
 import { ApiResponse, EventQueryParams } from '../types';
@@ -212,6 +218,152 @@ router.get('/tokens/transfers', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching token transfer events:', error);
     res.status(500).json(createResponse(undefined, 'Failed to fetch token transfers'));
+  }
+});
+
+// Get classified transfers by wallet
+router.get('/transfers/wallet/:address', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const { limit = '100' } = req.query;
+    
+    const transfers = await getTransfersByWallet(address as Address, parseInt(limit as string));
+    
+    res.json(createResponse(transfers));
+  } catch (error) {
+    console.error('Error fetching transfers by wallet:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch transfers'));
+  }
+});
+
+// Get transfers by type (deposit, withdrawal, bucket_transfer, external)
+router.get('/transfers/type/:type', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { type } = req.params;
+    const { limit = '100' } = req.query;
+    
+    if (!['deposit', 'withdrawal', 'bucket_transfer', 'external'].includes(type)) {
+      res.status(400).json(createResponse(undefined, 'Invalid transfer type'));
+      return;
+    }
+    
+    const transfers = await getTransfersByType(type, parseInt(limit as string));
+    
+    res.json(createResponse(transfers));
+  } catch (error) {
+    console.error('Error fetching transfers by type:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch transfers'));
+  }
+});
+
+// Get transfers by token address
+router.get('/transfers/token/:address', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const { limit = '100' } = req.query;
+    
+    const transfers = await getTransfersByToken(address as Address, parseInt(limit as string));
+    
+    res.json(createResponse(transfers));
+  } catch (error) {
+    console.error('Error fetching transfers by token:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch transfers'));
+  }
+});
+
+// Get wallet deposits (transfers TO a wallet)
+router.get('/wallet/:address/deposits', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const { limit = '100' } = req.query;
+    
+    const transfers = await getTransfersByWallet(address as Address, parseInt(limit as string));
+    // Filter for deposits only
+    const deposits = transfers.filter(t => t.transfer_type === 'deposit' && t.to_address.toLowerCase() === (address as string).toLowerCase());
+    
+    res.json(createResponse(deposits));
+  } catch (error) {
+    console.error('Error fetching wallet deposits:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch deposits'));
+  }
+});
+
+// Get wallet withdrawals (transfers FROM a wallet)
+router.get('/wallet/:address/withdrawals', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const { limit = '100' } = req.query;
+    
+    const transfers = await getTransfersByWallet(address as Address, parseInt(limit as string));
+    // Filter for withdrawals only
+    const withdrawals = transfers.filter(t => t.transfer_type === 'withdrawal' && t.from_address.toLowerCase() === (address as string).toLowerCase());
+    
+    res.json(createResponse(withdrawals));
+  } catch (error) {
+    console.error('Error fetching wallet withdrawals:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch withdrawals'));
+  }
+});
+
+// Get structured withdrawals by wallet address
+router.get('/wallet/:address/structured-withdrawals', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const { limit = '100', offset = '0' } = req.query;
+    
+    const withdrawals = await getWithdrawalsByWallet(
+      address as Address, 
+      parseInt(limit as string),
+      parseInt(offset as string)
+    );
+    
+    res.json(createResponse(withdrawals));
+  } catch (error) {
+    console.error('Error fetching structured withdrawals:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch structured withdrawals'));
+  }
+});
+
+// Get structured withdrawals by user address
+router.get('/user/:address/withdrawals', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const { limit = '100', offset = '0' } = req.query;
+    
+    const withdrawals = await getWithdrawalsByUser(
+      address as Address, 
+      parseInt(limit as string),
+      parseInt(offset as string)
+    );
+    
+    res.json(createResponse(withdrawals));
+  } catch (error) {
+    console.error('Error fetching user withdrawals:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch user withdrawals'));
+  }
+});
+
+// Get withdrawals by type (unallocated or emergency)
+router.get('/withdrawals/type/:type', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { type } = req.params;
+    const { limit = '100', offset = '0' } = req.query;
+    
+    if (type !== 'unallocated' && type !== 'emergency') {
+      res.status(400).json(createResponse(undefined, 'Invalid withdrawal type. Must be "unallocated" or "emergency"'));
+      return;
+    }
+    
+    const withdrawals = await getWithdrawalsByType(
+      type as 'unallocated' | 'emergency',
+      parseInt(limit as string),
+      parseInt(offset as string)
+    );
+    
+    res.json(createResponse(withdrawals));
+  } catch (error) {
+    console.error('Error fetching withdrawals by type:', error);
+    res.status(500).json(createResponse(undefined, 'Failed to fetch withdrawals by type'));
   }
 });
 

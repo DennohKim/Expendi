@@ -103,10 +103,14 @@ export function CreateBucket() {
       setMonthlyLimit('')
       
       // Refetch wallet data and buckets to update the UI
-      await Promise.all([
-        refetch(),
-        refetchBuckets()
-      ])
+      // await Promise.all([
+      //   refetch(),
+      //   refetchBuckets()
+      // ])
+      setTimeout(() => {
+        refetchBuckets();
+        refetch();
+      }, 1000); // Delay refetch to avoid rate limiting
 
     } catch (error) {
       console.error('Error creating bucket:', error)
