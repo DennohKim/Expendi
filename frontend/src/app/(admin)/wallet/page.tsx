@@ -16,6 +16,11 @@ import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wal
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import AllocateFunds from '@/components/wallet/AllocateFunds';
 
+interface Bucket {
+  name: string;
+  tokenBalances?: Array<{ balance: string }>;
+}
+
 const WalletPage = () => {
   const { address: eoaAddress } = useAccount();
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
@@ -66,7 +71,7 @@ const WalletPage = () => {
   console.log("User data:", userData)
   
   // Calculate allocated balance from all token balances in buckets except UNALLOCATED
-  const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: { name: string; tokenBalances?: Array<{ balance: string }> }) => {
+  const allocatedBalance = userData?.buckets?.reduce((sum: bigint, bucket: Bucket) => {
     if (bucket.name !== 'UNALLOCATED') {
       // Sum all token balances in this bucket
       const bucketTokenBalance = bucket.tokenBalances?.reduce((tokenSum: bigint, tokenBalance: { balance: string }) => {
@@ -78,7 +83,7 @@ const WalletPage = () => {
   }, BigInt(0)) || BigInt(0);
   
   // Calculate unallocated balance from UNALLOCATED bucket
-  const unallocatedBalance = userData?.buckets?.find(bucket => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: { balance: string }) => {
+  const unallocatedBalance = userData?.buckets?.find((bucket: Bucket) => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: { balance: string }) => {
     return sum + BigInt(tokenBalance.balance || '0');
   }, BigInt(0)) || BigInt(0);
   
@@ -93,8 +98,8 @@ const WalletPage = () => {
     allocatedBalance: allocatedBalance.toString(),
     hasData: !!userData,
     walletsCreated: userData?.walletsCreated?.length,
-    allBuckets: userData?.buckets?.map(b => ({ name: b.name, tokenBalances: b.tokenBalances })),
-    unallocatedBucket: userData?.buckets?.find(bucket => bucket.name === 'UNALLOCATED')
+    allBuckets: userData?.buckets?.map((b: Bucket) => ({ name: b.name, tokenBalances: b.tokenBalances })),
+    unallocatedBucket: userData?.buckets?.find((bucket: Bucket) => bucket.name === 'UNALLOCATED')
   });
 
   // Handle the complete deposit process using smart account batch transaction

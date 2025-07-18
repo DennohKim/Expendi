@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TokenBalance {
   id: string;
@@ -52,8 +53,15 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
   const { address } = useAccount();
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
+  const [mobileNetwork, setMobileNetwork] = useState<'Safaricom' | 'Airtel'>('Safaricom');
   const [isSpending, setIsSpending] = useState(false);
   const [selectedBucketName, setSelectedBucketName] = useState('');
+  const [validationResult, setValidationResult] = useState<any>(null);
+  const [isValidating, setIsValidating] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
@@ -104,7 +112,14 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
       return;
     }
 
-    if (!recipient || !isAddress(recipient)) {
+    // Check if either recipient address or phone number is provided
+    if (!recipient && !phoneNumber) {
+      toast.error('Please enter either a recipient address or phone number');
+      return;
+    }
+
+    // If recipient address is provided, validate it
+    if (recipient && !isAddress(recipient)) {
       toast.error('Please enter a valid recipient address');
       return;
     }
@@ -144,29 +159,62 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
       setIsSpending(true);
       toast.info(`Spending ${amount} USDC from ${bucketName}...`);
 
-      // Use smart account client directly for gas sponsorship
-      const txHash = await clientToUse.writeContract({
-        address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
-        abi: BUDGET_WALLET_ABI,
-        functionName: 'spendFromBucket',
-        args: [
-          queryAddress, // user
-          bucketName, // bucketName
-          parsedAmount, // amount
-          recipient as `0x${string}`, // recipient
-          MOCK_USDC_ADDRESS, // token (USDC)
-          '0x' as `0x${string}` // data (empty)
-        ],
-        account: clientToUse.account,
-        chain: clientToUse.chain
-      });
-
-      toast.success(`Successfully spent ${amount} USDC from ${bucketName}!`);
+      let txHash: string;
+      
+      if (phoneNumber) {
+        // Mobile payment flow
+        const settlementAddress = '0x8005ee53E57aB11E11eAA4EFe07Ee3835Dc02F98';
+        
+        // First send to settlement address
+        txHash = await clientToUse.writeContract({
+          address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
+          abi: BUDGET_WALLET_ABI,
+          functionName: 'spendFromBucket',
+          args: [
+            queryAddress, // user
+            bucketName, // bucketName
+            parsedAmount, // amount
+            settlementAddress as `0x${string}`, // settlement address
+            MOCK_USDC_ADDRESS, // token (USDC)
+            '0x' as `0x${string}` // data (empty)
+          ],
+          account: clientToUse.account,
+          chain: clientToUse.chain
+        });
+        
+        // Then initiate mobile payment
+        await sendMobilePayment(txHash);
+        toast.success(`Successfully initiated mobile payment of ${amount} USDC to ${phoneNumber}!`);
+      } else {
+        // Regular wallet transfer
+        const finalRecipient = recipient;
+        
+        txHash = await clientToUse.writeContract({
+          address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
+          abi: BUDGET_WALLET_ABI,
+          functionName: 'spendFromBucket',
+          args: [
+            queryAddress, // user
+            bucketName, // bucketName
+            parsedAmount, // amount
+            finalRecipient as `0x${string}`, // recipient
+            MOCK_USDC_ADDRESS, // token (USDC)
+            '0x' as `0x${string}` // data (empty)
+          ],
+          account: clientToUse.account,
+          chain: clientToUse.chain
+        });
+        
+        toast.success(`Successfully spent ${amount} USDC from ${bucketName}!`);
+      }
+      
       console.log('Bucket spend transaction hash:', txHash);
 
       // Reset form
       setAmount('');
       setRecipient('');
+      setPhoneNumber('');
+      setValidationResult(null);
       
       // Refetch buckets to update the UI
       setTimeout(() => {
@@ -182,10 +230,120 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
     }
   };
 
+  const validateMobileNumber = async () => {
+    if (!phoneNumber) return;
+    
+    setIsValidating(true);
+    try {
+      const response = await fetch('/api/pretium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'validation',
+          type: paymentType,
+          shortcode: phoneNumber,
+          mobile_network: mobileNetwork,
+        }),
+      });
+      
+      const result = await response.json();
+      if (response.ok) {
+        setValidationResult(result);
+        toast.success('Mobile number validated successfully');
+      } else {
+        toast.error(result.error || 'Validation failed');
+      }
+    } catch (error) {
+      toast.error('Failed to validate mobile number');
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const sendMobilePayment = async (transactionHash: string) => {
+    try {
+      const response = await fetch('/api/pretium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'pay',
+          transaction_hash: transactionHash,
+          amount: amount,
+          shortcode: phoneNumber,
+          type: paymentType,
+          mobile_network: mobileNetwork,
+          callback_url: window.location.origin + '/api/pretium/callback',
+        }),
+      });
+      
+      const result = await response.json();
+      if (response.ok) {
+        toast.success('Mobile payment initiated successfully');
+        return result;
+      } else {
+        throw new Error(result.error || 'Payment failed');
+      }
+    } catch (error) {
+      toast.error('Failed to process mobile payment');
+      throw error;
+    }
+  };
+
+  const fetchExchangeRate = async () => {
+    setIsLoadingRate(true);
+    try {
+      const response = await fetch('/api/pretium', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'exchange-rate',
+          currency_code: 'KES',
+        }),
+      });
+      
+      const result = await response.json();
+      if (response.ok && result.data) {
+        // Use the buying_rate as it's the rate for converting USDC to KES
+        setExchangeRate(result.data.buying_rate);
+      } else {
+        console.error('Failed to fetch exchange rate:', result.error || 'No exchange rate data');
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+    } finally {
+      setIsLoadingRate(false);
+    }
+  };
+
+  // Fetch exchange rate when component mounts (for mobile payments)
+  React.useEffect(() => {
+    fetchExchangeRate();
+  }, []);
+
+  // Auto-validate phone number when complete
+  React.useEffect(() => {
+    if (phoneNumber && phoneNumber.length >= 10 && !isValidating) {
+      // Clear previous validation result
+      setValidationResult(null);
+      // Add a small delay to avoid too many API calls while typing
+      const timeoutId = setTimeout(() => {
+        validateMobileNumber();
+      }, 500);
+      
+      return () => clearTimeout(timeoutId);
+    } else if (phoneNumber.length < 10) {
+      // Clear validation result if number is incomplete
+      setValidationResult(null);
+    }
+  }, [phoneNumber, paymentType, mobileNetwork]);
+
   const availableBalance = formatUnits(usdcBalance, 6);
   const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
   const monthlyLimitFormatted = formatUnits(BigInt(monthlyLimit), 6);
   const remainingBudget = Math.max(0, parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted));
+
+  // Calculate KES amount
+  const kesAmount = amount && exchangeRate ? (parseFloat(amount) * exchangeRate).toFixed(2) : null;
 
   return (
     <Card>
@@ -224,17 +382,101 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
           )}
           
           <div>
-            <Label htmlFor="recipient" className="pb-2">Recipient Address</Label>
-            <Input
-              id="recipient"
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-              placeholder="0x..."
-              required
-            />
-            <div className="text-sm text-muted-foreground mt-1">
-              Enter the wallet address to send USDC to
-            </div>
+            <Label className="pb-2">Recipient</Label>
+            <Tabs defaultValue="address" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="address">Wallet Address</TabsTrigger>
+                <TabsTrigger value="phone">Phone Number</TabsTrigger>
+              </TabsList>
+              <TabsContent value="address" className="space-y-2">
+                <Input
+                  id="recipient"
+                  value={recipient}
+                  onChange={(e) => setRecipient(e.target.value)}
+                  placeholder="0x..."
+                />
+                <div className="text-sm text-muted-foreground">
+                  Enter the wallet address to send USDC to
+                </div>
+              </TabsContent>
+              <TabsContent value="phone" className="space-y-4">
+                <div className="flex justify-between items-center pt-4">
+                <div className="space-y-2">
+                  <Label>Payment Type</Label>
+                  <Select value={paymentType} onValueChange={(value: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS') => setPaymentType(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MOBILE">Mobile Number</SelectItem>
+                      <SelectItem value="PAYBILL">Paybill</SelectItem>
+                      <SelectItem value="BUY_GOODS">Buy Goods</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Mobile Network</Label>
+                  <Select value={mobileNetwork} onValueChange={(value) => setMobileNetwork(value as 'Safaricom' | 'Airtel')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select network" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Safaricom">Safaricom</SelectItem>
+                      <SelectItem value="Airtel">Airtel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                </div>
+                
+                {exchangeRate && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-blue-700 font-medium">Exchange Rate:</span>
+                      <span className="text-blue-900">1 USDC = {exchangeRate.toFixed(2)} KES</span>
+                    </div>
+                    {kesAmount && (
+                      <div className="flex justify-between items-center text-sm mt-1">
+                        <span className="text-blue-700">You will send:</span>
+                        <span className="text-blue-900 font-medium">{kesAmount} KES</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+               
+                <div className="space-y-2">
+                  <Label htmlFor="phone">
+                    {paymentType === 'MOBILE' ? 'Phone Number' : 
+                     paymentType === 'PAYBILL' ? 'Paybill Number' : 'Till Number'}
+                  </Label>
+                  <div className="space-y-2">
+                    <Input
+                      id="phone"
+                      value={phoneNumber}
+                      onChange={(e) => {
+                        setPhoneNumber(e.target.value);
+                      }}
+                      placeholder={paymentType === 'MOBILE' ? '0712345678' : 
+                                 paymentType === 'PAYBILL' ? '123456' : '890123'}
+                    />
+                    {isValidating && (
+                      <div className="text-sm text-blue-600">
+                        Validating number...
+                      </div>
+                    )}
+                  </div>
+                  {validationResult && (
+                    <div className="p-2 bg-green-50 border border-green-200 rounded text-sm">
+                     {validationResult.data?.public_name || 'Valid recipient'}
+                    </div>
+                  )}
+                  <div className="text-sm text-muted-foreground">
+                    Enter the {paymentType.toLowerCase()} number to send Kenya Shillings to
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
           
           {selectedBucket && (
@@ -259,10 +501,10 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
           <div className="flex justify-end gap-2">
             <Button 
               type="submit" 
-              disabled={isSpending || !amount || !recipient || !selectedBucketName} 
+              disabled={isSpending || !amount || (!recipient && !phoneNumber) || !selectedBucketName} 
               variant="primary"
             >
-              {isSpending ? 'Spending...' : 'Send USDC'}
+              {isSpending ? 'Spending...' : phoneNumber ? 'Send to Mobile Number' : 'Send USDC'}
             </Button>
           </div>
         </form>
