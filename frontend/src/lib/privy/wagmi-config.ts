@@ -4,7 +4,7 @@ import { base, baseSepolia } from 'viem/chains';
 import { http } from 'viem';
 
 export const config = createConfig({
-  chains: [baseSepolia, base],
+  chains: [base, baseSepolia],
   transports: {
     [baseSepolia.id]: http(),
     [base.id]: http(),

@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {  formatUnits, parseUnits, encodeFunctionData } from 'viem';
-import { useBalance, useAccount } from 'wagmi';
-import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wallet';
+import { useBalance, useAccount, useChainId } from 'wagmi';
+import { BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wallet';
+import { getNetworkConfig } from '@/lib/contracts/config';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import AllocateFunds from '@/components/wallet/AllocateFunds';
 
@@ -29,6 +30,7 @@ const WalletPage = () => {
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const { smartAccountClient } = useSmartAccount();
+  const chainId = useChainId();
   
   // Use smart account address if available, fallback to EOA
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
@@ -36,11 +38,24 @@ const WalletPage = () => {
   const { data, loading, error, refetch } = useUserBudgetWallet(queryAddress);
   console.log("Wallet data", data?.user?.walletsCreated[0].wallet)
 
+  // Get network configuration for current chain
+  const networkConfig = getNetworkConfig(chainId);
+  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
-  // Get user's MockUSDC balance from their smart account wallet
+  // DEBUG: Log current chain and addresses
+  console.log("🔍 DEBUG Chain Info:", {
+    chainId,
+    networkName: networkConfig.NETWORK_NAME,
+    usdcAddress,
+    isBaseMainnet: chainId === 8453,
+    isBaseSepolia: chainId === 84532,
+    subgraphUrl: networkConfig.SUBGRAPH_URL
+  });
+
+  // Get user's USDC balance from their smart account wallet
   const { data: walletBalance, isLoading: walletBalanceLoading, refetch: refetchWalletBalance } = useBalance({
     address: queryAddress,
-    token: MOCK_USDC_ADDRESS,
+    token: usdcAddress,
   });
   console.log("Query address being used:", data?.queryAddress);
 
@@ -158,13 +173,13 @@ const WalletPage = () => {
       const depositCallData = encodeFunctionData({
         abi: BUDGET_WALLET_ABI,
         functionName: 'depositToken',
-        args: [MOCK_USDC_ADDRESS, parsedAmount],
+        args: [usdcAddress, parsedAmount],
       });
 
       // Create batch calls array
       const batchCalls = [
         {
-          to: MOCK_USDC_ADDRESS,
+          to: usdcAddress,
           data: approveCallData,
         },
         {

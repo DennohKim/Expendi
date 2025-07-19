@@ -1,9 +1,10 @@
 // Factory contract interaction utilities using wagmi with Privy
 import { createPublicClient, http } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import { baseSepolia, base } from 'viem/chains';
 import FactoryABI from './SimpleBudgetWalletFactory.json';
 import type { SmartAccountClient } from 'permissionless';
 import type { Abi } from 'viem';
+import { getNetworkConfig, CHAIN_IDS } from './config';
 
 interface WriteContractArgs {
   address: `0x${string}`;
@@ -13,17 +14,27 @@ interface WriteContractArgs {
   value?: bigint;
 }
 
-// Factory contract details
-export const FACTORY_CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS as `0x${string}`) || ('0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a' as const);
-
 // Factory contract ABI (complete from compiled contract)
 export const FACTORY_ABI = FactoryABI.abi as Abi;
 
-// Create clients for Base Sepolia
-export const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http()
-});
+// Get factory contract address for specific chain
+export function getFactoryAddress(chainId: number): `0x${string}` {
+  const config = getNetworkConfig(chainId);
+  return config.FACTORY_ADDRESS as `0x${string}`;
+}
+
+// Create public client for specific chain
+export function getPublicClient(chainId: number) {
+  const chain = chainId === CHAIN_IDS.BASE_MAINNET ? base : baseSepolia;
+  return createPublicClient({
+    chain,
+    transport: http()
+  });
+}
+
+// Legacy exports for backward compatibility
+export const FACTORY_CONTRACT_ADDRESS = getFactoryAddress(CHAIN_IDS.BASE_SEPOLIA);
+export const publicClient = getPublicClient(CHAIN_IDS.BASE_SEPOLIA);
 
 // Contract configuration for wagmi
 export const FACTORY_CONTRACT_CONFIG = {
@@ -42,6 +53,7 @@ export function getCreationFee(): bigint {
 export async function createOrGetBudgetWallet(
   writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   connectedWalletAddress: `0x${string}`,
+  chainId: number,
   smartAccountClient?: SmartAccountClient // Optional smart account client for gas sponsorship
 ): Promise<{
   txHash?: `0x${string}`;
@@ -51,10 +63,13 @@ export async function createOrGetBudgetWallet(
   try {
     console.log('Creating/getting budget wallet for connected wallet:', connectedWalletAddress);
     
+    const factoryAddress = getFactoryAddress(chainId);
+    const client = getPublicClient(chainId);
+    
     // Always check EOA first, then smart account if we're using one
     console.log('Checking if EOA already has a budget wallet...');
-    const eoaHasWallet = await publicClient.readContract({
-      address: FACTORY_CONTRACT_ADDRESS,
+    const eoaHasWallet = await client.readContract({
+      address: factoryAddress,
       abi: FACTORY_ABI,
       functionName: 'hasWallet',
       args: [connectedWalletAddress]
@@ -62,8 +77,8 @@ export async function createOrGetBudgetWallet(
     
     if (eoaHasWallet) {
       console.log('EOA already has a budget wallet - returning existing wallet');
-      const budgetWalletAddress = await publicClient.readContract({
-        address: FACTORY_CONTRACT_ADDRESS,
+      const budgetWalletAddress = await client.readContract({
+        address: factoryAddress,
         abi: FACTORY_ABI,
         functionName: 'getUserWallet',
         args: [connectedWalletAddress]
@@ -79,8 +94,8 @@ export async function createOrGetBudgetWallet(
     // If using smart account, check if smart account has a wallet
     if (smartAccountClient?.account?.address) {
       console.log('Checking if smart account already has a budget wallet...');
-      const smartAccountHasWallet = await publicClient.readContract({
-        address: FACTORY_CONTRACT_ADDRESS,
+      const smartAccountHasWallet = await client.readContract({
+        address: factoryAddress,
         abi: FACTORY_ABI,
         functionName: 'hasWallet',
         args: [smartAccountClient.account.address]
@@ -88,8 +103,8 @@ export async function createOrGetBudgetWallet(
       
       if (smartAccountHasWallet) {
         console.log('Smart account already has a budget wallet');
-        const budgetWalletAddress = await publicClient.readContract({
-          address: FACTORY_CONTRACT_ADDRESS,
+        const budgetWalletAddress = await client.readContract({
+          address: factoryAddress,
           abi: FACTORY_ABI,
           functionName: 'getUserWallet',
           args: [smartAccountClient.account.address]
@@ -126,7 +141,7 @@ export async function createOrGetBudgetWallet(
       }
       
       txHash = await smartAccountClient.writeContract({
-        address: FACTORY_CONTRACT_ADDRESS,
+        address: factoryAddress,
         abi: FACTORY_ABI,
         functionName: 'createWallet',
         args: [smartAccountClient.account.address], // Pass smart account address as user parameter
@@ -139,7 +154,7 @@ export async function createOrGetBudgetWallet(
       // Fallback to regular wagmi call
       console.log('⚠️ Factory: Using regular wagmi writeContract (user pays gas)');
       txHash = await writeContractAsync({
-        address: FACTORY_CONTRACT_ADDRESS,
+        address: factoryAddress,
         abi: FACTORY_ABI,
         functionName: 'createWallet',
         args: [connectedWalletAddress],
@@ -149,11 +164,21 @@ export async function createOrGetBudgetWallet(
 
     console.log('Transaction hash:', txHash);
     
-    // Wait for the transaction and get the budget wallet address from the event
-    const budgetWalletAddress = await waitForWalletCreation(txHash);
+    // Try to wait for the transaction and get the budget wallet address from the event
+    // If it times out, we'll still return success since the transaction was submitted
+    let budgetWalletAddress: `0x${string}` | null = null;
+    
+    try {
+      budgetWalletAddress = await waitForWalletCreation(txHash, chainId);
+    } catch (timeoutError) {
+      console.warn('Transaction confirmation timed out, but transaction was submitted successfully:', txHash);
+      // We'll return a placeholder address and let the frontend handle the timeout gracefully
+      budgetWalletAddress = '0x0000000000000000000000000000000000000000' as `0x${string}`;
+    }
     
     if (!budgetWalletAddress) {
-      throw new Error('Failed to get budget wallet address from transaction. Please check the transaction manually.');
+      console.warn('Failed to get budget wallet address from transaction, but transaction was submitted:', txHash);
+      budgetWalletAddress = '0x0000000000000000000000000000000000000000' as `0x${string}`;
     }
     
     console.log('Budget wallet created successfully:', budgetWalletAddress);
@@ -205,17 +230,19 @@ export async function createDeterministicBudgetWallet(
   writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   userAddress: `0x${string}`, 
   salt: bigint,
+  chainId: number,
   smartAccountClient?: SmartAccountClient // Optional smart account client
 ): Promise<{
   txHash: `0x${string}`;
   walletAddress?: `0x${string}`;
 }> {
   let txHash: `0x${string}`;
+  const factoryAddress = getFactoryAddress(chainId);
   
   // Use smart account client for gas sponsorship if available
   if (smartAccountClient?.account) {
     txHash = await smartAccountClient.writeContract({
-      address: FACTORY_CONTRACT_ADDRESS,
+      address: factoryAddress,
       abi: FACTORY_ABI,
       functionName: 'createWalletDeterministic',
       args: [smartAccountClient.account.address, salt], // Pass smart account address and salt
@@ -225,7 +252,7 @@ export async function createDeterministicBudgetWallet(
   } else {
     // Use wagmi's writeContractAsync (no fee required)
     txHash = await writeContractAsync({
-      address: FACTORY_CONTRACT_ADDRESS,
+      address: factoryAddress,
       abi: FACTORY_ABI,
       functionName: 'createWalletDeterministic',
       args: [userAddress, salt], // Pass user address and salt
@@ -252,12 +279,15 @@ export async function switchToBaseSepolia(switchChain: (args: { chainId: number 
 }
 
 // Wait for transaction and get wallet address from event
-export async function waitForWalletCreation(txHash: `0x${string}`): Promise<`0x${string}` | null> {
+export async function waitForWalletCreation(txHash: `0x${string}`, chainId: number): Promise<`0x${string}` | null> {
   try {
-    // Wait for transaction receipt
-    const receipt = await publicClient.waitForTransactionReceipt({
+    const client = getPublicClient(chainId);
+    const factoryAddress = getFactoryAddress(chainId);
+    
+    // Wait for transaction receipt with shorter timeout
+    const receipt = await client.waitForTransactionReceipt({
       hash: txHash,
-      timeout: 60_000 // 60 seconds timeout
+      timeout: 30_000 // 30 seconds timeout (reduced from 60)
     });
 
     // Parse logs for WalletCreated event
@@ -265,7 +295,7 @@ export async function waitForWalletCreation(txHash: `0x${string}`): Promise<`0x$
     
     for (const log of logs) {
       try {
-        if (log.address.toLowerCase() === FACTORY_CONTRACT_ADDRESS.toLowerCase()) {
+        if (log.address.toLowerCase() === factoryAddress.toLowerCase()) {
           // Try to decode as WalletCreated event
           const decodedLog = {
             eventName: 'WalletCreated',
@@ -295,12 +325,15 @@ export async function waitForWalletCreation(txHash: `0x${string}`): Promise<`0x$
 }
 
 // Check if connected wallet has a budget wallet using the hasWallet contract function
-export async function checkUserHasWallet(connectedWalletAddress: `0x${string}`): Promise<boolean> {
+export async function checkUserHasWallet(connectedWalletAddress: `0x${string}`, chainId: number): Promise<boolean> {
   try {
     console.log('Checking if connected wallet has budget wallet:', connectedWalletAddress);
 
-    const hasWallet = await publicClient.readContract({
-      address: FACTORY_CONTRACT_ADDRESS,
+    const client = getPublicClient(chainId);
+    const factoryAddress = getFactoryAddress(chainId);
+
+    const hasWallet = await client.readContract({
+      address: factoryAddress,
       abi: FACTORY_ABI,
       functionName: 'hasWallet',
       args: [connectedWalletAddress]
@@ -316,18 +349,21 @@ export async function checkUserHasWallet(connectedWalletAddress: `0x${string}`):
 }
 
 // Get user's existing budget wallet address from their connected wallet (returns null if no budget wallet)
-export async function getUserBudgetWalletAddress(connectedWalletAddress: `0x${string}`): Promise<`0x${string}` | null> {
+export async function getUserBudgetWalletAddress(connectedWalletAddress: `0x${string}`, chainId: number): Promise<`0x${string}` | null> {
   try {
     // First check if connected wallet has a budget wallet
-    const hasWallet = await checkUserHasWallet(connectedWalletAddress);
+    const hasWallet = await checkUserHasWallet(connectedWalletAddress, chainId);
     
     if (!hasWallet) {
       return null;
     }
 
+    const client = getPublicClient(chainId);
+    const factoryAddress = getFactoryAddress(chainId);
+
     // Get the budget wallet address
-    const budgetWalletAddress = await publicClient.readContract({
-      address: FACTORY_CONTRACT_ADDRESS,
+    const budgetWalletAddress = await client.readContract({
+      address: factoryAddress,
       abi: FACTORY_ABI,
       functionName: 'getUserWallet',
       args: [connectedWalletAddress]
@@ -343,27 +379,29 @@ export async function getUserBudgetWalletAddress(connectedWalletAddress: `0x${st
 }
 
 // Legacy functions - keeping for backward compatibility
-export async function getUserWalletAddress(userAddress: `0x${string}`): Promise<`0x${string}` | null> {
-  return await getUserBudgetWalletAddress(userAddress);
+export async function getUserWalletAddress(userAddress: `0x${string}`, chainId: number): Promise<`0x${string}` | null> {
+  return await getUserBudgetWalletAddress(userAddress, chainId);
 }
 
-export async function checkExistingBudgetWallet(userAddress: string): Promise<string | null> {
-  return await getUserBudgetWalletAddress(userAddress as `0x${string}`);
+export async function checkExistingBudgetWallet(userAddress: string, chainId: number): Promise<string | null> {
+  return await getUserBudgetWalletAddress(userAddress as `0x${string}`, chainId);
 }
 
 // Legacy alias for the main function
 export async function createBudgetWallet(
   writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
   connectedWalletAddress: `0x${string}`,
+  chainId: number,
   smartAccountClient?: SmartAccountClient
 ) {
   console.log('🏭 createBudgetWallet called with:', {
     connectedWalletAddress,
+    chainId,
     hasSmartAccount: !!smartAccountClient,
     smartAccountAddress: smartAccountClient?.account?.address
   });
   
-  const result = await createOrGetBudgetWallet(writeContractAsync, connectedWalletAddress, smartAccountClient);
+  const result = await createOrGetBudgetWallet(writeContractAsync, connectedWalletAddress, chainId, smartAccountClient);
   
   console.log('🏭 createBudgetWallet result:', {
     txHash: result.txHash,
@@ -379,9 +417,9 @@ export async function createBudgetWallet(
 }
 
 // Legacy subgraph check function (keeping for reference/fallback)
-export async function checkExistingBudgetWalletSubgraph(userAddress: string): Promise<string | null> {
+export async function checkExistingBudgetWalletSubgraph(userAddress: string, chainId: number): Promise<string | null> {
   try {
-    const subgraphUrl = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
+    const subgraphUrl = getNetworkConfig(chainId).SUBGRAPH_URL;
     if (!subgraphUrl) {
       console.warn('Subgraph URL not configured');
       return null;

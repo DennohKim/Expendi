@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
-import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
+import { BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
+import { getNetworkConfig } from "@/lib/contracts/config";
 import { formatBalance } from "@/lib/utils";
 import { useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
 
@@ -37,8 +38,13 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   const [amount, setAmount] = useState('');
   const [tokenType] = useState<'USDC'>('USDC');
   const [isFunding, setIsFunding] = useState(false);
+  const chainId = useChainId();
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
+
+  // Get network configuration for current chain
+  const networkConfig = getNetworkConfig(chainId);
+  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
@@ -84,7 +90,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
       toast.info(`Funding bucket with ${amount} ${tokenType}...`);
 
       const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
-      const tokenAddress = MOCK_USDC_ADDRESS;
+      const tokenAddress = usdcAddress;
 
       // Use smart account client directly for gas sponsorship
       const txHash = await clientToUse.writeContract({

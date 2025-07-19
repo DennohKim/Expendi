@@ -23,11 +23,10 @@ export function BudgetWalletCreationProgress({
 
   const steps = [
     { id: 'checking', label: 'Checking existing wallet', icon: Clock },
-    { id: 'waiting-smart-account', label: 'Preparing sponsored transaction', icon: Loader2 },
-    { id: 'switching-network', label: 'Switching to Base Sepolia', icon: Loader2 },
-    { id: 'creating', label: 'Creating budget wallet (gas sponsored)', icon: Wallet },
-    { id: 'waiting', label: 'Waiting for confirmation', icon: Loader2 },
-    { id: 'syncing', label: 'Syncing with backend', icon: Loader2 },
+    { id: 'switching-network', label: 'Switching to Base mainnet', icon: Loader2 },
+    { id: 'waiting-smart-account', label: 'Preparing transaction', icon: Loader2 },
+    { id: 'creating', label: 'Creating budget wallet', icon: Wallet },
+    { id: 'waiting', label: 'Submitting transaction', icon: Loader2 },
     { id: 'completed', label: 'Wallet ready!', icon: CheckCircle },
     { id: 'error', label: 'Creation failed', icon: XCircle },
   ];
@@ -120,7 +119,7 @@ export function BudgetWalletCreationProgress({
 
         {step === 'switching-network' && (
           <div className="text-xs text-blue-600 bg-blue-100 rounded p-2 mt-3">
-            <strong>Note:</strong> Please approve the network switch to Base Sepolia in your wallet.
+            <strong>Note:</strong> Please approve the network switch to Base mainnet in your wallet.
           </div>
         )}
         
@@ -180,9 +179,9 @@ export function BudgetWalletCreationStatus({
       <span className="text-sm">
         {step === 'checking' && 'Checking wallet...'}
         {step === 'switching-network' && 'Switching network...'}
+        {step === 'waiting-smart-account' && 'Preparing transaction...'}
         {step === 'creating' && 'Creating wallet...'}
-        {step === 'waiting' && 'Confirming transaction...'}
-        {step === 'syncing' && 'Syncing data...'}
+        {step === 'waiting' && 'Submitting transaction...'}
       </span>
     </div>
   );

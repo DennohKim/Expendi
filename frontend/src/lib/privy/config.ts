@@ -7,10 +7,10 @@ export const privyConfig: PrivyClientConfig = {
   loginMethods: ['email'],
   
   // Supported chains
-  supportedChains: [baseSepolia, base],
+  supportedChains: [base, baseSepolia],
   
   // Default chain
-  defaultChain: baseSepolia,
+  defaultChain: base,
   
   // Appearance customization
   appearance: {

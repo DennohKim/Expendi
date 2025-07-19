@@ -4,8 +4,11 @@
   "main": "index.js",
   "scripts": {
     "build": "graph build",
+    "build-mainnet": "graph build --config subgraph-mainnet.yaml",
     "codegen": "graph codegen",
+    "codegen-mainnet": "graph codegen --config subgraph-mainnet.yaml",
     "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a expendiv-3",
+    "deploy-mainnet": "graph deploy expendiv-1-base-mainnet --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a --node https://api.studio.thegraph.com/deploy/ --config subgraph-mainnet.yaml",
     "deploy-studio": "graph deploy expendiv-3 --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a --node https://api.studio.thegraph.com/deploy/",
     "create-local": "graph create --node http://localhost:8020/",
     "remove-local": "graph remove --node http://localhost:8020/",

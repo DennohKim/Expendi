@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits, formatUnits, isAddress } from "viem";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
-import { MOCK_USDC_ADDRESS, BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
+import { BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
+import { getNetworkConfig } from "@/lib/contracts/config";
 import { Bucket, useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
 import {
   Select,
@@ -62,8 +63,13 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
   const [isValidating, setIsValidating] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const chainId = useChainId();
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
+
+  // Get network configuration for current chain
+  const networkConfig = getNetworkConfig(chainId);
+  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
@@ -175,7 +181,7 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
             bucketName, // bucketName
             parsedAmount, // amount
             settlementAddress as `0x${string}`, // settlement address
-            MOCK_USDC_ADDRESS, // token (USDC)
+            usdcAddress, // token (USDC)
             '0x' as `0x${string}` // data (empty)
           ],
           account: clientToUse.account,
@@ -198,7 +204,7 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
             bucketName, // bucketName
             parsedAmount, // amount
             finalRecipient as `0x${string}`, // recipient
-            MOCK_USDC_ADDRESS, // token (USDC)
+            usdcAddress, // token (USDC)
             '0x' as `0x${string}` // data (empty)
           ],
           account: clientToUse.account,

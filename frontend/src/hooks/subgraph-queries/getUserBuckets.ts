@@ -1,4 +1,6 @@
 import { gql, useQuery } from '@apollo/client';
+import { useChainId } from 'wagmi';
+import { useEffect } from 'react';
 
 const GET_USER_BUCKETS = gql`
   query GetUserBuckets($userId: ID!) {
@@ -82,14 +84,27 @@ const GET_USER_BUCKETS = gql`
 `;
 
 export function useUserBuckets(userId: string | undefined) {
-  return useQuery(GET_USER_BUCKETS, {
+  const chainId = useChainId();
+  
+  const queryResult = useQuery(GET_USER_BUCKETS, {
     variables: { userId: userId?.toLowerCase() },
     skip: !userId,
+    notifyOnNetworkStatusChange: true,
     onError: (error) => {
       console.error('getUserBuckets GraphQL query error:', error);
     },
     onCompleted: (data) => {
-      console.log('getUserBuckets GraphQL query completed:', data);
+      console.log('getUserBuckets GraphQL query completed for chain:', chainId, data);
     }
   });
+
+  // Refetch when chain changes
+  useEffect(() => {
+    if (userId && queryResult.refetch) {
+      console.log('Chain changed to:', chainId, 'refetching user buckets data');
+      queryResult.refetch();
+    }
+  }, [chainId, userId, queryResult.refetch]);
+
+  return queryResult;
 }
