@@ -1,13 +1,13 @@
 // Privy configuration for wallet connection
-import { base, baseSepolia } from 'viem/chains';
+import { base } from 'viem/chains';
 import type { PrivyClientConfig } from '@privy-io/react-auth';
 
 export const privyConfig: PrivyClientConfig = {
   // Supported login methods - ONLY email, no wallet options
   loginMethods: ['email'],
   
-  // Supported chains
-  supportedChains: [base, baseSepolia],
+  // Supported chains - Base mainnet only
+  supportedChains: [base],
   
   // Default chain
   defaultChain: base,

@@ -13,7 +13,7 @@ import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
 import { BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
 import { getNetworkConfig } from "@/lib/contracts/config";
-import { Bucket, useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
+import { useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
 import {
   Select,
   SelectContent,
@@ -48,7 +48,7 @@ interface UserBucket {
 
 
 
-export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
+export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   console.log("bucket", bucket);
 
   const { address } = useAccount();
@@ -77,10 +77,11 @@ export function QuickSpendBucket({ bucket }: { bucket: Bucket[] }) {
   );
 
   const { data: walletData } = useUserBudgetWallet(queryAddress);
-  const { data: userBucketsData, refetch: refetchBuckets } = useUserBuckets(queryAddress);
+  const { refetch: refetchBuckets } = useUserBuckets(queryAddress);
   const { refetch: refetchTransactions } = useAllTransactions(queryAddress);
 
-  const userBuckets: UserBucket[] = userBucketsData?.user?.buckets || [];
+  // Use buckets passed from parent instead of fetching again
+  const userBuckets: UserBucket[] = bucket || [];
   
   const selectedBucket = userBuckets.find((b: UserBucket) => b.name === selectedBucketName);
   

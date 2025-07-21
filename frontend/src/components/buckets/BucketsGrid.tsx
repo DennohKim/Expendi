@@ -1,10 +1,8 @@
 "use client";
 
-import { useUserBuckets } from '@/hooks/subgraph-queries/getUserBuckets';
+import React from 'react';
 import { BucketCard } from './BucketCard';
 import { Card, CardContent } from '@/components/ui/card';
-import { useSmartAccount } from '@/context/SmartAccountContext';
-import { useAccount } from 'wagmi';
 
 interface Bucket {
   id: string;
@@ -33,7 +31,7 @@ interface BucketsProps {
 
 }
 
-export function BucketsGrid( {buckets, loading, error}: BucketsProps ) {
+export const BucketsGrid = React.memo(function BucketsGrid( {buckets, loading, error}: BucketsProps ) {
  
 
   if (loading) {
@@ -80,16 +78,19 @@ export function BucketsGrid( {buckets, loading, error}: BucketsProps ) {
     );
   }
 
+  const filteredBuckets = React.useMemo(() => 
+    buckets.filter((bucket: Bucket) => bucket.name !== 'UNALLOCATED'),
+    [buckets]
+  );
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {buckets
-        .filter((bucket: Bucket) => bucket.name !== 'UNALLOCATED') // Filter out UNALLOCATED bucket
-        .map((bucket: Bucket) => (
-          <BucketCard
-            key={bucket.id}
-            bucket={bucket}
-          />
-        ))}
+      {filteredBuckets.map((bucket: Bucket) => (
+        <BucketCard
+          key={bucket.id}
+          bucket={bucket}
+        />
+      ))}
     </div>
   );
-}
+});

@@ -2,7 +2,6 @@
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import WalletDropdown from "@/components/header/WalletDropdown";
-import ChainSwitcher from "@/components/header/ChainSwitcher";
 import { useSidebar } from "@/context/SidebarContext";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
@@ -156,10 +155,6 @@ const AppHeader: React.FC = () => {
 
            <NotificationDropdown /> 
             {/* <!-- Notification Menu Area --> */}
-
-
-            <ChainSwitcher />
-            
 
           </div>
           {/* <!-- Wallet Connection Area --> */}

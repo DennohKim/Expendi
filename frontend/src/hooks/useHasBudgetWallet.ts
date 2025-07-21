@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { checkUserHasWallet } from '@/lib/contracts/factory';
-import { CHAIN_IDS } from '@/lib/contracts/config';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 
 export function useHasBudgetWallet() {
@@ -27,7 +26,7 @@ export function useHasBudgetWallet() {
 
       try {
         // Always check on Base mainnet
-        const hasWallet = await checkUserHasWallet(queryAddress, CHAIN_IDS.BASE_MAINNET);
+        const hasWallet = await checkUserHasWallet(queryAddress);
         setHasBudgetWallet(hasWallet);
       } catch (err) {
         console.error('Error checking budget wallet:', err);

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 // import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {  formatUnits, parseUnits, encodeFunctionData } from 'viem';
-import { useBalance, useAccount, useChainId } from 'wagmi';
+import { useBalance, useAccount } from 'wagmi';
 import { BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wallet';
 import { getNetworkConfig } from '@/lib/contracts/config';
 import { useSmartAccount } from '@/context/SmartAccountContext';
@@ -30,7 +30,6 @@ const WalletPage = () => {
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const { smartAccountClient } = useSmartAccount();
-  const chainId = useChainId();
   
   // Use smart account address if available, fallback to EOA
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
@@ -38,17 +37,14 @@ const WalletPage = () => {
   const { data, loading, error, refetch } = useUserBudgetWallet(queryAddress);
   console.log("Wallet data", data?.user?.walletsCreated[0].wallet)
 
-  // Get network configuration for current chain
-  const networkConfig = getNetworkConfig(chainId);
+  // Get network configuration (Base mainnet only)
+  const networkConfig = getNetworkConfig();
   const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
-  // DEBUG: Log current chain and addresses
-  console.log("🔍 DEBUG Chain Info:", {
-    chainId,
+  // DEBUG: Log current network and addresses
+  console.log("🔍 DEBUG Network Info:", {
     networkName: networkConfig.NETWORK_NAME,
     usdcAddress,
-    isBaseMainnet: chainId === 8453,
-    isBaseSepolia: chainId === 84532,
     subgraphUrl: networkConfig.SUBGRAPH_URL
   });
 
@@ -58,6 +54,8 @@ const WalletPage = () => {
     token: usdcAddress,
   });
   console.log("Query address being used:", data?.queryAddress);
+
+  console.log("Wallet balance:", walletBalance);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -449,7 +447,7 @@ const WalletPage = () => {
  {/* Budget Wallet Balance */}
  <div className="text-center p-6 bg-[#ff7e5f]/10 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg">
                 <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Budget Wallet Balance
+                  Budget Account
                 </div>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
                   {formatBalance(actualTotalBalance)} USDC

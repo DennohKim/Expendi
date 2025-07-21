@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
-import { useWriteContract, useChainId, useSwitchChain } from 'wagmi';
+import { useWriteContract } from 'wagmi';
 import { supabase } from '@/lib/supabase/client';
 import type { Database } from '@/lib/types/database.types';
 import { GraphQLClient } from 'graphql-request';
@@ -99,8 +99,6 @@ export function useWalletUser() {
   // Wagmi hooks
   const { writeContractAsync } = useWriteContract();
   const { setActiveWallet } = useSetActiveWallet();
-  const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
 
   // Create or get budget wallet
   const createOrGetBudgetWallet = useCallback(async (walletAddress: string): Promise<string> => {
@@ -151,31 +149,7 @@ export function useWalletUser() {
       // Set active wallet
       await setActiveWallet(wallet);
 
-      // Switch to Base Sepolia network if needed
-      setWalletCreationState(prev => ({ ...prev, step: 'switching-network' }));
-
-      const { createBudgetWallet, waitForWalletCreation, getCurrentChainIdFromWagmi, switchToBaseSepolia } = await import('@/lib/contracts/factory');
-      
-      // Check current network
-      const currentChainId = getCurrentChainIdFromWagmi(chainId);
-      const targetChainId = 84532; // Base Sepolia
-      
-      if (currentChainId !== targetChainId) {
-        try {
-          await switchToBaseSepolia(switchChain);
-          // Wait for network switch to complete and verify
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          // Double-check that we're on the right network
-          const newChainId = getCurrentChainIdFromWagmi(chainId);
-          if (newChainId !== targetChainId) {
-            throw new Error('Network switch failed. Please manually switch to Base Sepolia in your wallet.');
-          }
-        } catch (switchError) {
-          console.error('Network switch error:', switchError);
-          throw new Error('Failed to switch to Base Sepolia. Please switch manually in your wallet and try again.');
-        }
-      }
+      const { createBudgetWallet, waitForWalletCreation } = await import('@/lib/contracts/factory');
 
       // Create new budget wallet with gas sponsorship if smart account is ready
       setWalletCreationState(prev => ({ ...prev, step: 'creating' }));
@@ -255,8 +229,8 @@ export function useWalletUser() {
         // Add some additional context for common errors
         if (error.message.includes('cancelled by user') || error.message.includes('rejected')) {
           errorMessage = 'Transaction was cancelled. Please try again and approve the transaction in your wallet.';
-        } else if (error.message.includes('Network error') || error.message.includes('switch manually')) {
-          errorMessage = error.message + ' Click "Try Again" once you\'ve switched networks.';
+        } else if (error.message.includes('Network error')) {
+          errorMessage = error.message + ' Please check your network connection and try again.';
         } else if (error.message.includes('insufficient funds')) {
           errorMessage = 'You need some ETH for gas fees. Please add ETH to your wallet and try again.';
         }
@@ -270,7 +244,7 @@ export function useWalletUser() {
 
       throw error;
     }
-  }, [wallet, writeContractAsync, setActiveWallet, chainId, switchChain, smartAccountReady, smartAccountClient]);
+  }, [wallet, writeContractAsync, setActiveWallet, smartAccountReady, smartAccountClient]);
 
   // Fetch user dashboard data
   const fetchDashboardData = useCallback(async (walletAddress: string) => {

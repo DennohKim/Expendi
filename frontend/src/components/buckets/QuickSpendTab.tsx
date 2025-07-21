@@ -2,9 +2,31 @@ import React from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CreateBucket } from './CreateBucket'
 import { QuickSpendBucket } from './QuickSpendBucket'
-import { Bucket } from '@/hooks/subgraph-queries/getAllTransactions'
 
-const QuickSpendTab = ({ bucket }: { bucket: Bucket[] }) => {
+interface TokenBalance {
+  id: string;
+  balance: string;
+  token: {
+    id: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
+}
+
+interface UserBucket {
+  id: string;
+  name: string;
+  balance: string;
+  monthlyLimit: string;
+  monthlySpent: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+  tokenBalances: TokenBalance[];
+}
+
+const QuickSpendTab = ({ bucket }: { bucket: UserBucket[] }) => {
   return (
     <Tabs defaultValue="quick-spend" className="w-full">
       <TabsList className="w-full">

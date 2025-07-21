@@ -3,22 +3,18 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAccount, useChainId, useWriteContract, useSwitchChain } from 'wagmi';
+import { useAccount, useWriteContract } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { Wallet, ArrowRight, CheckCircle } from 'lucide-react';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { createOrGetBudgetWallet } from '@/lib/contracts/factory';
 import { BudgetWalletCreationProgress } from '@/components/BudgetWalletCreationProgress';
-import { CHAIN_IDS } from '@/lib/contracts/config';
 import { Button } from '@/components/ui/button';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { address: eoaAddress } = useAccount();
-  const chainId = useChainId();
-  console.log('chainId', chainId);
   const { writeContractAsync } = useWriteContract();
-  const { switchChain } = useSwitchChain();
   const { smartAccountClient, smartAccountReady } = useSmartAccount();
   const { ready, authenticated, login } = usePrivy();
 
@@ -34,15 +30,6 @@ export default function OnboardingPage() {
     setStep('checking');
 
     try {
-      // Check if user is on Base mainnet, if not switch chains
-      if (chainId !== CHAIN_IDS.BASE_MAINNET) {
-        setStep('switching-network');
-        console.log('Switching to Base mainnet...');
-        await switchChain({ chainId: CHAIN_IDS.BASE_MAINNET });
-        // Wait a moment for the chain switch to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
       setStep('waiting-smart-account');
       
       // Create budget wallet using Base mainnet
@@ -52,7 +39,6 @@ export default function OnboardingPage() {
         result = await createOrGetBudgetWallet(
           writeContractAsync,
           eoaAddress,
-          CHAIN_IDS.BASE_MAINNET,
           smartAccountClient || undefined
         );
       } catch (sponsorshipError) {
@@ -61,7 +47,6 @@ export default function OnboardingPage() {
         result = await createOrGetBudgetWallet(
           writeContractAsync,
           eoaAddress,
-          CHAIN_IDS.BASE_MAINNET,
           undefined // No smart account client = regular transaction
         );
       }
@@ -191,14 +176,6 @@ export default function OnboardingPage() {
                   <span>Create Budget Account</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
-              )}
-
-              {chainId !== CHAIN_IDS.BASE_MAINNET && (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                  <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                    <strong>Note:</strong> Your budget account will be created on Base mainnet.
-                  </div>
-                </div>
               )}
             </>
           )}

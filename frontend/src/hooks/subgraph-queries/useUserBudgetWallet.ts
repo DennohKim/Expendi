@@ -1,6 +1,4 @@
 import { gql, useQuery } from '@apollo/client';
-import { useChainId } from 'wagmi';
-import { useEffect } from 'react';
 
 const GET_USER_BUDGET_WALLET = gql`
   query GetUserBudgetWallet($userAddress: ID!) {
@@ -80,28 +78,19 @@ const GET_USER_BUDGET_WALLET = gql`
 `;
 
 export function useUserBudgetWallet(userAddress: string | undefined) {
-  const chainId = useChainId();
+  // const chainId = useChainId();
   
   const queryResult = useQuery(GET_USER_BUDGET_WALLET, {
     variables: { userAddress: userAddress?.toLowerCase() },
     skip: !userAddress,
-    // Add chain ID to the query key to ensure fresh data when chain changes
     notifyOnNetworkStatusChange: true,
     onError: (error) => {
       console.error('GraphQL query error:', error);
     },
     onCompleted: (data) => {
-      console.log('GraphQL query completed for chain:', chainId, data);
+      console.log('GraphQL query completed:', data);
     }
   });
-
-  // Refetch when chain changes
-  useEffect(() => {
-    if (userAddress && queryResult.refetch) {
-      console.log('Chain changed to:', chainId, 'refetching budget wallet data');
-      queryResult.refetch();
-    }
-  }, [chainId, userAddress, queryResult.refetch]);
 
   return queryResult;
 }

@@ -21,16 +21,27 @@ export default function DashboardPage() {
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
   
   // Use smart account address if available, fallback to EOA address
-  const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
+  const queryAddress = React.useMemo(() => 
+    smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress,
+    [smartAccountReady, smartAccountAddress, eoaAddress]
+  );
   
 
 
   const { data, loading, error } = useUserBuckets(queryAddress);
   
+  React.useEffect(() => {
+    if (error) {
+      console.error('Dashboard page - getUserBuckets error:', error);
+    }
+  }, [error]);
   
   const buckets = data?.user?.buckets || [];
+  
+  // Only show loading when we have no data AND we're actually loading
+  const isInitialLoading = loading && !data;
 
-  console.log("buckets", buckets);
+  // console.log("buckets", buckets);
 
   return (
     <div className="grid grid-cols-12 gap-4 md:gap-6">
@@ -45,7 +56,7 @@ export default function DashboardPage() {
       
       {/* User Buckets Grid - Below QuickSpend on small/medium, left side on large */}
       <div className="col-span-12 h-[calc(100vh-120px)] overflow-y-auto pr-2 xl:col-span-8 xl:order-1">
-        <BucketsGrid buckets={buckets} loading={loading} error={error || null} />
+        <BucketsGrid buckets={buckets} loading={isInitialLoading} error={error || null} />
       </div>
       
       {/* TODO: This will be an overview of the budget wallet */}

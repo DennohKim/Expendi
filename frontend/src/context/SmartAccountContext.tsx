@@ -130,15 +130,15 @@ export const SmartAccountProvider = ({
     if (embeddedWallet) createSmartWallet(embeddedWallet);
   }, [embeddedWallet?.address, embeddedWallet]);
 
+  const contextValue = React.useMemo(() => ({
+    smartAccountReady,
+    smartAccountClient,
+    smartAccountAddress,
+    eoa,
+  }), [smartAccountReady, smartAccountClient, smartAccountAddress, eoa]);
+
   return (
-    <SmartAccountContext.Provider
-      value={{
-        smartAccountReady: smartAccountReady,
-        smartAccountClient: smartAccountClient,
-        smartAccountAddress: smartAccountAddress,
-        eoa: eoa,
-      }}
-    >
+    <SmartAccountContext.Provider value={contextValue}>
       {children}
     </SmartAccountContext.Provider>
   );

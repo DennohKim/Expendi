@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { createPublicClient, http } from 'viem'
-import { baseSepolia } from 'viem/chains'
+import { base } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 import { createSmartAccountClient } from 'permissionless'
 import { createPimlicoClient } from 'permissionless/clients/pimlico'
@@ -19,11 +19,11 @@ export function useSessionKeyClient(sessionKey: SessionKeyData | null) {
       const sessionAccount = privateKeyToAccount(sessionKey.privateKey)
       
       const publicClient = createPublicClient({
-        chain: baseSepolia,
+        chain: base,
         transport: http(),
       })
 
-      const pimlicoRpcUrl = `https://api.pimlico.io/v2/${baseSepolia.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`
+      const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`
       
       const pimlicoPaymaster = createPimlicoClient({
         transport: http(pimlicoRpcUrl),
@@ -45,7 +45,7 @@ export function useSessionKeyClient(sessionKey: SessionKeyData | null) {
 
       const sessionSmartAccountClient = createSmartAccountClient({
         account: simpleSmartAccount,
-        chain: baseSepolia,
+        chain: base,
         bundlerTransport: http(pimlicoRpcUrl),
         paymaster: pimlicoPaymaster,
         userOperation: {
