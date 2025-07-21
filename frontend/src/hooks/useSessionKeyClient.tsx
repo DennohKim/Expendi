@@ -23,7 +23,7 @@ export function useSessionKeyClient(sessionKey: SessionKeyData | null) {
         transport: http(),
       })
 
-      const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`
+      const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.PIMLICO_API_KEY}`
       
       const pimlicoPaymaster = createPimlicoClient({
         transport: http(pimlicoRpcUrl),
