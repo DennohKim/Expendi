@@ -1,4 +1,4 @@
-// UserDashboard component demonstrating integrated Supabase + Subgraph data
+// UserDashboard component demonstrating subgraph data integration
 import React from 'react';
 import { useWalletUser } from '@/hooks/useWalletUser';
 import { formatEther } from 'viem';
@@ -284,7 +284,7 @@ export function UserDashboard() {
                   <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
                     notification.priority === 'high' ? 'bg-red-500' :
                     notification.priority === 'medium' ? 'bg-yellow-500' :
-                    'bg-green-500'
+                    'bg-blue-500'
                   }`} />
                   <div className="ml-3 flex-1">
                     <p className="text-sm font-medium text-gray-900">
@@ -315,7 +315,7 @@ export function UserDashboard() {
               <div>
                 <p className="text-sm text-gray-500">Total Deposited</p>
                 <p className="text-lg font-semibold">
-                  {parseFloat(formatEther(safeBigInt(analytics.total_deposited))).toFixed(4)} ETH
+                  {analytics.total_deposited ? parseFloat(formatEther(safeBigInt(analytics.total_deposited))).toFixed(4) : '0.0000'} ETH
                 </p>
               </div>
               <div>
@@ -327,9 +327,9 @@ export function UserDashboard() {
               <div>
                 <p className="text-sm text-gray-500">Net Flow</p>
                 <p className={`text-lg font-semibold ${
-                  parseFloat(analytics.net_flow) >= 0 ? 'text-green-600' : 'text-red-600'
+                  analytics.net_flow && parseFloat(analytics.net_flow) >= 0 ? 'text-green-600' : 'text-red-600'
                 }`}>
-                  {parseFloat(formatEther(safeBigInt(analytics.net_flow))).toFixed(4)} ETH
+                  {analytics.net_flow ? parseFloat(formatEther(safeBigInt(analytics.net_flow))).toFixed(4) : '0.0000'} ETH
                 </p>
               </div>
               <div>

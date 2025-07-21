@@ -3,15 +3,47 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useWriteContract } from 'wagmi';
-import { supabase } from '@/lib/supabase/client';
-import type { Database } from '@/lib/types/database.types';
 import { GraphQLClient } from 'graphql-request';
 import { checkExistingBudgetWallet } from '@/lib/contracts/factory';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 
-type User = Database['public']['Tables']['users']['Row'];
-type UserAnalytics = Database['public']['Tables']['user_analytics']['Row'];
-type Notification = Database['public']['Tables']['notifications']['Row'];
+type User = {
+  id: string;
+  wallet_address: string;
+  wallet_contract_address?: string;
+  email?: string;
+  username?: string;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type UserAnalytics = {
+  id: string;
+  user_id: string;
+  total_spent: string;
+  total_deposited?: string;
+  net_flow?: string;
+  total_budgets: number;
+  transactions_count?: number;
+  most_used_bucket?: string;
+  period_type: string;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+};
+
+type Notification = {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  read: boolean;
+  read_at?: string;
+  created_at: string;
+};
 
 interface SubgraphUser {
   id: string;
@@ -251,51 +283,20 @@ export function useWalletUser() {
     try {
       setDashboardData(prev => ({ ...prev, isLoading: true, error: null }));
 
-      // Check if Supabase is configured
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        throw new Error('Supabase environment variables are not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
-      }
+      // Mock user data since Supabase is removed
+      const user: User | null = {
+        id: walletAddress.toLowerCase(),
+        wallet_address: walletAddress.toLowerCase(),
+        wallet_contract_address: undefined,
+        email: undefined,
+        username: undefined,
+        avatar_url: undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      // Get user from Supabase
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('wallet_address', walletAddress.toLowerCase())
-        .single();
-
-      if (userError && userError.code !== 'PGRST116') {
-        throw new Error(`Supabase error: ${userError.message} (Code: ${userError.code})`);
-      }
-
-      let analytics = null;
-      let notifications: Notification[] = [];
-
-      if (user) {
-        // Get current month analytics
-        const now = new Date();
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        
-        const { data: analyticsData } = await supabase
-          .from('user_analytics')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('period_type', 'monthly')
-          .gte('period_start', monthStart.toISOString().split('T')[0])
-          .single();
-
-        analytics = analyticsData;
-
-        // Get unread notifications
-        const { data: notificationsData } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('read', false)
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        notifications = notificationsData || [];
-      }
+      const analytics: UserAnalytics | null = null;
+      const notifications: Notification[] = [];
 
       // Get real-time data from subgraph
       let realTimeData = null;
@@ -366,7 +367,7 @@ export function useWalletUser() {
     }
   }, []);
 
-  // Sync user to Supabase only after budget wallet is created successfully
+  // Mock user sync since Supabase is removed
   const syncUserToSupabase = useCallback(async (
     walletAddress: string, 
     budgetWalletAddress: string,
@@ -379,54 +380,20 @@ export function useWalletUser() {
         error: null,
       }));
 
-      // Check if user exists in Supabase
-      const { data: existingUser, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('wallet_address', walletAddress.toLowerCase())
-        .single();
+      // Create mock user data
+      const user: User = {
+        id: walletAddress.toLowerCase(),
+        wallet_address: walletAddress.toLowerCase(),
+        wallet_contract_address: budgetWalletAddress,
+        email: userMetadata.email,
+        username: userMetadata.username,
+        avatar_url: userMetadata.avatar_url,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-      let user = existingUser;
-
-      if (!existingUser && !userError) {
-        // Create new user with budget wallet address
-        const { data: newUser, error: createError } = await supabase
-          .from('users')
-          .insert({
-            wallet_address: walletAddress.toLowerCase(),
-            wallet_contract_address: budgetWalletAddress,
-            email: userMetadata.email,
-            username: userMetadata.username,
-            avatar_url: userMetadata.avatar_url,
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        user = newUser;
-      } else if (existingUser && !existingUser.wallet_contract_address) {
-        // Update existing user with budget wallet address
-        const { data: updatedUser, error: updateError } = await supabase
-          .from('users')
-          .update({ wallet_contract_address: budgetWalletAddress })
-          .eq('id', existingUser.id)
-          .select()
-          .single();
-
-        if (updateError) throw updateError;
-        user = updatedUser;
-      }
-
-      // Trigger backend sync by calling your API endpoint
-      await fetch('/api/sync-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          walletAddress: walletAddress.toLowerCase(),
-          userId: user?.id,
-          walletContractAddress: budgetWalletAddress
-        }),
-      });
+      // Note: API sync endpoint removed since backend integration is being removed
+      console.log('User sync completed (local only):', user);
 
       return user;
     } catch (error) {
@@ -467,7 +434,7 @@ export function useWalletUser() {
         step: 'syncing',
       }));
 
-      // Step 2: Only sync to Supabase after successful wallet creation
+      // Step 2: Mock sync since backend is removed
       await syncUserToSupabase(walletAddress, budgetWalletAddress, userMetadata);
 
       // Update state to show completion
@@ -694,48 +661,18 @@ export function useWalletUser() {
     }
   }, [ready, isConnected, address]);
 
-  // Set up real-time subscriptions for notifications
-  useEffect(() => {
-    if (!dashboardData.user?.id) return;
+  // Note: Real-time subscriptions removed since Supabase is removed
 
-    const notificationsSubscription = supabase
-      .channel('notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${dashboardData.user.id}`,
-        },
-        (payload) => {
-          setDashboardData(prev => ({
-            ...prev,
-            notifications: [payload.new as Notification, ...prev.notifications],
-          }));
-        }
-      )
-      .subscribe();
-
-    return () => {
-      notificationsSubscription.unsubscribe();
-    };
-  }, [dashboardData.user?.id]);
-
-  // Utility functions
+  // Mock notification marking since Supabase is removed
   const markNotificationAsRead = useCallback(async (notificationId: string) => {
     try {
-      await supabase
-        .from('notifications')
-        .update({ read: true, read_at: new Date().toISOString() })
-        .eq('id', notificationId);
-
       setDashboardData(prev => ({
         ...prev,
         notifications: prev.notifications.map(n =>
           n.id === notificationId ? { ...n, read: true } : n
         ),
       }));
+      console.log('Notification marked as read (local only):', notificationId);
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -745,26 +682,24 @@ export function useWalletUser() {
     if (!dashboardData.user?.id) return;
 
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', dashboardData.user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const updatedUser = {
+        ...dashboardData.user,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
 
       setDashboardData(prev => ({
         ...prev,
-        user: data,
+        user: updatedUser,
       }));
 
-      return data;
+      console.log('User profile updated (local only):', updatedUser);
+      return updatedUser;
     } catch (error) {
       console.error('Error updating user profile:', error);
       throw error;
     }
-  }, [dashboardData.user?.id]);
+  }, [dashboardData.user]);
 
   const refreshData = useCallback(() => {
     if (address) {

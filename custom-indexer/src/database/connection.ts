@@ -13,7 +13,7 @@ const createPool = (): Pool => {
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
       ssl: isLocal ? false : {
-        rejectUnauthorized: false, // Required for Supabase/remote connections
+        rejectUnauthorized: false, // Required for remote connections
       },
     });
   }

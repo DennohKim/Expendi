@@ -61,56 +61,29 @@ export async function createOrGetBudgetWallet(
   try {
     console.log('Creating/getting budget wallet for connected wallet:', connectedWalletAddress);
     
-    const factoryAddress = getFactoryAddress();
-    const client = getPublicClient();
+    // Check EOA first using subgraph
+    console.log('Checking if EOA already has a budget wallet using subgraph...');
+    const eoaBudgetWallet = await checkExistingBudgetWalletSubgraph(connectedWalletAddress);
     
-    // Always check EOA first, then smart account if we're using one
-    console.log('Checking if EOA already has a budget wallet...');
-    const eoaHasWallet = await client.readContract({
-      address: factoryAddress,
-      abi: FACTORY_ABI,
-      functionName: 'hasWallet',
-      args: [connectedWalletAddress]
-    }) as boolean;
-    
-    if (eoaHasWallet) {
+    if (eoaBudgetWallet) {
       console.log('EOA already has a budget wallet - returning existing wallet');
-      const budgetWalletAddress = await client.readContract({
-        address: factoryAddress,
-        abi: FACTORY_ABI,
-        functionName: 'getUserWallet',
-        args: [connectedWalletAddress]
-      }) as `0x${string}`;
-      
-      console.log('Existing EOA budget wallet address:', budgetWalletAddress);
+      console.log('Existing EOA budget wallet address:', eoaBudgetWallet);
       return {
-        budgetWalletAddress,
+        budgetWalletAddress: eoaBudgetWallet as `0x${string}`,
         alreadyExists: true
       };
     }
     
-    // If using smart account, check if smart account has a wallet
+    // If using smart account, check if smart account has a wallet using subgraph
     if (smartAccountClient?.account?.address) {
-      console.log('Checking if smart account already has a budget wallet...');
-      const smartAccountHasWallet = await client.readContract({
-        address: factoryAddress,
-        abi: FACTORY_ABI,
-        functionName: 'hasWallet',
-        args: [smartAccountClient.account.address]
-      }) as boolean;
+      console.log('Checking if smart account already has a budget wallet using subgraph...');
+      const smartAccountBudgetWallet = await checkExistingBudgetWalletSubgraph(smartAccountClient.account.address);
       
-      if (smartAccountHasWallet) {
+      if (smartAccountBudgetWallet) {
         console.log('Smart account already has a budget wallet');
-        const budgetWalletAddress = await client.readContract({
-          address: factoryAddress,
-          abi: FACTORY_ABI,
-          functionName: 'getUserWallet',
-          args: [smartAccountClient.account.address]
-        }) as `0x${string}`;
-        
-        console.log('Existing smart account budget wallet address:', budgetWalletAddress);
+        console.log('Existing smart account budget wallet address:', smartAccountBudgetWallet);
         return {
-          budgetWalletAddress,
+          budgetWalletAddress: smartAccountBudgetWallet as `0x${string}`,
           alreadyExists: true
         };
       }
@@ -123,6 +96,7 @@ export async function createOrGetBudgetWallet(
       console.log('Will create wallet using EOA:', connectedWalletAddress);
     }
     
+    const factoryAddress = getFactoryAddress();
     let txHash: `0x${string}`;
     
     // Use smart account client for gas sponsorship if available
@@ -312,20 +286,13 @@ export async function waitForWalletCreation(txHash: `0x${string}`): Promise<`0x$
   }
 }
 
-// Check if connected wallet has a budget wallet using the hasWallet contract function
+// Check if connected wallet has a budget wallet using subgraph
 export async function checkUserHasWallet(connectedWalletAddress: `0x${string}`): Promise<boolean> {
   try {
-    console.log('Checking if connected wallet has budget wallet:', connectedWalletAddress);
+    console.log('Checking if connected wallet has budget wallet using subgraph:', connectedWalletAddress);
 
-    const client = getPublicClient();
-    const factoryAddress = getFactoryAddress();
-
-    const hasWallet = await client.readContract({
-      address: factoryAddress,
-      abi: FACTORY_ABI,
-      functionName: 'hasWallet',
-      args: [connectedWalletAddress]
-    }) as boolean;
+    const walletAddress = await checkExistingBudgetWalletSubgraph(connectedWalletAddress);
+    const hasWallet = walletAddress !== null;
 
     console.log('Connected wallet has budget wallet:', hasWallet);
     return hasWallet;
@@ -336,29 +303,16 @@ export async function checkUserHasWallet(connectedWalletAddress: `0x${string}`):
   }
 }
 
-// Get user's existing budget wallet address from their connected wallet (returns null if no budget wallet)
+// Get user's existing budget wallet address from their connected wallet using subgraph (returns null if no budget wallet)
 export async function getUserBudgetWalletAddress(connectedWalletAddress: `0x${string}`): Promise<`0x${string}` | null> {
   try {
-    // First check if connected wallet has a budget wallet
-    const hasWallet = await checkUserHasWallet(connectedWalletAddress);
+    console.log('Getting budget wallet address using subgraph:', connectedWalletAddress);
     
-    if (!hasWallet) {
-      return null;
-    }
-
-    const client = getPublicClient();
-    const factoryAddress = getFactoryAddress();
-
-    // Get the budget wallet address
-    const budgetWalletAddress = await client.readContract({
-      address: factoryAddress,
-      abi: FACTORY_ABI,
-      functionName: 'getUserWallet',
-      args: [connectedWalletAddress]
-    }) as `0x${string}`;
+    // Get the budget wallet address from subgraph
+    const budgetWalletAddress = await checkExistingBudgetWalletSubgraph(connectedWalletAddress);
 
     console.log('Budget wallet address:', budgetWalletAddress);
-    return budgetWalletAddress;
+    return budgetWalletAddress as `0x${string}` | null;
 
   } catch (error) {
     console.error('Error getting budget wallet address:', error);

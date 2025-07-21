@@ -68,7 +68,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
   // Get network configuration for current chain
-  const networkConfig = getNetworkConfig(chainId);
+  const networkConfig = getNetworkConfig();
   const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
@@ -86,7 +86,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const selectedBucket = userBuckets.find((b: UserBucket) => b.name === selectedBucketName);
   
   const bucketOptions = userBuckets
-    .filter((b: UserBucket) => b.active)
+    .filter((b: UserBucket) => b.active && b.name !== 'UNALLOCATED')
     .map((b: UserBucket) => ({
       value: b.name,
       label: b.name
@@ -242,11 +242,10 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     
     setIsValidating(true);
     try {
-      const response = await fetch('/api/pretium', {
+      const response = await fetch('/api/pretium/validation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'validation',
           type: paymentType,
           shortcode: phoneNumber,
           mobile_network: mobileNetwork,
@@ -269,17 +268,19 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
 
   const sendMobilePayment = async (transactionHash: string) => {
     try {
+      // Convert USDC amount to KES using exchange rate
+      const kesAmount = exchangeRate ? (parseFloat(amount) * exchangeRate).toString() : amount;
+      
       const response = await fetch('/api/pretium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'pay',
           transaction_hash: transactionHash,
-          amount: amount,
+          amount: kesAmount,
           shortcode: phoneNumber,
           type: paymentType,
           mobile_network: mobileNetwork,
-          callback_url: window.location.origin + '/api/pretium/callback',
+          callback_url: "http://localhost:3000/api/pretium/callback",
         }),
       });
       
@@ -299,11 +300,10 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const fetchExchangeRate = async () => {
     setIsLoadingRate(true);
     try {
-      const response = await fetch('/api/pretium', {
+      const response = await fetch('/api/pretium/exchange-rate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'exchange-rate',
           currency_code: 'KES',
         }),
       });
