@@ -172,6 +172,7 @@ export function BudgetWalletCreationStatus({
       </div>
     );
   }
+  
 
   return (
     <div className="flex items-center space-x-2 text-blue-600">
