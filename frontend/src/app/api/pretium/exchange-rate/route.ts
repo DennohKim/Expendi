@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 const PRETIUM_BASE_URI = process.env.PRETIUM_BASE_URI || 'https://api.xwift.africa';
 const PRETIUM_API_KEY = process.env.PRETIUM_API_KEY || '';
 
-interface ExchangeRateRequest {
+interface ExchangeRateRequest extends Record<string, unknown> {
   currency_code: string;
 }
 
-async function makeRequest(endpoint: string, data: any) {
+async function makeRequest(endpoint: string, data: Record<string, unknown>) {
   const url = `${PRETIUM_BASE_URI}/v1/${endpoint}`;
     
   const response = await fetch(url, {

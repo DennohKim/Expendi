@@ -4,7 +4,7 @@ const PRETIUM_BASE_URI = process.env.PRETIUM_BASE_URI || 'https://api.xwift.afri
 const PRETIUM_API_KEY = process.env.PRETIUM_API_KEY || '';
 const SETTLEMENT_ADDRESS = '0x8005ee53E57aB11E11eAA4EFe07Ee3835Dc02F98';
 
-interface PayRequest {
+interface PayRequest extends Record<string, unknown> {
   transaction_hash: string;
   amount: string;
   shortcode: string;
@@ -14,7 +14,7 @@ interface PayRequest {
   chain?: string;
 }
 
-async function makeRequest(endpoint: string, data: any, currency?: string) {
+async function makeRequest(endpoint: string, data: Record<string, unknown>, currency?: string) {
   const url = currency 
     ? `${PRETIUM_BASE_URI}/v1/${endpoint}/${currency}`
     : `${PRETIUM_BASE_URI}/v1/${endpoint}`;

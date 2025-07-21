@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits, formatUnits, isAddress } from "viem";
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
@@ -38,12 +38,11 @@ export function SpendBucketButton({
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [isSpending, setIsSpending] = useState(false);
-  const chainId = useChainId();
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
   // Get network configuration for current chain
-  const networkConfig = getNetworkConfig(chainId);
+  const networkConfig = getNetworkConfig();
   const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 

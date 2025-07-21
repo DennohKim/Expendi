@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits } from "viem";
-import { useAccount, useBalance, useChainId } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
@@ -24,7 +24,6 @@ export function CreateBucketButton() {
   const [monthlyLimit, setMonthlyLimit] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount()
-  const chainId = useChainId()
   
   // const { 
   //   sessionKey, 
@@ -41,7 +40,7 @@ export function CreateBucketButton() {
   // }, [loadSessionKey])
 
   // Get network configuration for current chain
-  const networkConfig = getNetworkConfig(chainId)
+  const networkConfig = getNetworkConfig()
   const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`
 
   // Get user's current USDC balance

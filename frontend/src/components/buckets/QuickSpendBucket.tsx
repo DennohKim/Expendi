@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits, formatUnits, isAddress } from "viem";
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
@@ -59,11 +59,10 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [mobileNetwork, setMobileNetwork] = useState<'Safaricom' | 'Airtel'>('Safaricom');
   const [isSpending, setIsSpending] = useState(false);
   const [selectedBucketName, setSelectedBucketName] = useState('');
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<Record<string, unknown> | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
-  const [isLoadingRate, setIsLoadingRate] = useState(false);
-  const chainId = useChainId();
+  const [, setIsLoadingRate] = useState(false);
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
@@ -237,7 +236,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     }
   };
 
-  const validateMobileNumber = async () => {
+  const validateMobileNumber = React.useCallback(async () => {
     if (!phoneNumber) return;
     
     setIsValidating(true);
@@ -259,12 +258,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       } else {
         toast.error(result.error || 'Validation failed');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to validate mobile number');
     } finally {
       setIsValidating(false);
     }
-  };
+  }, [phoneNumber, paymentType, mobileNetwork]);
 
   const sendMobilePayment = async (transactionHash: string) => {
     try {
@@ -343,7 +342,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       // Clear validation result if number is incomplete
       setValidationResult(null);
     }
-  }, [phoneNumber, paymentType, mobileNetwork]);
+  }, [phoneNumber, isValidating, validateMobileNumber]);
 
   const availableBalance = formatUnits(usdcBalance, 6);
   const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
@@ -476,7 +475,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                   </div>
                   {validationResult && (
                     <div className="p-2 bg-green-50 border border-green-200 rounded text-sm">
-                     {validationResult.data?.public_name || 'Valid recipient'}
+                     {(validationResult as { data?: { public_name?: string } })?.data?.public_name || 'Valid recipient'}
                     </div>
                   )}
                   <div className="text-sm text-muted-foreground">

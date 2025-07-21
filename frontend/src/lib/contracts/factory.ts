@@ -4,7 +4,7 @@ import { base } from 'viem/chains';
 import FactoryABI from './SimpleBudgetWalletFactory.json';
 import type { SmartAccountClient } from 'permissionless';
 import type { Abi } from 'viem';
-import { getNetworkConfig, CHAIN_ID } from './config';
+import { getNetworkConfig } from './config';
 
 interface WriteContractArgs {
   address: `0x${string}`;
@@ -142,7 +142,7 @@ export async function createOrGetBudgetWallet(
     
     try {
       budgetWalletAddress = await waitForWalletCreation(txHash);
-    } catch (timeoutError) {
+    } catch {
       console.warn('Transaction confirmation timed out, but transaction was submitted successfully:', txHash);
       // We'll return a placeholder address and let the frontend handle the timeout gracefully
       budgetWalletAddress = '0x0000000000000000000000000000000000000000' as `0x${string}`;

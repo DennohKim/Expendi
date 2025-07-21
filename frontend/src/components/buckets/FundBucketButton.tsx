@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { parseUnits } from "viem";
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
@@ -21,10 +21,6 @@ interface TokenBalance {
   balance: string;
 }
 
-interface Bucket {
-  name: string;
-  tokenBalances?: TokenBalance[];
-}
 
 interface FundBucketButtonProps {
   bucketName: string;
@@ -38,12 +34,11 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   const [amount, setAmount] = useState('');
   const [tokenType] = useState<'USDC'>('USDC');
   const [isFunding, setIsFunding] = useState(false);
-  const chainId = useChainId();
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
   // Get network configuration for current chain
-  const networkConfig = getNetworkConfig(chainId);
+  const networkConfig = getNetworkConfig();
   const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
@@ -59,7 +54,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
    console.log("User data:", userData)
    
    // Calculate unallocated balance from UNALLOCATED bucket
-   const unallocatedBalance = userData?.buckets?.find(bucket => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: TokenBalance) => {
+   const unallocatedBalance = userData?.buckets?.find((bucket: { name: string }) => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: TokenBalance) => {
      return sum + BigInt(tokenBalance.balance || '0');
    }, BigInt(0)) || BigInt(0);
 

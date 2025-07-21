@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger, 
   DropdownMenuItem 
 } from "@/components/ui/dropdown-menu";
-import { Wallet, LogOut, User, Mail, Settings, HelpCircle, Loader2 } from "lucide-react";
+import { Wallet, LogOut, User, Mail, HelpCircle, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 
