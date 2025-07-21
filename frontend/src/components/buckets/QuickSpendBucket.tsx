@@ -281,6 +281,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           type: paymentType,
           mobile_network: mobileNetwork,
           callback_url: "http://localhost:3000/api/pretium/callback",
+          chain: "BASE",
         }),
       });
       

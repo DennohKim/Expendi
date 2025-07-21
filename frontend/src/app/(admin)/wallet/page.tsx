@@ -351,10 +351,10 @@ const WalletPage = () => {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  No Budget Wallet Found
+                  No Budget Account Found
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  You don&apos;t have a budget wallet yet. Create one to get started.
+                  You don&apos;t have a budget account yet. Create one to get started.
                 </p>
               </div>
             </CardContent>
@@ -372,10 +372,10 @@ const WalletPage = () => {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Budget Wallet
+            Budget Account
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage your budget wallet and view balance information
+            Manage your budget account and view balance information
           </p>
         </div>
 
@@ -600,7 +600,7 @@ const WalletPage = () => {
            Control Funds 
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Allocate or withdraw funds from your budget wallet
+            Allocate or withdraw funds from your budget account
           </p>
         </div>
         <AllocateFunds 

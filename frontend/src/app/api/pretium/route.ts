@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // This should be a direct pay request according to Pretium API docs
     const requestData: PayRequest = {
       ...body,
-      chain: body.chain || 'base', // Default chain
+      chain: body.chain || 'BASE', // Default chain as per updated docs
     };
     
     const result = await makeRequest('pay', requestData);
