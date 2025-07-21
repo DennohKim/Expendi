@@ -257,10 +257,10 @@ const WalletPage = () => {
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Budget Wallet
+              Budget Account
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Loading your budget wallet information...
+              Loading your budget account information...
             </p>
           </div>
           <Card className="animate-pulse">
@@ -307,10 +307,10 @@ const WalletPage = () => {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Error Loading Wallet
+                  Error Loading Account
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400">
-                  There was an error loading your budget wallet information.
+                  There was an error loading your budget account information.
                 </p>
                 <Button onClick={() => refetch()} variant="outline">
                   Try Again
