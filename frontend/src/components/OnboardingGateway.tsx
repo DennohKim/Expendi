@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { useHasBudgetWallet } from '@/hooks/useHasBudgetWallet';
+import { useWalletCreationPolling } from '@/hooks/useWalletCreationPolling';
+import { useSmartAccount } from '@/context/SmartAccountContext';
 import { Loader2 } from 'lucide-react';
 
 interface OnboardingGatewayProps {
@@ -11,16 +13,40 @@ interface OnboardingGatewayProps {
 }
 
 export function OnboardingGateway({ children }: OnboardingGatewayProps) {
-  const { isConnected } = useAccount();
-  const { hasBudgetWallet, isLoading } = useHasBudgetWallet();
+  const { address: eoaAddress, isConnected } = useAccount();
+  const { smartAccountClient } = useSmartAccount();
+  const { hasBudgetWallet, isLoading, refreshWalletCheck } = useHasBudgetWallet();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Use smart account address for polling if available, otherwise EOA address
+  const pollingAddress = smartAccountClient?.account?.address || eoaAddress;
+  const { isPolling } = useWalletCreationPolling(pollingAddress);
+
+  // Add a polling completion handler to refresh wallet check
+  const [wasPolling, setWasPolling] = useState(false);
+  
+  useEffect(() => {
+    if (wasPolling && !isPolling) {
+      // Polling just completed, refresh wallet check after a short delay
+      console.log('Polling completed, refreshing wallet check...');
+      setTimeout(() => {
+        refreshWalletCheck();
+      }, 1000);
+    }
+    setWasPolling(isPolling);
+  }, [isPolling, wasPolling, refreshWalletCheck]);
 
   const isOnboardingPage = pathname === '/onboarding';
 
   useEffect(() => {
     // Only proceed if wallet is connected and we have wallet check results
     if (!isConnected || isLoading || hasBudgetWallet === null) {
+      return;
+    }
+
+    // Don't redirect if wallet creation is in progress (polling)
+    if (isPolling) {
       return;
     }
 
@@ -35,7 +61,7 @@ export function OnboardingGateway({ children }: OnboardingGatewayProps) {
       router.push('/');
       return;
     }
-  }, [isConnected, hasBudgetWallet, isLoading, isOnboardingPage, router]);
+  }, [isConnected, hasBudgetWallet, isLoading, isOnboardingPage, isPolling, router]);
 
   // Show loading spinner while checking wallet status
   if (isConnected && isLoading) {

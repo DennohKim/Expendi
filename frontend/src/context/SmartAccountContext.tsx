@@ -83,7 +83,7 @@ export const SmartAccountProvider = ({
 
         // Create the Pimlico paymaster client
         console.log('🔧 Creating Pimlico paymaster...');
-        const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.PIMLICO_API_KEY}`;
+        const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`;
         
         const pimlicoPaymaster = createPimlicoClient({
           transport: http(pimlicoRpcUrl),

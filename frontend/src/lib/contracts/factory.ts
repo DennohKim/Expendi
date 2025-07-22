@@ -55,7 +55,7 @@ export async function createOrGetBudgetWallet(
   smartAccountClient?: SmartAccountClient // Optional smart account client for gas sponsorship
 ): Promise<{
   txHash?: `0x${string}`;
-  budgetWalletAddress: `0x${string}`;
+  budgetWalletAddress: `0x${string}` | null;
   alreadyExists: boolean;
 }> {
   try {
@@ -136,28 +136,13 @@ export async function createOrGetBudgetWallet(
 
     console.log('Transaction hash:', txHash);
     
-    // Try to wait for the transaction and get the budget wallet address from the event
-    // If it times out, we'll still return success since the transaction was submitted
-    let budgetWalletAddress: `0x${string}` | null = null;
-    
-    try {
-      budgetWalletAddress = await waitForWalletCreation(txHash);
-    } catch {
-      console.warn('Transaction confirmation timed out, but transaction was submitted successfully:', txHash);
-      // We'll return a placeholder address and let the frontend handle the timeout gracefully
-      budgetWalletAddress = '0x0000000000000000000000000000000000000000' as `0x${string}`;
-    }
-    
-    if (!budgetWalletAddress) {
-      console.warn('Failed to get budget wallet address from transaction, but transaction was submitted:', txHash);
-      budgetWalletAddress = '0x0000000000000000000000000000000000000000' as `0x${string}`;
-    }
-    
-    console.log('Budget wallet created successfully:', budgetWalletAddress);
+    // Return immediately after transaction submission
+    // The frontend will use subgraph polling to detect when wallet is indexed
+    console.log('Budget wallet creation transaction submitted successfully');
     
     return { 
       txHash, 
-      budgetWalletAddress,
+      budgetWalletAddress: null, // Will be determined by subgraph polling
       alreadyExists: false 
     };
   } catch (error) {
@@ -240,51 +225,7 @@ export function getCurrentChainIdFromWagmi(chainId: number | undefined): number 
 }
 
 
-// Wait for transaction and get wallet address from event
-export async function waitForWalletCreation(txHash: `0x${string}`): Promise<`0x${string}` | null> {
-  try {
-    const client = getPublicClient();
-    const factoryAddress = getFactoryAddress();
-    
-    // Wait for transaction receipt with shorter timeout
-    const receipt = await client.waitForTransactionReceipt({
-      hash: txHash,
-      timeout: 30_000 // 30 seconds timeout (reduced from 60)
-    });
-
-    // Parse logs for WalletCreated event
-    const logs = receipt.logs;
-    
-    for (const log of logs) {
-      try {
-        if (log.address.toLowerCase() === factoryAddress.toLowerCase()) {
-          // Try to decode as WalletCreated event
-          const decodedLog = {
-            eventName: 'WalletCreated',
-            args: {
-              user: `0x${log.topics[1]?.slice(26)}` as `0x${string}`,
-              wallet: `0x${log.topics[2]?.slice(26)}` as `0x${string}`,
-              salt: log.data ? BigInt(log.data) : BigInt(0)
-            }
-          };
-          
-          if (decodedLog.eventName === 'WalletCreated') {
-            return decodedLog.args.wallet;
-          }
-        }
-      } catch (decodeError) {
-        console.warn('Failed to decode log:', decodeError);
-        continue;
-      }
-    }
-    
-    console.warn('WalletCreated event not found in transaction logs');
-    return null;
-  } catch (error) {
-    console.error('Error waiting for wallet creation:', error);
-    throw error;
-  }
-}
+// Note: waitForWalletCreation function removed - now using subgraph polling instead
 
 // Check if connected wallet has a budget wallet using subgraph
 export async function checkUserHasWallet(connectedWalletAddress: `0x${string}`): Promise<boolean> {

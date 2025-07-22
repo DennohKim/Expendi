@@ -24,7 +24,6 @@ export const privyConfig: PrivyClientConfig = {
   // Embedded wallet configuration - force embedded wallet creation
   embeddedWallets: {
     createOnLogin: "all-users", // Force embedded wallet for all users
-    requireUserPasswordOnCreate: true, // Keep password requirement
     noPromptOnSignature: false,
     showWalletUIs: true, // Show embedded wallet UI
   },

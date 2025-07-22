@@ -10,6 +10,8 @@ import { useSmartAccount } from '@/context/SmartAccountContext';
 import { createOrGetBudgetWallet } from '@/lib/contracts/factory';
 import { BudgetWalletCreationProgress } from '@/components/BudgetWalletCreationProgress';
 import { Button } from '@/components/ui/button';
+import { useWalletCreationPolling } from '@/hooks/useWalletCreationPolling';
+import { WalletPollingLoadingPage } from '@/components/WalletPollingLoadingPage';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -17,6 +19,17 @@ export default function OnboardingPage() {
   const { writeContractAsync } = useWriteContract();
   const { smartAccountClient, smartAccountReady } = useSmartAccount();
   const { ready, authenticated, login } = usePrivy();
+  
+  // Use smart account address for polling if available, otherwise EOA address
+  const pollingAddress = smartAccountClient?.account?.address || eoaAddress;
+  const { 
+    pollForWallet, 
+    isPolling, 
+    error: pollingError, 
+    currentAttempt, 
+    maxAttempts, 
+    currentTxHash 
+  } = useWalletCreationPolling(pollingAddress);
 
   const [isCreating, setIsCreating] = useState(false);
   const [step, setStep] = useState('checking');
@@ -53,26 +66,46 @@ export default function OnboardingPage() {
 
       if (result.alreadyExists) {
         setStep('completed');
+        
+        // Hard refresh for existing wallets too
         setTimeout(() => {
-          router.push('/wallet');
-        }, 2000);
-      } else {
+          window.location.href = '/wallet';
+        }, 1000);
+      } else if (result.txHash) {
+        console.log('Budget wallet creation transaction submitted:', result.txHash);
         setStep('creating');
         setStep('waiting');
         
-        // Don't wait for transaction receipt due to timeout issues
-        // The transaction hash indicates success, proceed to completion
-        if (result.txHash) {
-          console.log('Budget wallet creation transaction submitted:', result.txHash);
+        // Log the addresses being used for debugging
+        console.log('🏭 Wallet creation addresses:', {
+          eoaAddress,
+          smartAccountAddress: smartAccountClient?.account?.address,
+          pollingAddress,
+          txHash: result.txHash
+        });
+        
+        // Use subgraph polling to wait for wallet to be indexed
+        const createdWalletAddress = await pollForWallet(result.txHash);
+        
+        if (createdWalletAddress) {
+          console.log('Wallet successfully created and indexed:', createdWalletAddress);
           setStep('completed');
           
-          // Redirect to wallet page after successful creation
+          // Hard refresh to ensure all state is reset and gateway detects wallet
           setTimeout(() => {
-            router.push('/wallet');
-          }, 2000);
+            window.location.href = '/wallet';
+          }, 1000);
         } else {
-          throw new Error('Transaction failed - no transaction hash received');
+          // Wallet was created but not yet indexed - still proceed with hard refresh
+          console.log('Wallet created but not yet indexed, proceeding anyway');
+          setStep('completed');
+          
+          setTimeout(() => {
+            window.location.href = '/wallet';
+          }, 1000);
         }
+      } else {
+        throw new Error('Transaction failed - no transaction hash received');
       }
     } catch (err) {
       console.error('Error creating budget wallet:', err);
@@ -89,11 +122,30 @@ export default function OnboardingPage() {
     }
   };
 
+  // Also handle polling errors
+  React.useEffect(() => {
+    if (pollingError) {
+      setError(pollingError);
+      setStep('error');
+    }
+  }, [pollingError]);
+
   const handleRetry = () => {
     setError(null);
     setStep('checking');
     handleCreateWallet();
   };
+
+  // Show loading page during polling
+  if (isPolling && currentTxHash) {
+    return (
+      <WalletPollingLoadingPage
+        txHash={currentTxHash}
+        attempt={currentAttempt}
+        maxAttempts={maxAttempts}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#ff7e5f]/5 to-[#ff7e5f]/10 dark:from-gray-900 dark:to-gray-800 p-4">
@@ -159,14 +211,14 @@ export default function OnboardingPage() {
 
               {step !== 'checking' && (
                 <BudgetWalletCreationProgress
-                  isCreating={isCreating}
+                  isCreating={isCreating || isPolling}
                   step={step}
                   error={error}
                   onRetry={handleRetry}
                 />
               )}
 
-              {!isCreating && step === 'checking' && (
+              {!isCreating && !isPolling && step === 'checking' && (
                 <Button
                   onClick={handleCreateWallet}
                   disabled={!eoaAddress || !smartAccountReady}
