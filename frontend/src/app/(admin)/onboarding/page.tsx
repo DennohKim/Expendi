@@ -72,7 +72,7 @@ export default function OnboardingPage() {
           window.location.href = '/wallet';
         }, 1000);
       } else if (result.txHash) {
-        console.log('Budget wallet creation transaction submitted:', result.txHash);
+        console.log('Budget Account creation transaction submitted:', result.txHash);
         setStep('creating');
         setStep('waiting');
         

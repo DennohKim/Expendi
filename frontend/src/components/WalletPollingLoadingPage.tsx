@@ -28,11 +28,11 @@ export function WalletPollingLoadingPage({
           
           {/* Main heading */}
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Setting up your wallet
+            Setting up your budget account
           </h1>
           
           <p className="text-gray-600 dark:text-gray-300 mb-8">
-            Your budget wallet is being created and indexed. This usually takes a few seconds.
+            Your budget account is being created. This usually takes a few seconds.
           </p>
           
           {/* Progress steps */}
@@ -50,7 +50,7 @@ export function WalletPollingLoadingPage({
               <div className="flex items-center">
                 <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 animate-spin" />
                 <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Indexing wallet data
+                  Indexing account data
                 </span>
               </div>
               <span className="text-xs text-blue-600 dark:text-blue-400">
@@ -97,10 +97,10 @@ export function WalletPollingLoadingPage({
             <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0" />
             <div className="text-left">
               <p className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">
-                Creating your smart wallet
+                Creating your smart account
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-300">
-                We're setting up your budget wallet with automatic spending controls and gas sponsorship features.
+                We're setting up your budget account with automatic spending controls and gas sponsorship features.
               </p>
             </div>
           </div>

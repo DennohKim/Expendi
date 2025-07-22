@@ -69,7 +69,7 @@ export function OnboardingGateway({ children }: OnboardingGatewayProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-gray-600 dark:text-gray-300">Checking your budget wallet...</p>
+          <p className="text-gray-600 dark:text-gray-300">Checking your budget account...</p>
         </div>
       </div>
     );

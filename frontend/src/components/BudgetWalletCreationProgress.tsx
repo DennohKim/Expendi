@@ -39,8 +39,8 @@ export function BudgetWalletCreationProgress({
         <div className="flex items-center space-x-3">
           <CheckCircle className="h-5 w-5 text-green-600" />
           <div>
-            <h3 className="text-sm font-medium text-green-800">Budget Wallet Created!</h3>
-            <p className="text-xs text-green-600">Your budget wallet is ready to use.</p>
+            <h3 className="text-sm font-medium text-green-800">Budget Account Created!</h3>
+            <p className="text-xs text-green-600">Your budget account is ready to use.</p>
           </div>
         </div>
       </div>
@@ -54,7 +54,7 @@ export function BudgetWalletCreationProgress({
           <div className="flex items-center space-x-3">
             <XCircle className="h-5 w-5 text-red-600" />
             <div className="flex-1">
-              <h3 className="text-sm font-medium text-red-800">Wallet Creation Failed</h3>
+              <h3 className="text-sm font-medium text-red-800">Account Creation Failed</h3>
               <p className="text-xs text-red-600 mt-1">{error || 'An error occurred'}</p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function BudgetWalletCreationStatus({
     return (
       <div className="flex items-center space-x-2 text-green-600">
         <CheckCircle className="h-4 w-4" />
-        <span className="text-sm">Budget wallet ready</span>
+        <span className="text-sm">Budget Account ready</span>
       </div>
     );
   }
@@ -159,7 +159,7 @@ export function BudgetWalletCreationStatus({
       <div className="flex items-center space-x-2">
         <div className="flex items-center space-x-2 text-red-600">
           <XCircle className="h-4 w-4" />
-          <span className="text-sm">Wallet creation failed</span>
+          <span className="text-sm">Account creation failed</span>
         </div>
         {onRetry && (
           <button
