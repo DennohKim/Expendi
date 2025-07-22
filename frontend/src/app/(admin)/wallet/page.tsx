@@ -16,6 +16,7 @@ import { BUDGET_WALLET_ABI } from '@/lib/contracts/budget-wallet';
 import { getNetworkConfig } from '@/lib/contracts/config';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import AllocateFunds from '@/components/wallet/AllocateFunds';
+import WalletPageSkeleton from '@/components/wallet/WalletPageSkeleton';
 
 interface Bucket {
   name: string;
@@ -253,29 +254,7 @@ const WalletPage = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Budget Account
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading your budget account information...
-            </p>
-          </div>
-          <Card className="animate-pulse">
-            <CardHeader>
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <WalletPageSkeleton />
     );
   }
 
