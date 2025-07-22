@@ -1,6 +1,15 @@
 import { useState, useCallback } from 'react';
 import { useUserBudgetWallet } from './subgraph-queries/useUserBudgetWallet';
 
+interface WalletCreated {
+  id: string;
+  wallet: string;
+  salt: string;
+  timestamp: string;
+  blockNumber: string;
+  transactionHash?: string;
+}
+
 interface WalletCreationPollingResult {
   pollForWallet: (txHash: string) => Promise<string | null>;
   isPolling: boolean;
@@ -46,13 +55,13 @@ export function useWalletCreationPolling(userAddress: string | undefined): Walle
           const wallets = result.data.user.walletsCreated;
           
           // Try to find wallet with matching transaction hash
-          let targetWallet = wallets.find((wallet: any) => 
+          let targetWallet = wallets.find((wallet: WalletCreated) => 
             wallet.transactionHash?.toLowerCase() === txHash.toLowerCase()
           );
           
           // Fallback to most recent wallet if tx hash doesn't match
           if (!targetWallet) {
-            targetWallet = wallets.sort((a: any, b: any) => 
+            targetWallet = wallets.sort((a: WalletCreated, b: WalletCreated) => 
               parseInt(b.timestamp) - parseInt(a.timestamp)
             )[0];
           }

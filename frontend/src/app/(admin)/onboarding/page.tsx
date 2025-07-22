@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAccount, useWriteContract } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
@@ -14,7 +13,6 @@ import { useWalletCreationPolling } from '@/hooks/useWalletCreationPolling';
 import { WalletPollingLoadingPage } from '@/components/WalletPollingLoadingPage';
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const { address: eoaAddress } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const { smartAccountClient, smartAccountReady } = useSmartAccount();

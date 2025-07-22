@@ -100,7 +100,7 @@ export function WalletPollingLoadingPage({
                 Creating your smart account
               </p>
               <p className="text-xs text-blue-600 dark:text-blue-300">
-                We're setting up your budget account with automatic spending controls and gas sponsorship features.
+                We&apos;re setting up your budget account with automatic spending controls and gas sponsorship features.
               </p>
             </div>
           </div>
