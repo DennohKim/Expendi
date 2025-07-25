@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { TourProvider as ReactTourProvider } from '@reactour/tour';
+import { TourProvider as ReactTourProvider, StepType } from '@reactour/tour';
 import { useTour } from '@/context/TourContext';
-import { tourSteps } from './tourSteps';
+import { tourSteps, TourStep } from './tourSteps';
 import { useRouter } from 'next/navigation';
 
 interface AppTourProps {
@@ -22,17 +22,29 @@ export const AppTour: React.FC<AppTourProps> = ({ children }) => {
 
   const router = useRouter();
 
-  // Get current tour steps based on tour type
-  const getCurrentSteps = () => {
+  // Get current tour steps based on tour type and convert to ReactTour StepType
+  const getCurrentSteps = (): StepType[] => {
     if (!tourType) return [];
-    return tourSteps[tourType] || [];
+    const tourStepList = tourSteps[tourType] || [];
+    
+    // Convert TourStep to StepType format expected by ReactTour
+    return tourStepList.map((step: TourStep): StepType => ({
+      selector: step.selector,
+      content: step.content as string | React.ReactElement,
+      position: step.position,
+      action: step.action ? (elem: Element | null) => {
+        if (elem && step.action) step.action(elem);
+      } : undefined,
+      stepInteraction: step.stepInteraction
+    }));
   };
 
   const steps = getCurrentSteps();
 
   // Handle step change with navigation
   const handleStepChange = (step: number) => {
-    const currentStepData = steps[step];
+    const tourStepList = tourSteps[tourType || 'onboarding'] || [];
+    const currentStepData = tourStepList[step];
     
     if (currentStepData?.navigate) {
       router.push(currentStepData.navigate);
@@ -56,11 +68,12 @@ export const AppTour: React.FC<AppTourProps> = ({ children }) => {
     isOpen: isTourOpen,
     currentStep,
     onRequestClose: closeTour,
-    onClickMask: ({ setCurrentStep, currentStep, steps }: { setCurrentStep: (step: number) => void; currentStep: number; steps: unknown[] }) => {
-      if (currentStep === steps.length - 1) {
+    onClickMask: ({ setCurrentStep, currentStep, steps }: any) => {
+      const stepsArray = steps || [];
+      if (currentStep === stepsArray.length - 1) {
         handleComplete();
       } else {
-        setCurrentStep(Math.min(currentStep + 1, steps.length - 1));
+        setCurrentStep(Math.min(currentStep + 1, stepsArray.length - 1));
       }
     },
     styles: {
@@ -138,8 +151,8 @@ export const AppTour: React.FC<AppTourProps> = ({ children }) => {
         </button>
       );
     },
-    badgeContent: ({ currentStep, stepsLength }: { currentStep: number; stepsLength: number }) => 
-      `${currentStep + 1} of ${stepsLength}`,
+    badgeContent: ({ currentStep }: any) => 
+      `${currentStep + 1} of ${steps.length}`,
   };
 
   return (
