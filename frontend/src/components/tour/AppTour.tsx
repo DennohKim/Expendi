@@ -6,6 +6,17 @@ import { useTour } from '@/context/TourContext';
 import { tourSteps, TourStep } from './tourSteps';
 import { useRouter } from 'next/navigation';
 
+interface ClickMaskProps {
+  setCurrentStep: (step: number) => void;
+  currentStep: number;
+  steps?: StepType[];
+}
+
+interface BadgeContentProps {
+  currentStep: number;
+  totalSteps: number;
+}
+
 interface AppTourProps {
   children: React.ReactNode;
 }
@@ -68,7 +79,7 @@ export const AppTour: React.FC<AppTourProps> = ({ children }) => {
     isOpen: isTourOpen,
     currentStep,
     onRequestClose: closeTour,
-    onClickMask: ({ setCurrentStep, currentStep, steps }: any) => {
+    onClickMask: ({ setCurrentStep, currentStep, steps }: ClickMaskProps) => {
       const stepsArray = steps || [];
       if (currentStep === stepsArray.length - 1) {
         handleComplete();
@@ -151,7 +162,7 @@ export const AppTour: React.FC<AppTourProps> = ({ children }) => {
         </button>
       );
     },
-    badgeContent: ({ currentStep }: any) => 
+    badgeContent: ({ currentStep }: BadgeContentProps) => 
       `${currentStep + 1} of ${steps.length}`,
   };
 
