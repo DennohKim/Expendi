@@ -13,6 +13,7 @@ import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
 import { createBudgetWalletUtils } from "@/lib/contracts/budget-wallet";
 import { getNetworkConfig } from "@/lib/contracts/config";
+import { useAnalytics } from "@/hooks/useAnalytics";
 // import { useSessionKeys } from "@/hooks/useSessionKeys";
 // import { useSessionKeyClient } from "@/hooks/useSessionKeyClient";
 
@@ -22,6 +23,7 @@ export function CreateBucket() {
   const [monthlyLimit, setMonthlyLimit] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount()
+  const { track } = useAnalytics()
   
   // const { 
   //   sessionKey, 
@@ -89,6 +91,12 @@ export function CreateBucket() {
       setIsCreating(true)
       toast.info('Creating bucket...')
 
+      track('bucket_creation_started', {
+        bucket_name: bucketName,
+        monthly_limit: parseFloat(monthlyLimit),
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      })
+
       const limitInUsdc = parseUnits(monthlyLimit, 6) // USDC has 6 decimals
 
       // Create budget wallet utils instance and use createBucket method
@@ -99,6 +107,13 @@ export function CreateBucket() {
         limitInUsdc,
         clientToUse
       )
+
+      track('bucket_created_successfully', {
+        bucket_name: bucketName,
+        monthly_limit: parseFloat(monthlyLimit),
+        transaction_hash: txHash,
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      })
 
       toast.success('Bucket created successfully!')
       console.log('Bucket created with transaction hash:', txHash)
@@ -118,6 +133,13 @@ export function CreateBucket() {
       }, 1000); // Delay refetch to avoid rate limiting
 
     } catch (error) {
+      track('bucket_creation_failed', {
+        bucket_name: bucketName,
+        monthly_limit: parseFloat(monthlyLimit),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      })
+      
       console.error('Error creating bucket:', error)
       toast.error('Failed to create bucket')
     } finally {

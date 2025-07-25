@@ -56,7 +56,7 @@ export const AppTour: React.FC<AppTourProps> = ({ children }) => {
     isOpen: isTourOpen,
     currentStep,
     onRequestClose: closeTour,
-    onClickMask: ({ setCurrentStep, currentStep, steps }: { setCurrentStep: (step: number) => void; currentStep: number; steps: any[] }) => {
+    onClickMask: ({ setCurrentStep, currentStep, steps }: { setCurrentStep: (step: number) => void; currentStep: number; steps: unknown[] }) => {
       if (currentStep === steps.length - 1) {
         handleComplete();
       } else {

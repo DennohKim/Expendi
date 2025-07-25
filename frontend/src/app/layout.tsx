@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { ApolloWrapper } from '@/lib/services/apollo-wrapper';
 import { AppTour } from '@/components/tour/AppTour';
 import { cookies } from 'next/headers';
+import { PostHogProvider } from '@/context/PostHogContext';
 
 
 const outfit = Outfit({
@@ -36,20 +37,22 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.className} dark:bg-gray-900`}>
         <Providers>
-          <ThemeProvider>
-            <SmartAccountProvider>
-              <SidebarProvider>
-                <TourProvider>
-                  <AppTour>
-                    <ApolloWrapper delay={delay}>
-                      {children}
-                    </ApolloWrapper>
-                  </AppTour>
-                </TourProvider>
-                <Toaster />
-              </SidebarProvider>
-            </SmartAccountProvider>
-          </ThemeProvider>
+          <PostHogProvider>
+            <ThemeProvider>
+              <SmartAccountProvider>
+                <SidebarProvider>
+                  <TourProvider>
+                    <AppTour>
+                      <ApolloWrapper delay={delay}>
+                        {children}
+                      </ApolloWrapper>
+                    </AppTour>
+                  </TourProvider>
+                  <Toaster />
+                </SidebarProvider>
+              </SmartAccountProvider>
+            </ThemeProvider>
+          </PostHogProvider>
         </Providers>
       </body>
     </html>

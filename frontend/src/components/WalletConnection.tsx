@@ -4,6 +4,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { Wallet, LogOut, User, Mail } from 'lucide-react';
 import { useWalletUser } from '@/hooks/useWalletUser';
 import { BudgetWalletCreationStatus } from './BudgetWalletCreationProgress';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 export function WalletConnection() {
   const { ready, authenticated, user, login, logout } = usePrivy();
@@ -12,6 +13,7 @@ export function WalletConnection() {
     budgetWalletCreationStep, 
     retryWalletCreation
   } = useWalletUser();
+  const { track } = useAnalytics();
 
   if (!ready) {
     return (
@@ -25,7 +27,10 @@ export function WalletConnection() {
     return (
       <button
         data-tour="wallet-connect"
-        onClick={login}
+        onClick={() => {
+          track('wallet_connect_clicked');
+          login();
+        }}
         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       >
         <Wallet className="h-4 w-4 mr-2" />
@@ -62,7 +67,10 @@ export function WalletConnection() {
 
       {/* Logout Button */}
       <button
-        onClick={logout}
+        onClick={() => {
+          track('wallet_disconnect_clicked');
+          logout();
+        }}
         className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       >
         <LogOut className="h-4 w-4 mr-1" />
