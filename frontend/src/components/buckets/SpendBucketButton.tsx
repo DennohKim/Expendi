@@ -155,7 +155,7 @@ export function SpendBucketButton({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size}>
+        <Button data-tour="spend-from-bucket" variant={variant} size={size}>
           <Send />
           Spend
         </Button>

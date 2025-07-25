@@ -59,6 +59,7 @@ export function UserDashboard() {
             Connect your wallet to view your budget dashboard
           </p>
           <button
+            data-tour="create-account"
             onClick={login}
             className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
@@ -103,9 +104,9 @@ export function UserDashboard() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div data-tour="dashboard-overview" className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div data-tour="welcome" className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Budget Dashboard</h1>
           <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -141,7 +142,7 @@ export function UserDashboard() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div data-tour="balance-overview" className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow border">
           <div className="flex items-center">
             <DollarSign className="h-8 w-8 text-green-500" />
@@ -191,7 +192,7 @@ export function UserDashboard() {
 
       {/* Buckets Overview */}
       {realTimeData?.buckets && realTimeData.buckets.length > 0 && (
-        <div className="bg-white rounded-lg shadow border">
+        <div data-tour="buckets-grid" className="bg-white rounded-lg shadow border">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Your Buckets</h2>
           </div>
@@ -267,7 +268,7 @@ export function UserDashboard() {
 
       {/* Recent Notifications */}
       {notifications.length > 0 && (
-        <div className="bg-white rounded-lg shadow border">
+        <div data-tour="recent-transactions" className="bg-white rounded-lg shadow border">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Recent Alerts</h2>
           </div>
@@ -306,7 +307,7 @@ export function UserDashboard() {
 
       {/* Analytics Summary */}
       {analytics && (
-        <div className="bg-white rounded-lg shadow border">
+        <div data-tour="spending-chart" className="bg-white rounded-lg shadow border">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Monthly Summary</h2>
           </div>

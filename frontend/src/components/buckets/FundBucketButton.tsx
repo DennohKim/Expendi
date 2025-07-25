@@ -123,7 +123,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size}>
+        <Button data-tour="fund-bucket" variant={variant} size={size}>
           <Wallet />
           Fund
         </Button>

@@ -2,6 +2,7 @@
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import WalletDropdown from "@/components/header/WalletDropdown";
+import { TourControls } from "@/components/tour/TourControls";
 import { useSidebar } from "@/context/SidebarContext";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
@@ -149,6 +150,10 @@ const AppHeader: React.FC = () => {
           } items-center justify-between w-full gap-4 px-5 py-4 lg:flex shadow-theme-md lg:justify-end lg:px-0 lg:shadow-none`}
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
+            {/* <!-- Tour Controls --> */}
+            <TourControls />
+            {/* <!-- Tour Controls --> */}
+
             {/* <!-- Dark Mode Toggler --> */}
             <ThemeToggleButton />
             {/* <!-- Dark Mode Toggler --> */}

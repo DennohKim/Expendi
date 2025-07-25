@@ -81,7 +81,7 @@ export const BucketsGrid = React.memo(function BucketsGrid( {buckets, loading, e
   const filteredBuckets = buckets.filter((bucket: Bucket) => bucket.name !== 'UNALLOCATED');
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div data-tour="buckets-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {filteredBuckets.map((bucket: Bucket) => (
         <BucketCard
           key={bucket.id}

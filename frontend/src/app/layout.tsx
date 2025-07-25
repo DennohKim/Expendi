@@ -3,11 +3,13 @@ import './globals.css';
 
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { TourProvider } from '@/context/TourContext';
 import { Providers } from '@/lib/privy/providers';
 import { Metadata } from 'next';
 import { SmartAccountProvider } from '@/context/SmartAccountContext';
 import { Toaster } from "@/components/ui/sonner"
 import { ApolloWrapper } from '@/lib/services/apollo-wrapper';
+import { AppTour } from '@/components/tour/AppTour';
 import { cookies } from 'next/headers';
 
 
@@ -37,9 +39,13 @@ export default async function RootLayout({
           <ThemeProvider>
             <SmartAccountProvider>
               <SidebarProvider>
-                <ApolloWrapper delay={delay}>
-                  {children}
-                </ApolloWrapper>
+                <TourProvider>
+                  <AppTour>
+                    <ApolloWrapper delay={delay}>
+                      {children}
+                    </ApolloWrapper>
+                  </AppTour>
+                </TourProvider>
                 <Toaster />
               </SidebarProvider>
             </SmartAccountProvider>

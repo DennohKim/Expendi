@@ -81,7 +81,7 @@ export const BucketCard = React.memo(function BucketCard({ bucket }: BucketCardP
       
       <CardContent className="space-y-4">
         {/* Monthly Limit Progress */}
-        <div className="space-y-2">
+        <div data-tour="bucket-analytics" className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Monthly Spending</span>
             <span>

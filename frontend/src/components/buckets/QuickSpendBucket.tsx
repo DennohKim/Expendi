@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getCachedExchangeRate } from "@/lib/utils/exchangeRateCache";
 
 interface TokenBalance {
   id: string;
@@ -300,20 +301,11 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const fetchExchangeRate = async () => {
     setIsLoadingRate(true);
     try {
-      const response = await fetch('/api/pretium/exchange-rate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currency_code: 'KES',
-        }),
-      });
-      
-      const result = await response.json();
-      if (response.ok && result.data) {
-        // Use the buying_rate as it's the rate for converting USDC to KES
-        setExchangeRate(result.data.buying_rate);
+      const rate = await getCachedExchangeRate('KES');
+      if (rate) {
+        setExchangeRate(rate);
       } else {
-        console.error('Failed to fetch exchange rate:', result.error || 'No exchange rate data');
+        console.error('Failed to fetch exchange rate: No exchange rate data');
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);

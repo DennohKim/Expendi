@@ -128,7 +128,7 @@ export function CreateBucketButton() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="primary">
+        <Button data-tour="create-bucket" variant="primary">
           <Plus />
           Create Bucket
         </Button>
