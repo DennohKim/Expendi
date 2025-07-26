@@ -430,7 +430,7 @@ export default function Transactions() {
     return (
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pb-3 pt-4 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6">
         <div className="text-center py-8">
-          <p className="text-gray-500">Please connect your wallet and create a budget wallet to view transactions</p>
+          <p className="text-gray-500">Please connect your wallet and create a budget account to view transactions</p>
         </div>
       </div>
     );

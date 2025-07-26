@@ -6,13 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { parseUnits, formatUnits, isAddress } from "viem";
+import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
-import { BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
-import { getNetworkConfig } from "@/lib/contracts/config";
 import { useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
 import {
   Select,
@@ -23,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
+import { useDebouncedValidation } from "@/hooks/useDebouncedValidation";
+import { useBucketPayment } from "@/hooks/useBucketPayment";
 
 interface TokenBalance {
   id: string;
@@ -58,18 +58,27 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
   const [mobileNetwork, setMobileNetwork] = useState<'Safaricom' | 'Airtel'>('Safaricom');
-  const [isSpending, setIsSpending] = useState(false);
   const [selectedBucketName, setSelectedBucketName] = useState('');
-  const [validationResult, setValidationResult] = useState<Record<string, unknown> | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate('KES');
+  
+  // Use TanStack Query for phone number validation
+  const { 
+    isValidating, 
+    validationResult, 
+    clearValidation 
+  } = useDebouncedValidation({
+    phoneNumber,
+    paymentType,
+    mobileNetwork,
+    enabled: phoneNumber.length >= 10,
+  });
+
+  // Use TanStack Query for bucket payments
+  const bucketPayment = useBucketPayment();
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
-  // Get network configuration for current chain
-  const networkConfig = getNetworkConfig();
-  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
@@ -98,7 +107,6 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   }, BigInt(0)) || BigInt(0);
   const currentSpent = selectedBucket?.monthlySpent || '0';
   const monthlyLimit = selectedBucket?.monthlyLimit || '0';
-  const bucketName = selectedBucket?.name || '';
 
 
   const handleSpendFromBucket = async (e: React.FormEvent) => {
@@ -114,114 +122,41 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       return;
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
-      toast.error('Please enter a valid amount');
-      return;
-    }
-
-    // Check if either recipient address or phone number is provided
-    if (!recipient && !phoneNumber) {
-      toast.error('Please enter either a recipient address or phone number');
-      return;
-    }
-
-    // If recipient address is provided, validate it
-    if (recipient && !isAddress(recipient)) {
-      toast.error('Please enter a valid recipient address');
-      return;
-    }
-
     if (!queryAddress) {
       toast.error('User address not found');
       return;
     }
 
-    // Use smart account client for gas sponsorship
-    const clientToUse = smartAccountClient;
-
-    if (!clientToUse?.account) {
+    if (!smartAccountClient) {
       toast.error('Smart account not available');
       return;
     }
 
-    const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
-    const availableBalance = formatUnits(usdcBalance, 6);
-    const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
-    const monthlyLimitFormatted = formatUnits(BigInt(monthlyLimit), 6);
-    const remainingBudget = parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted);
-
-    // Check if user has enough balance in bucket
-    if (parseFloat(amount) > parseFloat(availableBalance)) {
-      toast.error(`Insufficient balance in bucket. Available: ${availableBalance} USDC`);
-      return;
-    }
-
-    // Check if spending would exceed monthly limit
-    if (parseFloat(amount) > remainingBudget) {
-      toast.error(`Amount exceeds remaining budget. Remaining: ${remainingBudget.toFixed(2)} USDC`);
-      return;
-    }
-
+    // Use the bucket payment mutation
     try {
-      setIsSpending(true);
-      toast.info(`Spending ${amount} USDC from ${bucketName}...`);
+      const result = await bucketPayment.mutateAsync({
+        smartAccountClient,
+        walletAddress: walletData.user.walletsCreated[0].wallet as `0x${string}`,
+        userAddress: queryAddress as `0x${string}`,
+        bucketName: selectedBucketName,
+        amount,
+        recipient,
+        phoneNumber,
+        paymentType,
+        mobileNetwork,
+        availableBalance: usdcBalance,
+        currentSpent,
+        monthlyLimit,
+        exchangeRate,
+      });
 
-      let txHash: string;
-      
-      if (phoneNumber) {
-        // Mobile payment flow
-        const settlementAddress = '0x8005ee53E57aB11E11eAA4EFe07Ee3835Dc02F98';
-        
-        // First send to settlement address
-        txHash = await clientToUse.writeContract({
-          address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
-          abi: BUDGET_WALLET_ABI,
-          functionName: 'spendFromBucket',
-          args: [
-            queryAddress, // user
-            bucketName, // bucketName
-            parsedAmount, // amount
-            settlementAddress as `0x${string}`, // settlement address
-            usdcAddress, // token (USDC)
-            '0x' as `0x${string}` // data (empty)
-          ],
-          account: clientToUse.account,
-          chain: clientToUse.chain
-        });
-        
-        // Then initiate mobile payment
-        await sendMobilePayment(txHash);
-        toast.success(`Successfully initiated mobile payment of ${amount} USDC to ${phoneNumber}!`);
-      } else {
-        // Regular wallet transfer
-        const finalRecipient = recipient;
-        
-        txHash = await clientToUse.writeContract({
-          address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
-          abi: BUDGET_WALLET_ABI,
-          functionName: 'spendFromBucket',
-          args: [
-            queryAddress, // user
-            bucketName, // bucketName
-            parsedAmount, // amount
-            finalRecipient as `0x${string}`, // recipient
-            usdcAddress, // token (USDC)
-            '0x' as `0x${string}` // data (empty)
-          ],
-          account: clientToUse.account,
-          chain: clientToUse.chain
-        });
-        
-        toast.success(`Successfully spent ${amount} USDC from ${bucketName}!`);
-      }
-      
-      console.log('Bucket spend transaction hash:', txHash);
+      console.log('Bucket spend transaction hash:', result.txHash);
 
       // Reset form
       setAmount('');
       setRecipient('');
       setPhoneNumber('');
-      setValidationResult(null);
+      clearValidation();
       
       // Refetch buckets to update the UI
       setTimeout(() => {
@@ -230,73 +165,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       }, 1000); // Delay refetch to avoid rate limiting
 
     } catch (error) {
-      console.error('Error spending from bucket:', error);
-      toast.error('Failed to spend from bucket');
-    } finally {
-      setIsSpending(false);
+      // Error handling is done in the mutation hooks
+      console.error('Bucket payment error:', error);
     }
   };
 
-  const validateMobileNumber = React.useCallback(async () => {
-    if (!phoneNumber) return;
-    
-    setIsValidating(true);
-    try {
-      const response = await fetch('/api/pretium/validation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: paymentType,
-          shortcode: phoneNumber,
-          mobile_network: mobileNetwork,
-        }),
-      });
-      
-      const result = await response.json();
-      if (response.ok) {
-        setValidationResult(result);
-        toast.success('Mobile number validated successfully');
-      } else {
-        toast.error(result.error || 'Validation failed');
-      }
-    } catch {
-      toast.error('Failed to validate mobile number');
-    } finally {
-      setIsValidating(false);
-    }
-  }, [phoneNumber, paymentType, mobileNetwork]);
 
-  const sendMobilePayment = async (transactionHash: string) => {
-    try {
-      // Convert USDC amount to KES using exchange rate
-      const kesAmount = exchangeRate ? (parseFloat(amount) * exchangeRate).toString() : amount;
-      
-      const response = await fetch('/api/pretium', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transaction_hash: transactionHash,
-          amount: kesAmount,
-          shortcode: phoneNumber,
-          type: paymentType,
-          mobile_network: mobileNetwork,
-          callback_url: "http://localhost:3000/api/pretium/callback",
-          chain: "BASE",
-        }),
-      });
-      
-      const result = await response.json();
-      if (response.ok) {
-        toast.success('Mobile payment initiated successfully');
-        return result;
-      } else {
-        throw new Error(result.error || 'Payment failed');
-      }
-    } catch (error) {
-      toast.error('Failed to process mobile payment');
-      throw error;
-    }
-  };
 
   // Handle exchange rate errors
   React.useEffect(() => {
@@ -305,22 +179,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     }
   }, [exchangeRateError]);
 
-  // Auto-validate phone number when complete
+  // Clear validation when phone number changes significantly
   React.useEffect(() => {
-    if (phoneNumber && phoneNumber.length >= 10 && !isValidating) {
-      // Clear previous validation result
-      setValidationResult(null);
-      // Add a small delay to avoid too many API calls while typing
-      const timeoutId = setTimeout(() => {
-        validateMobileNumber();
-      }, 500);
-      
-      return () => clearTimeout(timeoutId);
-    } else if (phoneNumber.length < 10) {
-      // Clear validation result if number is incomplete
-      setValidationResult(null);
+    if (phoneNumber.length < 10) {
+      clearValidation();
     }
-  }, [phoneNumber, isValidating, validateMobileNumber]);
+  }, [phoneNumber, clearValidation]);
 
   const availableBalance = formatUnits(usdcBalance, 6);
   const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
@@ -500,10 +364,10 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           <div className="flex justify-end gap-2">
             <Button 
               type="submit" 
-              disabled={isSpending || !amount || (!recipient && !phoneNumber) || !selectedBucketName} 
+              disabled={bucketPayment.isProcessing || !amount || (!recipient && !phoneNumber) || !selectedBucketName} 
               variant="primary"
             >
-              {isSpending ? 'Spending...' : phoneNumber ? 'Send to Mobile Number' : 'Send USDC'}
+              {bucketPayment.isProcessing ? 'Processing...' : phoneNumber ? 'Send to Mobile Number' : 'Send USDC'}
             </Button>
           </div>
         </form>

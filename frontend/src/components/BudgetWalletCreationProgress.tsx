@@ -77,7 +77,7 @@ export function BudgetWalletCreationProgress({
         <div className="flex items-center space-x-3">
           <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
           <div>
-            <h3 className="text-sm font-medium text-blue-800">Creating Budget Wallet</h3>
+            <h3 className="text-sm font-medium text-blue-800">Creating Budget Account</h3>
             <p className="text-xs text-blue-600">This may take a few moments...</p>
           </div>
         </div>
@@ -117,11 +117,6 @@ export function BudgetWalletCreationProgress({
           })}
         </div>
 
-        {step === 'switching-network' && (
-          <div className="text-xs text-blue-600 bg-blue-100 rounded p-2 mt-3">
-            <strong>Note:</strong> Please approve the network switch to Base mainnet in your wallet.
-          </div>
-        )}
         
         {step === 'creating' && (
           <div className="text-xs text-blue-600 bg-blue-100 rounded p-2 mt-3">
