@@ -20,17 +20,21 @@ export function PostHogProvider({ children }: PostHogProviderProps) {
     initPostHog()
   }, [])
 
+  return (
+    <PostHogContext.Provider value={{ posthog }}>
+      <PostHogProviderContent>{children}</PostHogProviderContent>
+    </PostHogContext.Provider>
+  )
+}
+
+function PostHogProviderContent({ children }: { children: ReactNode }) {
   // Handle user identification automatically
   usePostHogIdentification()
   
   // Handle page view tracking
   usePageTracking()
 
-  return (
-    <PostHogContext.Provider value={{ posthog }}>
-      {children}
-    </PostHogContext.Provider>
-  )
+  return <>{children}</>
 }
 
 export function usePostHog() {
