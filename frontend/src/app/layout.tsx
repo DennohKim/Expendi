@@ -48,7 +48,7 @@ export default async function RootLayout({
                       </ApolloWrapper>
                     </AppTour>
                   </TourProvider>
-                  <Toaster />
+                  <Toaster position="top-right" richColors />
                 </SidebarProvider>
               </SmartAccountProvider>
             </ThemeProvider>

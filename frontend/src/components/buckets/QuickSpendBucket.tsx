@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getCachedExchangeRate } from "@/lib/utils/exchangeRateCache";
+import { useExchangeRate } from "@/hooks/useExchangeRate";
 
 interface TokenBalance {
   id: string;
@@ -62,8 +62,8 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [selectedBucketName, setSelectedBucketName] = useState('');
   const [validationResult, setValidationResult] = useState<Record<string, unknown> | null>(null);
   const [isValidating, setIsValidating] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
-  const [, setIsLoadingRate] = useState(false);
+  // Use TanStack Query for exchange rate
+  const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate('KES');
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
@@ -298,26 +298,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     }
   };
 
-  const fetchExchangeRate = async () => {
-    setIsLoadingRate(true);
-    try {
-      const rate = await getCachedExchangeRate('KES');
-      if (rate) {
-        setExchangeRate(rate);
-      } else {
-        console.error('Failed to fetch exchange rate: No exchange rate data');
-      }
-    } catch (error) {
-      console.error('Error fetching exchange rate:', error);
-    } finally {
-      setIsLoadingRate(false);
-    }
-  };
-
-  // Fetch exchange rate when component mounts (for mobile payments)
+  // Handle exchange rate errors
   React.useEffect(() => {
-    fetchExchangeRate();
-  }, []);
+    if (exchangeRateError) {
+      console.error('Error fetching exchange rate:', exchangeRateError);
+    }
+  }, [exchangeRateError]);
 
   // Auto-validate phone number when complete
   React.useEffect(() => {
@@ -429,7 +415,21 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                 
                 </div>
                 
-                {exchangeRate && (
+                {isLoadingRate ? (
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-700 font-medium">Exchange Rate:</span>
+                      <span className="text-gray-600">Loading...</span>
+                    </div>
+                  </div>
+                ) : exchangeRateError ? (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-red-700 font-medium">Exchange Rate:</span>
+                      <span className="text-red-600">Error loading rate</span>
+                    </div>
+                  </div>
+                ) : exchangeRate ? (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-blue-700 font-medium">Exchange Rate:</span>
@@ -442,7 +442,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                       </div>
                     )}
                   </div>
-                )}
+                ) : null}
                
                 <div className="space-y-2">
                   <Label htmlFor="phone">
