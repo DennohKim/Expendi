@@ -22,10 +22,10 @@ export function BudgetWalletCreationProgress({
   }
 
   const steps = [
-    { id: 'checking', label: 'Checking existing wallet', icon: Clock },
+    { id: 'checking', label: 'Checking existing account', icon: Clock },
     { id: 'switching-network', label: 'Switching to Base mainnet', icon: Loader2 },
     { id: 'waiting-smart-account', label: 'Preparing transaction', icon: Loader2 },
-    { id: 'creating', label: 'Creating budget wallet', icon: Wallet },
+    { id: 'creating', label: 'Creating budget account', icon: Wallet },
     { id: 'waiting', label: 'Submitting transaction', icon: Loader2 },
     { id: 'completed', label: 'Wallet ready!', icon: CheckCircle },
     { id: 'error', label: 'Creation failed', icon: XCircle },
