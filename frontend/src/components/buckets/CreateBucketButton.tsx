@@ -41,13 +41,13 @@ export function CreateBucketButton() {
 
   // Get network configuration for current chain
   const networkConfig = getNetworkConfig()
-  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`
+  const cusdAddress = networkConfig.CUSD_ADDRESS as `0x${string}`
 
   // Get user's current USDC balance
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : address
   useBalance({
     address: queryAddress,
-    token: usdcAddress,
+    token: cusdAddress,
   })
 
   const { refetch: refetchBuckets } = useUserBuckets(queryAddress)

@@ -20,7 +20,7 @@ interface SpendBucketButtonProps {
   bucketName: string;
   currentSpent: bigint;
   monthlyLimit: bigint;
-  usdcBalance: bigint;
+  cusdBalance: bigint;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "secondary";
 }
@@ -29,7 +29,7 @@ export function SpendBucketButton({
   bucketName, 
   currentSpent, 
   monthlyLimit, 
-  usdcBalance,
+  cusdBalance,
   size = "sm", 
   variant = "outline" 
 }: SpendBucketButtonProps) {
@@ -43,7 +43,7 @@ export function SpendBucketButton({
 
   // Get network configuration for current chain
   const networkConfig = getNetworkConfig();
-  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
+  const cusdAddress = networkConfig.CUSD_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
@@ -86,10 +86,10 @@ export function SpendBucketButton({
       return;
     }
 
-    const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
-    const availableBalance = formatUnits(usdcBalance, 6);
-    const currentSpentFormatted = formatUnits(currentSpent, 6);
-    const monthlyLimitFormatted = formatUnits(monthlyLimit, 6);
+    const parsedAmount = parseUnits(amount, 18); // cUSD has 18 decimals
+    const availableBalance = formatUnits(cusdBalance, 18);
+    const currentSpentFormatted = formatUnits(currentSpent, 18);
+    const monthlyLimitFormatted = formatUnits(monthlyLimit, 18);
     const remainingBudget = parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted);
 
     // Check if user has enough balance in bucket
@@ -118,7 +118,7 @@ export function SpendBucketButton({
           bucketName, // bucketName
           parsedAmount, // amount
           recipient as `0x${string}`, // recipient
-          usdcAddress, // token (USDC)
+          cusdAddress, // token (cUSD)
           '0x' as `0x${string}` // data (empty)
         ],
         account: clientToUse.account,
@@ -147,9 +147,9 @@ export function SpendBucketButton({
     }
   };
 
-  const availableBalance = formatUnits(usdcBalance, 6);
-  const currentSpentFormatted = formatUnits(currentSpent, 6);
-  const monthlyLimitFormatted = formatUnits(monthlyLimit, 6);
+  const availableBalance = formatUnits(cusdBalance, 18);
+  const currentSpentFormatted = formatUnits(currentSpent, 18);
+  const monthlyLimitFormatted = formatUnits(monthlyLimit, 18);
   const remainingBudget = Math.max(0, parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted));
 
   return (

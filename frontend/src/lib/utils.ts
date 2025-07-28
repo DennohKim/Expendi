@@ -8,8 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export const formatBalance = (balance: string | bigint) => {
   if (typeof balance === 'bigint') {
-    // MockUSDC has 6 decimals
-    const formatted = parseFloat(formatUnits(balance, 6)).toFixed(2);
+    // cUSD has 18 decimals (standard ERC-20)
+    const formatted = parseFloat(formatUnits(balance, 18)).toFixed(2);
     return Number(formatted).toLocaleString();
   }
   const formatted = parseFloat(balance).toFixed(2);

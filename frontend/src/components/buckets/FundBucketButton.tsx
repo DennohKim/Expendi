@@ -39,7 +39,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
 
   // Get network configuration for current chain
   const networkConfig = getNetworkConfig();
-  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
+  const cusdAddress = networkConfig.CUSD_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
@@ -84,8 +84,8 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
       setIsFunding(true);
       toast.info(`Funding bucket with ${amount} ${tokenType}...`);
 
-      const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
-      const tokenAddress = usdcAddress;
+      const parsedAmount = parseUnits(amount, 18); // cUSD has 18 decimals
+      const tokenAddress = cusdAddress;
 
       // Use smart account client directly for gas sponsorship
       const txHash = await clientToUse.writeContract({

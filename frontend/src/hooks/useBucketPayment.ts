@@ -75,21 +75,21 @@ export function useBucketPayment() {
       }
 
       // Balance checks
-      const availableBalanceFormatted = formatUnits(availableBalance, 6);
-      const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
-      const monthlyLimitFormatted = formatUnits(BigInt(monthlyLimit), 6);
+      const availableBalanceFormatted = formatUnits(availableBalance, 18);
+      const currentSpentFormatted = formatUnits(BigInt(currentSpent), 18);
+      const monthlyLimitFormatted = formatUnits(BigInt(monthlyLimit), 18);
       const remainingBudget = parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted);
 
       if (parseFloat(amount) > parseFloat(availableBalanceFormatted)) {
-        throw new Error(`Insufficient balance in bucket. Available: ${availableBalanceFormatted} USDC`);
+        throw new Error(`Insufficient balance in bucket. Available: ${availableBalanceFormatted} cUSD`);
       }
 
       if (parseFloat(amount) > remainingBudget) {
-        throw new Error(`Amount exceeds remaining budget. Remaining: ${remainingBudget.toFixed(2)} USDC`);
+        throw new Error(`Amount exceeds remaining budget. Remaining: ${remainingBudget.toFixed(2)} cUSD`);
       }
 
       // Show initial loading message
-      toast.info(`Spending ${amount} USDC from ${bucketName}...`);
+      toast.info(`Spending ${amount} cUSD from ${bucketName}...`);
 
       let finalRecipient: `0x${string}`;
       let txHash: string;
@@ -111,7 +111,7 @@ export function useBucketPayment() {
         
         txHash = spendResult.txHash;
 
-        // Convert USDC amount to local currency using exchange rate
+        // Convert cUSD amount to local currency using exchange rate
         const localAmount = exchangeRate ? (parseFloat(amount) * exchangeRate).toString() : amount;
 
         // Initiate mobile payment
@@ -122,10 +122,10 @@ export function useBucketPayment() {
           type: paymentType,
           mobile_network: mobileNetwork,
           callback_url: "http://localhost:3000/api/pretium/callback",
-          chain: "BASE",
+          chain: "CELO",
         });
 
-        toast.success(`Successfully initiated mobile payment of ${amount} USDC to ${phoneNumber}!`);
+        toast.success(`Successfully initiated mobile payment of ${amount} cUSD to ${phoneNumber}!`);
         
         return { txHash, paymentResult };
       } else {
@@ -143,7 +143,7 @@ export function useBucketPayment() {
         
         txHash = spendResult.txHash;
         
-        toast.success(`Successfully spent ${amount} USDC from ${bucketName}!`);
+        toast.success(`Successfully spent ${amount} cUSD from ${bucketName}!`);
         
         return { txHash };
       }

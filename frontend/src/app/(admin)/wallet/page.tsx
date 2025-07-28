@@ -38,21 +38,21 @@ const WalletPage = () => {
   const { data, loading, error, refetch } = useUserBudgetWallet(queryAddress);
   console.log("Wallet data", data?.user?.walletsCreated[0].wallet)
 
-  // Get network configuration (Base mainnet only)
+  // Get network configuration (Celo mainnet only)
   const networkConfig = getNetworkConfig();
-  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
+  const cusdAddress = networkConfig.CUSD_ADDRESS as `0x${string}`;
 
   // DEBUG: Log current network and addresses
   console.log("🔍 DEBUG Network Info:", {
     networkName: networkConfig.NETWORK_NAME,
-    usdcAddress,
+    cusdAddress,
     subgraphUrl: networkConfig.SUBGRAPH_URL
   });
 
-  // Get user's USDC balance from their smart account wallet
+  // Get user's cUSD balance from their smart account wallet
   const { data: walletBalance, isLoading: walletBalanceLoading, refetch: refetchWalletBalance } = useBalance({
     address: queryAddress,
-    token: usdcAddress,
+    token: cusdAddress,
   });
   console.log("Query address being used:", data?.queryAddress);
 
@@ -72,8 +72,8 @@ const WalletPage = () => {
 
   const formatBalance = (balance: string | bigint) => {
     if (typeof balance === 'bigint') {
-      // MockUSDC has 6 decimals
-      const formatted = parseFloat(formatUnits(balance, 6)).toFixed(2);
+      // cUSD has 18 decimals
+      const formatted = parseFloat(formatUnits(balance, 18)).toFixed(2);
       return Number(formatted).toLocaleString();
     }
     const formatted = parseFloat(balance).toFixed(2);
@@ -133,13 +133,13 @@ const WalletPage = () => {
       return;
     }
 
-    const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
+    const parsedAmount = parseUnits(amount, 18); // cUSD has 18 decimals
 
     // Check if user has sufficient balance
     if (!walletBalance || walletBalance.value < parsedAmount) {
       const currentBalance = walletBalance ? formatBalance(walletBalance.value) : '0.00';
       const neededAmount = formatBalance(parsedAmount);
-      toast.error(`Insufficient USDC balance. You have ${currentBalance} USDC but need ${neededAmount} USDC`);
+      toast.error(`Insufficient cUSD balance. You have ${currentBalance} cUSD but need ${neededAmount} cUSD`);
       return;
     }
 
@@ -172,13 +172,13 @@ const WalletPage = () => {
       const depositCallData = encodeFunctionData({
         abi: BUDGET_WALLET_ABI,
         functionName: 'depositToken',
-        args: [usdcAddress, parsedAmount],
+        args: [cusdAddress, parsedAmount],
       });
 
       // Create batch calls array
       const batchCalls = [
         {
-          to: usdcAddress,
+          to: cusdAddress,
           data: approveCallData,
         },
         {
@@ -236,7 +236,7 @@ const WalletPage = () => {
                  errorMessage.includes('ERC20InsufficientBalance') ||
                  errorMessage.includes('insufficient funds') || 
                  errorMessage.includes('insufficient balance')) {
-        toast.error('Insufficient USDC balance in your smart account for this deposit');
+        toast.error('Insufficient cUSD balance in your smart account for this deposit');
       } else {
         toast.error('Batch transaction failed: ' + (errorMessage || 'Unknown error'));
       }
@@ -429,7 +429,7 @@ const WalletPage = () => {
                   Budget Account
                 </div>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                  {formatBalance(actualTotalBalance)} USDC
+                  {formatBalance(actualTotalBalance)} cUSD
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Available for budgeting
@@ -445,7 +445,7 @@ const WalletPage = () => {
                   {walletBalanceLoading ? (
                     <span className="animate-pulse">Loading...</span>
                   ) : (
-                    `${walletBalance ? formatBalance(walletBalance.value) : '0.00'} USDC`
+                    `${walletBalance ? formatBalance(walletBalance.value) : '0.00'} cUSD`
                   )}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -489,7 +489,7 @@ const WalletPage = () => {
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="amount">Amount (USDC)</Label>
+                      <Label htmlFor="amount">Amount (cUSD)</Label>
                       <Input
                         id="amount"
                         type="number"
@@ -501,7 +501,7 @@ const WalletPage = () => {
                       />
                       {walletBalance && (
                         <p className="text-sm text-gray-500">
-                          Available: {formatBalance(walletBalance.value)} USDC
+                          Available: {formatBalance(walletBalance.value)} cUSD
                         </p>
                       )}
                     </div>
@@ -548,7 +548,7 @@ const WalletPage = () => {
                   Unallocated
                 </p>
                 <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {formatBalance(unallocatedBalance)} USDC
+                  {formatBalance(unallocatedBalance)} cUSD
                 </p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
@@ -556,7 +556,7 @@ const WalletPage = () => {
                   Allocated
                 </p>
                 <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {formatBalance(allocatedBalance)} USDC
+                  {formatBalance(allocatedBalance)} cUSD
                 </p>
               </div>
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">

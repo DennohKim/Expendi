@@ -134,7 +134,7 @@ export const BucketCard = React.memo(function BucketCard({ bucket }: BucketCardP
             bucketName={bucket.name}
             currentSpent={BigInt(bucket.monthlySpent)}
             monthlyLimit={BigInt(bucket.monthlyLimit)}
-            usdcBalance={calculations.totalTokenBalanceRaw} // Use raw BigInt value directly
+            cusdBalance={calculations.totalTokenBalanceRaw} // Use raw BigInt value directly
           />
         </div>
       </CardContent>

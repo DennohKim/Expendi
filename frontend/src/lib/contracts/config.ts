@@ -10,7 +10,7 @@ export const NETWORK_CONFIG = {
   FACTORY_ADDRESS: '0x82eA29c17EE7eE9176CEb37F728Ab1967C4993a5',
   BUDGET_WALLET_ADDRESS: '0x4B80e374ff1639B748976a7bF519e2A35b43Ca26',
   SUBGRAPH_URL: 'https://api.studio.thegraph.com/query/75392/expendi-celo/v0.0.1',
-  USDC_ADDRESS: '0x765DE816845861e75A25fCA122bb6898B8B1282a' // USDC on Celo
+  CUSD_ADDRESS: '0x765DE816845861e75A25fCA122bb6898B8B1282a' // cUSD on Celo
 } as const;
 
 // Get current network config (always returns Celo Mainnet)

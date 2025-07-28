@@ -118,10 +118,44 @@ forge install OpenZeppelin/openzeppelin-contracts
 ### Environment Configuration
 Create a `.env` file with:
 ```bash
-PRIVATE_KEY=your_private_key_here
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
-ETHERSCAN_API_KEY=your_basescan_api_key
-WALLET_CREATION_FEE=0
+# Privy Configuration (REQUIRED)
+NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id-here
+
+# WalletConnect (Optional - for better wallet support)
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id
+
+
+# Subgraph Configuration
+NEXT_PUBLIC_SUBGRAPH_URL=test
+
+# Smart Contract Addresses
+NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS=0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a
+NEXT_PUBLIC_BUDGET_WALLET_ADDRESS=0xA2f565Db75B32Dac366666621633b2259bF332D6
+NEXT_PUBLIC_CHAIN_ID=
+NEXT_PUBLIC_NETWORK_NAME=Celo
+
+# Pimlico Configuration (for gas sponsoring)
+NEXT_PUBLIC_PIMLICO_API_KEY=test
+
+# Database Configuration (for direct connections if needed)
+DATABASE_URL=your-postgres-connection-string
+
+# Notifications (for future push notifications)
+VAPID_PUBLIC_KEY=your-vapid-public-key
+VAPID_PRIVATE_KEY=your-vapid-private-key
+VAPID_SUBJECT=mailto:your-email@example.com
+
+# Analytics (optional)
+POSTHOG_KEY=your-posthog-key
+MIXPANEL_TOKEN=your-mixpanel-token
+
+# Email notifications (optional)
+RESEND_API_KEY=your-resend-api-key
+FROM_EMAIL=noreply@yourdomain.com
+
+# Development
+NODE_ENV=development
+NEXT_PUBLIC_ENVIRONMENT=development
 ```
 
 ### Build & Test
@@ -296,12 +330,6 @@ forge test --match-test testSpendFromBucket -vvv
 
 ## 🌐 Network Information
 
-### Base Sepolia Testnet
-- **Chain ID**: 84532
-- **RPC URL**: https://sepolia.base.org
-- **Block Explorer**: https://sepolia.basescan.org
-- **Faucet**: https://bridge.base.org/deposit
-
 ### Celo Mainnet
 - **Chain ID**: 42220
 - **RPC URL**: https://forno.celo.org
@@ -311,6 +339,143 @@ forge test --match-test testSpendFromBucket -vvv
 
 ### Contract Verification
 All contracts are verified on their respective block explorers for transparency and easy interaction.
+
+## 💳 Pretium API Integration
+
+Expendi integrates with the **Pretium API** to enable seamless cryptocurrency-to-mobile money conversions, allowing users to spend their cUSD directly as mobile money across African markets.
+
+### What is Pretium API?
+
+Pretium API (`https://api.xwift.africa`) is a financial bridge service that enables direct conversion from blockchain-based cryptocurrencies to mobile money systems like M-Pesa, Airtel Money, and other African mobile payment networks.
+
+### Integration Architecture
+
+The Pretium integration follows a sophisticated two-phase payment process:
+
+#### Phase 1: Blockchain Transaction
+1. User selects amount in cUSD from their budget bucket
+2. cUSD is transferred to settlement address: `0x8005ee53E57aB11E11eAA4EFe07Ee3835Dc02F98`
+3. Transaction is recorded on Celo blockchain
+4. Transaction hash is generated for tracking
+
+#### Phase 2: Mobile Money Distribution
+1. Pretium API receives the blockchain transaction hash
+2. cUSD amount is converted to local currency (KES) using live exchange rates
+3. Mobile money is sent to recipient's phone number/paybill/till number
+4. Payment confirmation handled via webhooks
+
+### Supported Payment Methods
+
+#### Mobile Payment Types
+- **MOBILE**: Direct phone number transfers (M-Pesa, Airtel Money)
+- **PAYBILL**: Business payment numbers for bill payments
+- **BUY_GOODS**: Till numbers for merchant payments
+
+#### Supported Networks
+- **Safaricom (M-Pesa)** - Primary network in Kenya
+- **Airtel Money** - Kenya and other African countries
+- **MTN Mobile Money** - Uganda, Ghana, and other markets
+- **AirtelTigo** - Ghana
+- **Telcel** - Regional coverage
+
+### API Endpoints Used
+
+#### 1. Exchange Rate Service (`/api/pretium/exchange-rate`)
+```typescript
+// Real-time cUSD to KES conversion rates
+const response = await fetch('/api/pretium/exchange-rate');
+const { rate } = await response.json();
+```
+- **Features**: 5-minute cache, auto-refresh, error handling
+- **Usage**: Display local currency equivalents to users
+
+#### 2. Mobile Number Validation (`/api/pretium/validation`)
+```typescript
+// Validate recipient mobile numbers and paybill numbers
+const response = await fetch('/api/pretium/validation', {
+  method: 'POST',
+  body: JSON.stringify({
+    recipient: '+254700000000',
+    type: 'MOBILE',
+    network: 'Safaricom'
+  })
+});
+```
+- **Features**: Real-time validation, recipient name lookup, network detection
+- **Usage**: Prevent failed transactions through pre-validation
+
+#### 3. Payment Processing (`/api/pretium`)
+```typescript
+// Initiate mobile money payment after blockchain confirmation
+const response = await fetch('/api/pretium', {
+  method: 'POST',
+  body: JSON.stringify({
+    transaction_hash: '0x...',
+    amount: '100.00',
+    shortcode: '+254700000000',
+    type: 'MOBILE',
+    mobile_network: 'Safaricom',
+    chain: 'CELO'
+  })
+});
+```
+- **Features**: Multi-network support, callback handling, status tracking
+
+### Configuration Requirements
+
+#### Environment Variables
+```bash
+# Pretium API Configuration
+PRETIUM_BASE_URI=https://api.xwift.africa
+PRETIUM_API_KEY=your-pretium-api-key
+
+# Settlement address for mobile money bridge
+SETTLEMENT_ADDRESS=0x8005ee53E57aB11E11eAA4EFe07Ee3835Dc02F98
+```
+
+#### Required Setup
+1. **Pretium API Account**: Register at [xwift.africa](https://xwift.africa)
+2. **API Key**: Obtain your unique API key for authentication
+3. **Webhook Configuration**: Set up callback URLs for payment status updates
+4. **Settlement Wallet**: Configure the bridge wallet for payment processing
+
+### User Experience Flow
+
+1. **Bucket Selection**: User selects which budget bucket to spend from
+2. **Payment Method Toggle**: Choose between wallet address or mobile number
+3. **Exchange Rate Display**: Live cUSD to KES conversion rates
+4. **Mobile Number Validation**: Real-time validation with recipient name display
+5. **Unified Payment Processing**: Single interface for blockchain + mobile payments
+
+### Integration Benefits
+
+- **Seamless UX**: Spend crypto as easily as traditional mobile money
+- **Real-time Rates**: Live exchange rates ensure fair conversions  
+- **Multi-network Support**: Works across major African mobile money networks
+- **Validation**: Prevents failed transactions through recipient validation
+- **Budget Control**: Integrates with bucket-based spending limits
+
+### Technical Implementation
+
+#### Key Hooks
+- **`useBucketPayment`**: Main orchestrator for bucket-based payments
+- **`useMobilePayment`**: Direct interface to Pretium payment API
+- **`useExchangeRate`**: Currency conversion with caching
+- **`useValidatePhoneNumber`**: Debounced recipient validation
+
+#### Error Handling
+- Comprehensive error messages for API failures
+- Retry logic for exchange rate fetching
+- User-friendly notifications via toast system
+- Fallback handling for network issues
+
+#### Security Features  
+- API key authentication with Pretium
+- Input validation for addresses and phone numbers
+- Balance and spending limit validation
+- Transaction hash verification before mobile payment
+
+This integration represents a sophisticated bridge between DeFi and traditional African financial infrastructure, enabling practical cryptocurrency spending through established mobile money systems.
 
 ## 📈 Future Enhancements
 

@@ -36,9 +36,9 @@ async function spendFromBucket(request: SpendFromBucketRequest): Promise<SpendFr
 
   // Get network configuration for current chain
   const networkConfig = getNetworkConfig();
-  const usdcAddress = tokenAddress || networkConfig.USDC_ADDRESS as `0x${string}`;
+  const cusdAddress = tokenAddress || networkConfig.CUSD_ADDRESS as `0x${string}`;
   
-  const parsedAmount = parseUnits(amount, 6); // USDC has 6 decimals
+  const parsedAmount = parseUnits(amount, 18); // cUSD has 18 decimals
 
   const txHash = await smartAccountClient.writeContract({
     address: walletAddress,
@@ -49,7 +49,7 @@ async function spendFromBucket(request: SpendFromBucketRequest): Promise<SpendFr
       bucketName, // bucketName
       parsedAmount, // amount
       recipient, // recipient
-      usdcAddress, // token (USDC)
+      cusdAddress, // token (cUSD)
       '0x' as `0x${string}` // data (empty)
     ],
     account: smartAccountClient.account,

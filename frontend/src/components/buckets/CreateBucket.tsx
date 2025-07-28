@@ -41,13 +41,13 @@ export function CreateBucket() {
 
   // Get network configuration for current chain
   const networkConfig = getNetworkConfig()
-  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`
+  const cusdAddress = networkConfig.CUSD_ADDRESS as `0x${string}`
 
-  // Get user's current USDC balance
+  // Get user's current cUSD balance 
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : address
   useBalance({
     address: queryAddress,
-    token: usdcAddress,
+    token: cusdAddress,
   })
 
   const { refetch: refetchBuckets } = useUserBuckets(queryAddress)
@@ -97,14 +97,14 @@ export function CreateBucket() {
         wallet_address: walletData.user.walletsCreated[0].wallet
       })
 
-      const limitInUsdc = parseUnits(monthlyLimit, 6) // USDC has 6 decimals
+      const limitInCusd = parseUnits(monthlyLimit, 18) // cUSD has 18 decimals
 
       // Create budget wallet utils instance and use createBucket method
       const walletUtils = createBudgetWalletUtils(walletData.user.walletsCreated[0].wallet as `0x${string}`)
       const txHash = await walletUtils.createBucket(
         () => Promise.reject(new Error('Account not available')),
         bucketName,
-        limitInUsdc,
+        limitInCusd,
         clientToUse
       )
 
@@ -166,7 +166,7 @@ export function CreateBucket() {
             />
           </div>
           <div>
-            <Label htmlFor="monthlyLimit" className="pb-2">Monthly Limit (USDC)</Label>
+            <Label htmlFor="monthlyLimit" className="pb-2">Monthly Limit (cUSD)</Label>
             <Input
               id="monthlyLimit"
               type="number"
