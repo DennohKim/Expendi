@@ -157,7 +157,7 @@ export default function OnboardingPage() {
             Welcome to Expendi
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            To get started, you need to create a budget account on Base mainnet.
+            To get started, you need to create a budget account on Celo Mainnet.
           </p>
         </div>
 
