@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { createPublicClient, createWalletClient, custom, http } from "viem";
-import { base } from "viem/chains";
+import { celo } from "viem/chains";
 import { SmartAccountClient, createSmartAccountClient } from "permissionless";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { entryPoint06Address } from "viem/account-abstraction";
@@ -71,19 +71,19 @@ export const SmartAccountProvider = ({
         console.log('🔧 Creating wallet client...');
         const privyClient = createWalletClient({
           account: eoa.address as `0x${string}`,
-          chain: base,
+          chain: celo,
           transport: custom(eip1193provider),
         });
 
         console.log('🔧 Creating public client...');
         const publicClient = createPublicClient({
-          chain: base,
+          chain: celo,
           transport: http(),
         });
 
         // Create the Pimlico paymaster client
         console.log('🔧 Creating Pimlico paymaster...');
-        const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`;
+        const pimlicoRpcUrl = `https://api.pimlico.io/v2/${celo.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`;
         
         const pimlicoPaymaster = createPimlicoClient({
           transport: http(pimlicoRpcUrl),
@@ -107,7 +107,7 @@ export const SmartAccountProvider = ({
         console.log('🔧 Creating smart account client...');
         const smartAccountClient = createSmartAccountClient({
           account: simpleSmartAccount,
-          chain: base,
+          chain: celo,
           bundlerTransport: http(pimlicoRpcUrl),
           paymaster: pimlicoPaymaster,
           userOperation: {

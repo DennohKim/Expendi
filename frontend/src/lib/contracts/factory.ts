@@ -1,6 +1,6 @@
 // Factory contract interaction utilities using wagmi with Privy
 import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import { celo } from 'viem/chains';
 import FactoryABI from './SimpleBudgetWalletFactory.json';
 import type { SmartAccountClient } from 'permissionless';
 import type { Abi } from 'viem';
@@ -17,16 +17,16 @@ interface WriteContractArgs {
 // Factory contract ABI (complete from compiled contract)
 export const FACTORY_ABI = FactoryABI.abi as Abi;
 
-// Get factory contract address (always Base mainnet)
+// Get factory contract address (always Celo mainnet)
 export function getFactoryAddress(): `0x${string}` {
   const config = getNetworkConfig();
   return config.FACTORY_ADDRESS as `0x${string}`;
 }
 
-// Create public client (always Base mainnet)
+// Create public client (always Celo mainnet)
 export function getPublicClient() {
   return createPublicClient({
-    chain: base,
+    chain: celo,
     transport: http()
   });
 }
@@ -168,7 +168,7 @@ export async function createOrGetBudgetWallet(
       if (error.message.includes('network') || 
           error.message.includes('chain') ||
           error.message.includes('unsupported network')) {
-        throw new Error('Network error. Please ensure you are connected to Base mainnet.');
+        throw new Error('Network error. Please ensure you are connected to Celo mainnet.');
       }
       
       // Check for contract issues

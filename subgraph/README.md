@@ -1,12 +1,27 @@
 # Expendi Budget Wallet Subgraph
 
-This subgraph indexes events from the Expendi budget wallet smart contracts deployed on Base Sepolia.
+This subgraph indexes events from the Expendi budget wallet smart contracts deployed on multiple networks.
 
-## Contract Addresses
+## Deployed Networks
 
+### Base Sepolia (Testnet)
 - **SimpleBudgetWallet**: `0x3300416DB028aE9eC43f32835aF652Fa87200874`
 - **SimpleBudgetWalletFactory**: `0xAf8fb11822deC6Df35e17255B1A6bbF268a6b4e4`
-- **Network**: Base Sepolia (Chain ID: 84532)
+- **Chain ID**: 84532
+- **Subgraph URL**: TBD
+
+### Base Mainnet
+- **SimpleBudgetWallet**: `0x4B80e374ff1639B748976a7bF519e2A35b43Ca26`
+- **SimpleBudgetWalletFactory**: `0x82eA29c17EE7eE9176CEb37F728Ab1967C4993a5`
+- **Chain ID**: 8453
+- **Subgraph URL**: TBD
+
+### Celo Mainnet
+- **SimpleBudgetWallet**: `0x4B80e374ff1639B748976a7bF519e2A35b43Ca26`
+- **SimpleBudgetWalletFactory**: `0x82eA29c17EE7eE9176CEb37F728Ab1967C4993a5`
+- **Chain ID**: 42220
+- **Subgraph URL**: https://api.studio.thegraph.com/query/75392/expendi-celo/v0.0.1
+- **Studio URL**: https://thegraph.com/studio/subgraph/expendi-celo
 
 ## Features
 
@@ -196,9 +211,22 @@ For local development with Graph Node:
 
 ## Build Commands
 
+### Base Sepolia (default)
 - `npm run codegen` - Generate types from GraphQL schema
 - `npm run build` - Build the subgraph
 - `npm run deploy` - Deploy to Subgraph Studio
+
+### Base Mainnet
+- `npm run codegen-mainnet` - Generate types for mainnet configuration
+- `npm run build-mainnet` - Build the mainnet subgraph
+- `npm run deploy-mainnet` - Deploy mainnet subgraph to Studio
+
+### Celo Mainnet
+- `npm run codegen-celo` - Generate types for Celo configuration
+- `npm run build-celo` - Build the Celo subgraph
+- `npm run deploy-celo` - Deploy Celo subgraph to Studio
+
+### Local Development
 - `npm run deploy-local` - Deploy to local Graph Node
 
 ## Development Notes
