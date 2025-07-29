@@ -6,9 +6,9 @@ dataSources:
     name: SimpleBudgetWallet
     network: celo
     source:
-      address: "0x4B80e374ff1639B748976a7bF519e2A35b43Ca26"
+      address: "0x30c72e2b14ee982fe3587e366c9093845e84aa1f"
       abi: SimpleBudgetWallet
-      startBlock: 24070000
+      startBlock: 41714129
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -51,9 +51,9 @@ dataSources:
     name: SimpleBudgetWalletFactory
     network: celo
     source:
-      address: "0x82eA29c17EE7eE9176CEb37F728Ab1967C4993a5"
+      address: "0x06cb6b1b6dd6b16df66f50a597ef7902c80f937f"
       abi: SimpleBudgetWalletFactory
-      startBlock: 24070000
+      startBlock: 41714129
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
