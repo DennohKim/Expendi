@@ -59,15 +59,20 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
    }, BigInt(0)) || BigInt(0);
 
 
-  const getErrorMessage = (error: any): string => {
+  const getErrorMessage = (error: unknown): string => {
+    // Type guard to check if error has expected properties
+    const hasStringProperty = (obj: unknown, prop: string): obj is Record<string, string> => {
+      return typeof obj === 'object' && obj !== null && prop in obj && typeof (obj as Record<string, unknown>)[prop] === 'string';
+    };
+
     // Check for insufficient unallocated tokens error
-    if (error?.message?.includes('Insufficient unallocated tokens') || 
-        error?.details?.includes('Insufficient unallocated tokens')) {
+    if (hasStringProperty(error, 'message') && error.message.includes('Insufficient unallocated tokens') || 
+        hasStringProperty(error, 'details') && error.details.includes('Insufficient unallocated tokens')) {
       return `Insufficient funds in unallocated budget. You have ${formatBalance(unallocatedBalance)} USDC available, but trying to fund ${amount} USDC.`;
     }
 
     // Check for hex error in UserOperationExecutionError
-    if (error?.details?.includes('0x08c379a0')) {
+    if (hasStringProperty(error, 'details') && error.details.includes('0x08c379a0')) {
       try {
         // Extract hex error from the details
         const hexMatch = error.details.match(/0x08c379a0[a-fA-F0-9]+/);
@@ -91,7 +96,8 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
     }
 
     // Generic contract error
-    if (error?.message?.includes('execution reverted') || error?.message?.includes('UserOperation reverted')) {
+    if (hasStringProperty(error, 'message') && 
+        (error.message.includes('execution reverted') || error.message.includes('UserOperation reverted'))) {
       return 'Transaction failed. Please check your balance and try again.';
     }
 
