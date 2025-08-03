@@ -50,7 +50,6 @@ interface UserBucket {
 
 
 export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
-  // console.log("bucket", bucket);
 
   const { address } = useAccount();
   const [amount, setAmount] = useState('');

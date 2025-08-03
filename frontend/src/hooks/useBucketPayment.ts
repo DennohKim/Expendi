@@ -35,7 +35,7 @@ interface BucketPaymentResponse {
 export function useBucketPayment() {
   const spendFromBucket = useSpendFromBucket();
   const mobilePayment = useMobilePayment();
-  const receiptGeneration = useReceiptGeneration();
+  // const receiptGeneration = useReceiptGeneration();
 
   const mutation = useMutation({
     mutationFn: async (request: BucketPaymentRequest): Promise<BucketPaymentResponse> => {
@@ -128,16 +128,16 @@ export function useBucketPayment() {
         });
 
         // Generate receipt if transaction_code is available
-        if (paymentResult.transaction_code) {
-          try {
-            await receiptGeneration.mutateAsync({
-              transaction_code: paymentResult.transaction_code,
-            });
-          } catch (receiptError) {
-            console.error('Receipt generation failed:', receiptError);
-            // Don't fail the entire payment flow for receipt generation
-          }
-        }
+        // if (paymentResult.transaction_code) {
+        //   try {
+        //     await receiptGeneration.mutateAsync({
+        //       transaction_code: paymentResult.transaction_code,
+        //     });
+        //   } catch (receiptError) {
+        //     console.error('Receipt generation failed:', receiptError);
+        //     // Don't fail the entire payment flow for receipt generation
+        //   }
+        // }
 
         toast.success(`Successfully initiated mobile payment of ${amount} USDC to ${phoneNumber}!`);
         
