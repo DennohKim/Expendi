@@ -364,7 +364,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           <div className="flex justify-end gap-2">
             <Button 
               type="submit" 
-              disabled={bucketPayment.isProcessing || !amount || !recipient || !selectedBucketName} 
+              disabled={bucketPayment.isProcessing || !amount || (!recipient && !phoneNumber) || !selectedBucketName} 
               variant="primary"
             >
               {bucketPayment.isProcessing ? 'Processing...' : phoneNumber ? 'Send to Mobile Number' : 'Send USDC'}
