@@ -184,7 +184,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     if (phoneNumber.length < 10) {
       clearValidation();
     }
-  }, [phoneNumber, clearValidation]);
+  }, [phoneNumber]);
 
   const availableBalance = formatUnits(usdcBalance, 6);
   const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
