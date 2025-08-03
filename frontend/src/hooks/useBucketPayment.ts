@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { formatUnits, isAddress } from 'viem';
 import { useSpendFromBucket } from './useSpendFromBucket';
 import { useMobilePayment } from './useMobilePayment';
-import { useReceiptGeneration } from './useReceiptGeneration';
+// import { useReceiptGeneration } from './useReceiptGeneration';
 
 interface BucketPaymentRequest {
   // Required data
