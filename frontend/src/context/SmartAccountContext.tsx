@@ -66,7 +66,6 @@ export const SmartAccountProvider = ({
       
       try {
         // Get an EIP1193 provider and viem WalletClient for the EOA
-        console.log('🔧 Getting Ethereum provider...');
         const eip1193provider = await eoa.getEthereumProvider();
         console.log('🔧 Creating wallet client...');
         const privyClient = createWalletClient({
