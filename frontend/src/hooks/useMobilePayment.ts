@@ -15,6 +15,7 @@ interface MobilePaymentResponse {
   [key: string]: unknown;
   success?: boolean;
   message?: string;
+  transaction_code?: string;
 }
 
 async function sendMobilePayment(request: MobilePaymentRequest): Promise<MobilePaymentResponse> {

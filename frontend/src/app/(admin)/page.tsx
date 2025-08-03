@@ -37,6 +37,7 @@ export default function DashboardPage() {
   }, [error]);
   
   const buckets = data?.user?.buckets || [];
+
   
   // Only show loading when we have no data AND we're actually loading
   const isInitialLoading = loading && !data;

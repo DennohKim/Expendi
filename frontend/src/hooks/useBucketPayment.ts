@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { formatUnits, isAddress } from 'viem';
 import { useSpendFromBucket } from './useSpendFromBucket';
 import { useMobilePayment } from './useMobilePayment';
+import { useReceiptGeneration } from './useReceiptGeneration';
 
 interface BucketPaymentRequest {
   // Required data
@@ -34,6 +35,7 @@ interface BucketPaymentResponse {
 export function useBucketPayment() {
   const spendFromBucket = useSpendFromBucket();
   const mobilePayment = useMobilePayment();
+  const receiptGeneration = useReceiptGeneration();
 
   const mutation = useMutation({
     mutationFn: async (request: BucketPaymentRequest): Promise<BucketPaymentResponse> => {
@@ -124,6 +126,18 @@ export function useBucketPayment() {
           callback_url: "http://localhost:3000/api/pretium/callback",
           chain: "BASE",
         });
+
+        // Generate receipt if transaction_code is available
+        if (paymentResult.transaction_code) {
+          try {
+            await receiptGeneration.mutateAsync({
+              transaction_code: paymentResult.transaction_code,
+            });
+          } catch (receiptError) {
+            console.error('Receipt generation failed:', receiptError);
+            // Don't fail the entire payment flow for receipt generation
+          }
+        }
 
         toast.success(`Successfully initiated mobile payment of ${amount} USDC to ${phoneNumber}!`);
         

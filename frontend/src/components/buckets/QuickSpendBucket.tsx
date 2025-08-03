@@ -50,7 +50,7 @@ interface UserBucket {
 
 
 export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
-  console.log("bucket", bucket);
+  // console.log("bucket", bucket);
 
   const { address } = useAccount();
   const [amount, setAmount] = useState('');
@@ -184,7 +184,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     if (phoneNumber.length < 10) {
       clearValidation();
     }
-  }, [phoneNumber, clearValidation]);
+  }, [phoneNumber]);
 
   const availableBalance = formatUnits(usdcBalance, 6);
   const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
@@ -364,7 +364,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           <div className="flex justify-end gap-2">
             <Button 
               type="submit" 
-              disabled={bucketPayment.isProcessing || !amount || (!recipient && !phoneNumber) || !selectedBucketName} 
+              disabled={bucketPayment.isProcessing || !amount || !recipient || !selectedBucketName} 
               variant="primary"
             >
               {bucketPayment.isProcessing ? 'Processing...' : phoneNumber ? 'Send to Mobile Number' : 'Send USDC'}
