@@ -212,7 +212,7 @@ export function SpendBucketButton({
             <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSpending || !amount || !recipient}>
+            <Button variant="primary" type="submit" disabled={isSpending || !amount || !recipient}>
               {isSpending ? 'Spending...' : 'Send USDC'}
             </Button>
           </div>
