@@ -368,6 +368,11 @@ export const parseTokenEvent = (log: Log): IndexedEvent | null => {
     }
     return null;
   } catch (error) {
+    // Skip unknown events that aren't in our ABI (like USDC-specific events)
+    if (error instanceof Error && error.message.includes('Encoded event signature')) {
+      console.log(`Skipping unknown token event signature: ${log.topics[0]}`);
+      return null;
+    }
     console.error('Error parsing token event:', error);
     return null;
   }
@@ -436,6 +441,11 @@ export const getTokenEvents = async (
   fromBlock: bigint,
   toBlock: bigint
 ): Promise<IndexedEvent[]> => {
+  // Skip token monitoring if no USDC address is configured
+  if (!config.contracts.mockUSDC) {
+    return [];
+  }
+  
   const logs = await getLogsForContract(
     config.contracts.mockUSDC as Address,
     fromBlock,

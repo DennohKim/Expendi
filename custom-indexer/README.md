@@ -1,6 +1,6 @@
 # Custom Smart Contract Indexer
 
-A custom indexer built with Viem to capture and index smart contract events from your budget wallet system on Base Sepolia.
+A custom indexer built with Viem to capture and index smart contract events from your budget wallet system on Base Mainnet.
 
 ## Features
 
@@ -15,16 +15,24 @@ A custom indexer built with Viem to capture and index smart contract events from
 
 ### Contracts Indexed
 
-1. **SimpleBudgetWalletFactory** (`0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a`)
+1. **SimpleBudgetWalletFactory** (`0x82eA29c17EE7eE9176CEb37F728Ab1967C4993a5`)
    - `WalletCreated` events
+   - `WalletRegistered` events
 
-2. **Dynamic Budget Wallets** (deployed through factory)
+2. **Dynamic Budget Wallets** (`0x4B80e374ff1639B748976a7bF519e2A35b43Ca26` template)
    - `BucketCreated` events
-   - `Spending` events  
-   - `BucketLimitUpdated` events
-   - `DelegatePermissionChanged` events
+   - `BucketUpdated` events
+   - `BucketFunded` events
+   - `SpentFromBucket` events
+   - `BucketTransfer` events
+   - `FundsDeposited` events
+   - `MonthlyLimitReset` events
+   - `DelegateAdded` events
+   - `DelegateRemoved` events
+   - `UnallocatedWithdraw` events
+   - `EmergencyWithdraw` events
 
-3. **MockUSDC** (`0x5c6df8de742863d997083097e02a789f6b84bf38`)
+3. **Token Contracts** (ERC-20 tokens including USDC, ETH, etc.)
    - `Transfer` events
 
 ## Setup
@@ -62,41 +70,154 @@ pnpm run dev
 ```
 
 The indexer will:
-- Connect to Base Sepolia network
-- Start indexing from configured start blocks
-- Serve API endpoints on port 3000
+- Connect to Base Mainnet network
+- Start indexing from block 24070000
+- Serve API endpoints on port 8030
 
 ## API Endpoints
 
-### Health & Status
-- `GET /api/health` - Health check
-- `GET /api/status` - Indexer status
-- `GET /api/status/contract/:address` - Contract-specific status
+### Base URL
+`http://localhost:8030/api`
 
-### Events
-- `GET /api/events` - Get all events with filtering
-- `GET /api/events/contract/:address` - Get events by contract
-- `GET /api/factory/events` - Get factory wallet creation events
-- `GET /api/tokens/transfers` - Get token transfer events
+### Health & Status Endpoints
 
-### Wallets & Buckets
-- `GET /api/wallets/user/:address` - Get wallets by user
-- `GET /api/buckets/wallet/:address` - Get buckets by wallet
-- `GET /api/wallet/:address/buckets/events` - Get bucket events
-- `GET /api/wallet/:address/spending/events` - Get spending events
-- `GET /api/spending/wallet/:address` - Get spending records
+#### `GET /health`
+**Function**: Health check endpoint
+- **Returns**: Server health status and timestamp
+- **Response**: `{ status: 'healthy', timestamp: ISO_string }`
 
-### Query Parameters
+#### `GET /status`
+**Function**: Get overall indexer status
+- **Returns**: Indexer running state, last processed block, and known wallets count
+- **Response**: `{ isRunning: boolean, lastProcessedBlock: string, knownWalletsCount: number }`
 
-Most endpoints support filtering:
-- `contractAddress` - Filter by contract address
-- `eventName` - Filter by event name
-- `blockNumber` - Filter by specific block
-- `startBlock` / `endBlock` - Filter by block range
-- `user` - Filter by user address
-- `wallet` - Filter by wallet address
-- `bucketId` - Filter by bucket ID
-- `page` / `limit` - Pagination
+#### `GET /status/contract/:address`
+**Function**: Get indexer status for specific contract
+- **Parameters**: `address` - Contract address
+- **Returns**: Last processed block for the specific contract
+
+### Event Endpoints
+
+#### `GET /events`
+**Function**: Get all events with advanced filtering
+- **Query Parameters**:
+  - `contractAddress` - Filter by contract address
+  - `eventName` - Filter by event name
+  - `blockNumber` - Filter by specific block
+  - `transactionHash` - Filter by transaction hash
+  - `user` - Filter by user address
+  - `wallet` - Filter by wallet address
+  - `bucketId` - Filter by bucket ID
+  - `page` - Page number (default: 1)
+  - `limit` - Results per page (default: 100)
+  - `startBlock` - Start block for range
+  - `endBlock` - End block for range
+
+#### `GET /events/contract/:address`
+**Function**: Get events by specific contract address
+- **Parameters**: `address` - Contract address
+- **Query Parameters**: `page`, `limit`
+
+#### `GET /factory/events`
+**Function**: Get factory wallet creation events specifically
+- **Returns**: All `WalletCreated` events
+- **Supports**: All standard query parameters
+
+#### `GET /wallet/:address/buckets/events`
+**Function**: Get bucket creation events for specific wallet
+- **Parameters**: `address` - Wallet address
+- **Returns**: All `BucketCreated` events for the wallet
+
+#### `GET /wallet/:address/spending/events`
+**Function**: Get spending events for specific wallet
+- **Parameters**: `address` - Wallet address
+- **Returns**: All `Spending` events for the wallet
+
+#### `GET /tokens/transfers`
+**Function**: Get token transfer events
+- **Returns**: All `Transfer` events
+- **Supports**: All standard query parameters
+
+### Wallet & User Endpoints
+
+#### `GET /wallets/user/:address`
+**Function**: Get all wallets created by a user
+- **Parameters**: `address` - User address
+- **Returns**: Array of wallet records for the user
+
+#### `GET /buckets/wallet/:address`
+**Function**: Get all buckets for a specific wallet
+- **Parameters**: `address` - Wallet address
+- **Returns**: Array of bucket records
+
+#### `GET /spending/wallet/:address`
+**Function**: Get spending records for a specific wallet
+- **Parameters**: `address` - Wallet address
+- **Query Parameters**: `limit` (default: 100)
+- **Returns**: Array of spending records
+
+### Transfer Endpoints
+
+#### `GET /transfers/wallet/:address`
+**Function**: Get classified transfers for a specific wallet
+- **Parameters**: `address` - Wallet address
+- **Query Parameters**: `limit` (default: 100)
+- **Returns**: All transfers (deposits, withdrawals, bucket transfers) for the wallet
+
+#### `GET /transfers/type/:type`
+**Function**: Get transfers by classification type
+- **Parameters**: `type` - Transfer type (`deposit`, `withdrawal`, `bucket_transfer`, `external`)
+- **Query Parameters**: `limit` (default: 100)
+- **Returns**: Transfers of the specified type
+
+#### `GET /transfers/token/:address`
+**Function**: Get transfers for a specific token
+- **Parameters**: `address` - Token contract address
+- **Query Parameters**: `limit` (default: 100)
+- **Returns**: All transfers of the specified token
+
+#### `GET /wallet/:address/deposits`
+**Function**: Get deposits to a specific wallet
+- **Parameters**: `address` - Wallet address
+- **Query Parameters**: `limit` (default: 100)
+- **Returns**: Filtered transfers where type is 'deposit' and wallet is recipient
+
+#### `GET /wallet/:address/withdrawals`
+**Function**: Get withdrawals from a specific wallet
+- **Parameters**: `address` - Wallet address
+- **Query Parameters**: `limit` (default: 100)
+- **Returns**: Filtered transfers where type is 'withdrawal' and wallet is sender
+
+### Structured Withdrawal Endpoints
+
+#### `GET /wallet/:address/structured-withdrawals`
+**Function**: Get structured withdrawal records for a wallet
+- **Parameters**: `address` - Wallet address
+- **Query Parameters**: `limit` (default: 100), `offset` (default: 0)
+- **Returns**: Structured withdrawal records (UnallocatedWithdraw, EmergencyWithdraw events)
+
+#### `GET /user/:address/withdrawals`
+**Function**: Get all withdrawal records for a user
+- **Parameters**: `address` - User address
+- **Query Parameters**: `limit` (default: 100), `offset` (default: 0)
+- **Returns**: All withdrawal records for the user across all their wallets
+
+#### `GET /withdrawals/type/:type`
+**Function**: Get withdrawals by type
+- **Parameters**: `type` - Withdrawal type (`unallocated`, `emergency`)
+- **Query Parameters**: `limit` (default: 100), `offset` (default: 0)
+- **Returns**: Withdrawals of the specified type
+
+### Common Response Format
+
+All endpoints return responses in this format:
+```json
+{
+  "success": boolean,
+  "data": any,
+  "error": string | undefined
+}
+```
 
 ## CLI Commands
 
@@ -140,6 +261,13 @@ Optimized indexes for:
 - User and wallet associations
 - Timestamp-based queries
 
+## Supported Events
+
+The indexer tracks these contract events:
+- **Factory**: `WalletCreated`, `WalletRegistered`
+- **Wallet**: `BucketCreated`, `BucketUpdated`, `BucketFunded`, `SpentFromBucket`, `BucketTransfer`, `FundsDeposited`, `MonthlyLimitReset`, `DelegateAdded`, `DelegateRemoved`, `UnallocatedWithdraw`, `EmergencyWithdraw`
+- **Token**: `Transfer`
+
 ## Development
 
 ### Project Structure
@@ -169,13 +297,16 @@ Key configuration options:
 
 ```env
 # Network
-RPC_URL=https://sepolia.base.org
-CHAIN_ID=84532
+RPC_URL=https://mainnet.base.org
+CHAIN_ID=8453
 
 # Contracts
-FACTORY_CONTRACT_ADDRESS=0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a
-BUDGET_WALLET_TEMPLATE_ADDRESS=0xA2f565Db75B32Dac366666621633b2259bF332D6
-MOCK_USDC_ADDRESS=0x5c6df8de742863d997083097e02a789f6b84bf38
+FACTORY_CONTRACT_ADDRESS=0x82eA29c17EE7eE9176CEb37F728Ab1967C4993a5
+BUDGET_WALLET_TEMPLATE_ADDRESS=0x4B80e374ff1639B748976a7bF519e2A35b43Ca26
+
+# Start Blocks
+FACTORY_START_BLOCK=24070000
+BUDGET_WALLET_START_BLOCK=24070000
 
 # Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/indexer_db
@@ -183,6 +314,7 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/indexer_db
 # Indexer
 BATCH_SIZE=1000
 POLLING_INTERVAL=5000
+PORT=8030
 ```
 
 ## Frontend Integration
@@ -191,13 +323,19 @@ Use the API endpoints in your frontend application:
 
 ```javascript
 // Get wallets for a user
-const wallets = await fetch('/api/wallets/user/0x123...').then(r => r.json());
+const wallets = await fetch('http://localhost:8030/api/wallets/user/0x123...').then(r => r.json());
 
 // Get buckets for a wallet
-const buckets = await fetch('/api/buckets/wallet/0x456...').then(r => r.json());
+const buckets = await fetch('http://localhost:8030/api/buckets/wallet/0x456...').then(r => r.json());
 
 // Get spending records
-const spending = await fetch('/api/spending/wallet/0x456...').then(r => r.json());
+const spending = await fetch('http://localhost:8030/api/spending/wallet/0x456...').then(r => r.json());
+
+// Get transfers for a wallet
+const transfers = await fetch('http://localhost:8030/api/transfers/wallet/0x456...').then(r => r.json());
+
+// Get withdrawals for a user
+const withdrawals = await fetch('http://localhost:8030/api/user/0x123.../withdrawals').then(r => r.json());
 ```
 
 ## Production Deployment

@@ -433,7 +433,7 @@ export const stopIndexer = async (): Promise<void> => {
 export const getIndexerInfo = () => {
   return {
     isRunning: indexerState.isRunning,
-    lastProcessedBlock: indexerState.lastProcessedBlock,
+    lastProcessedBlock: indexerState.lastProcessedBlock.toString(),
     knownWalletsCount: indexerState.knownWallets.size,
   };
 };
