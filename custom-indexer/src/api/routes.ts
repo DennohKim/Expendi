@@ -20,10 +20,25 @@ import { ApiResponse, EventQueryParams } from '../types';
 
 const router: Router = Router();
 
+// Helper function to serialize BigInt values for JSON
+const serializeBigInt = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'bigint') return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serializeBigInt);
+  if (typeof obj === 'object') {
+    const serialized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      serialized[key] = serializeBigInt(value);
+    }
+    return serialized;
+  }
+  return obj;
+};
+
 // Helper function to create API response
 const createResponse = <T>(data?: T, error?: string): ApiResponse<T> => ({
   success: !error,
-  data,
+  data: serializeBigInt(data),
   error,
 });
 
