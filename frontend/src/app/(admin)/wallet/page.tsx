@@ -17,6 +17,7 @@ import { getNetworkConfig } from '@/lib/contracts/config';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import AllocateFunds from '@/components/wallet/AllocateFunds';
 import WalletPageSkeleton from '@/components/wallet/WalletPageSkeleton';
+import { formatAddress } from '@/lib/utils';
 
 interface Bucket {
   name: string;
@@ -34,6 +35,7 @@ const WalletPage = () => {
   
   // Use smart account address if available, fallback to EOA
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
+  const displayAddress = smartAccountAddress || eoaAddress;
   
   const { data, loading, error, refetch } = useUserBudgetWallet(queryAddress);
   console.log("Wallet data", data?.user?.walletsCreated[0].wallet)
@@ -392,7 +394,7 @@ const WalletPage = () => {
               </div>
               <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                 <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white">
-                  {smartAccountAddress || eoaAddress || 'Not connected'}
+                  {displayAddress ? formatAddress(displayAddress) : 'Not connected'}
                 </code>
                 <Button
                   variant="outline"
@@ -457,18 +459,8 @@ const WalletPage = () => {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-3 gap-3">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => copyToClipboard(userData?.walletsCreated?.[0]?.wallet || '')}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-                  <path d="M8 4v12a2 2 0 002 2h8a2 2 0 002-2V7.242a2 2 0 00-.602-1.43L16.083 2.57A2 2 0 0014.685 2H10a2 2 0 00-2 2z" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M16 18v2a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2h2" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-                Copy
-              </Button>
+            <div className="grid grid-cols-2 gap-3">
+             
               
               <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
                 <DialogTrigger asChild>
@@ -542,7 +534,7 @@ const WalletPage = () => {
             </div>
 
             {/* Additional Stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                   Unallocated

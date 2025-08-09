@@ -134,7 +134,8 @@ export const insertWallet = async (
 
 export const getWalletsByUser = async (userAddress: Address): Promise<any[]> => {
   const sql = `
-    SELECT * FROM wallet_registry 
+    SELECT id, wallet_address, user_address, template_address, created_at 
+    FROM wallet_registry 
     WHERE user_address = $1 
     ORDER BY created_at DESC
   `;

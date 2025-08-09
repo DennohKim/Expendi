@@ -51,12 +51,15 @@ export default function DashboardPage() {
       </div> */}
       
       {/* Quick Spend Tab - Above buckets on small/medium, right side on large */}
-      <div className="col-span-12 h-auto mb-4 w-full xl:col-span-4 xl:order-2 xl:h-[calc(100vh-120px)] xl:mb-0">
+      <div className="col-span-12 h-auto mb-4 w-full overflow-y-auto xl:col-span-4 xl:order-2 xl:h-[calc(100vh-120px)] xl:mb-0">
         <QuickSpendTab bucket={buckets} />
       </div>
       
       {/* User Buckets Grid - Below QuickSpend on small/medium, left side on large */}
       <div className="col-span-12 h-[calc(100vh-120px)] overflow-y-auto pr-2 xl:col-span-8 xl:order-1">
+        <div className="mb-1 pb-4 sticky top-0 bg-white dark:bg-gray-900 z-10 pr-2">
+          <h2 className="text-lg font-semibold leading-6 text-gray-900 dark:text-white">Buckets</h2>
+        </div>
         <BucketsGrid buckets={buckets} loading={isInitialLoading} error={error || null} />
       </div>
       

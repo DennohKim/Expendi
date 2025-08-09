@@ -55,6 +55,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [recipientMode, setRecipientMode] = useState<'address' | 'phone'>('address');
   const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
   const [mobileNetwork, setMobileNetwork] = useState<'Safaricom' | 'Airtel'>('Safaricom');
   const [selectedBucketName, setSelectedBucketName] = useState('');
@@ -133,12 +134,15 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
 
     // Use the bucket payment mutation
     try {
+      // Convert entered KES to USDC for on-chain spending and validations
+      const amountUsdc = exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : amount;
+
       const result = await bucketPayment.mutateAsync({
         smartAccountClient,
         walletAddress: walletData.user.walletsCreated[0].wallet as `0x${string}`,
         userAddress: queryAddress as `0x${string}`,
         bucketName: selectedBucketName,
-        amount,
+        amount: amountUsdc,
         recipient,
         phoneNumber,
         paymentType,
@@ -190,8 +194,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const monthlyLimitFormatted = formatUnits(BigInt(monthlyLimit), 6);
   const remainingBudget = Math.max(0, parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted));
 
-  // Calculate KES amount
-  const kesAmount = amount && exchangeRate ? (parseFloat(amount) * exchangeRate).toFixed(2) : null;
+  // New: amount is entered in KES. Compute USDC equivalent and KES maximums for UI/validation
+  const usdcEquivalent = amount && exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : null;
+  const maxUsdc = Math.min(parseFloat(availableBalance), remainingBudget);
+  const maxKesNumber = exchangeRate ? maxUsdc * exchangeRate : undefined;
+  const maxKesLabel = typeof maxKesNumber === 'number' && isFinite(maxKesNumber)
+    ? maxKesNumber.toFixed(2)
+    : '—';
 
   return (
     <Card>
@@ -231,7 +240,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           
           <div>
             <Label className="pb-2">Recipient</Label>
-            <Tabs defaultValue="address" className="w-full">
+            <Tabs value={recipientMode} onValueChange={(v) => setRecipientMode(v as 'address' | 'phone')} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="address">Wallet Address</TabsTrigger>
                 <TabsTrigger value="phone">Phone Number</TabsTrigger>
@@ -298,10 +307,16 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                       <span className="text-blue-700 font-medium">Exchange Rate:</span>
                       <span className="text-blue-900">1 USDC = {exchangeRate.toFixed(2)} KES</span>
                     </div>
-                    {kesAmount && (
+                    {amount && (
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-blue-700">You will send:</span>
-                        <span className="text-blue-900 font-medium">{kesAmount} KES</span>
+                        <span className="text-blue-900 font-medium">{parseFloat(amount).toFixed(2)} KES</span>
+                      </div>
+                    )}
+                    {usdcEquivalent && (
+                      <div className="flex justify-between items-center text-sm mt-1">
+                        <span className="text-blue-700">USDC equivalent:</span>
+                        <span className="text-blue-900 font-medium">{usdcEquivalent} USDC</span>
                       </div>
                     )}
                   </div>
@@ -343,30 +358,35 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           
           {selectedBucket && (
             <div>
-              <Label htmlFor="amount" className="pb-2">Amount (USDC)</Label>
+              <Label htmlFor="amount" className="pb-2">Amount (KES)</Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="10.00"
-                max={Math.min(parseFloat(availableBalance), remainingBudget)}
+                placeholder="1000.00"
+                max={maxKesNumber}
                 required
               />
               <div className="text-sm text-muted-foreground mt-1">
-                Maximum: {Math.min(parseFloat(availableBalance), remainingBudget).toFixed(2)} USDC
+                Maximum: {maxKesLabel} KES
               </div>
+              {usdcEquivalent && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  Equivalent: {usdcEquivalent} USDC
+                </div>
+              )}
             </div>
           )}
           
           <div className="flex justify-end gap-2">
             <Button 
               type="submit" 
-              disabled={bucketPayment.isProcessing || !amount || (!recipient && !phoneNumber) || !selectedBucketName} 
+              disabled={bucketPayment.isProcessing || !amount || (!recipient && !phoneNumber) || !selectedBucketName || !exchangeRate} 
               variant="primary"
             >
-              {bucketPayment.isProcessing ? 'Processing...' : phoneNumber ? 'Send to Mobile Number' : 'Send USDC'}
+              {bucketPayment.isProcessing ? 'Processing...' : recipientMode === 'phone' ? 'Send KES' : 'Send USDC'}
             </Button>
           </div>
         </form>
