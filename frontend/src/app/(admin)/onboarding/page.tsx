@@ -11,12 +11,14 @@ import { BudgetWalletCreationProgress } from '@/components/BudgetWalletCreationP
 import { Button } from '@/components/ui/button';
 import { useWalletCreationPolling } from '@/hooks/useWalletCreationPolling';
 import { WalletPollingLoadingPage } from '@/components/WalletPollingLoadingPage';
+import { useRouter } from 'next/navigation';
 
 export default function OnboardingPage() {
   const { address: eoaAddress } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const { smartAccountClient, smartAccountReady } = useSmartAccount();
   const { ready, authenticated, login } = usePrivy();
+  const router = useRouter();
   
   // Use smart account address for polling if available, otherwise EOA address
   const pollingAddress = smartAccountClient?.account?.address || eoaAddress;
@@ -66,9 +68,7 @@ export default function OnboardingPage() {
         setStep('completed');
         
         // Hard refresh for existing wallets too
-        setTimeout(() => {
-          window.location.href = '/wallet';
-        }, 1000);
+       router.push('/wallet');
       } else if (result.txHash) {
         console.log('Budget Account creation transaction submitted:', result.txHash);
         setStep('creating');
@@ -90,10 +90,9 @@ export default function OnboardingPage() {
           setStep('completed');
           
           // Hard refresh to ensure all state is reset and gateway detects wallet
-          setTimeout(() => {
-            window.location.href = '/wallet';
-          }, 1000);
-        } else {
+        router.push('/wallet');
+        }
+         else {
           // Wallet was created but not yet indexed - still proceed with hard refresh
           console.log('Wallet created but not yet indexed, proceeding anyway');
           setStep('completed');

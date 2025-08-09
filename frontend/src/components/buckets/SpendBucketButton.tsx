@@ -186,9 +186,9 @@ export function SpendBucketButton({
               placeholder="0x..."
               required
             />
-            <div className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Enter the wallet address to send USDC to
-            </div>
+            </p>
           </div>
           
           <div>

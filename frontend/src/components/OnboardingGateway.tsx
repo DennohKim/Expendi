@@ -7,6 +7,7 @@ import { useHasBudgetWallet } from '@/hooks/useHasBudgetWallet';
 import { useWalletCreationPolling } from '@/hooks/useWalletCreationPolling';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { Loader2 } from 'lucide-react';
+import { usePrivy } from '@privy-io/react-auth';
 
 interface OnboardingGatewayProps {
   children: React.ReactNode;
@@ -18,6 +19,13 @@ export function OnboardingGateway({ children }: OnboardingGatewayProps) {
   const { hasBudgetWallet, isLoading, refreshWalletCheck } = useHasBudgetWallet();
   const router = useRouter();
   const pathname = usePathname();
+  const { authenticated } = usePrivy();
+
+  useEffect(() => {
+    if (!authenticated) {
+      router.push('/onboarding');
+    }
+  }, [authenticated, router]);
 
   // Use smart account address for polling if available, otherwise EOA address
   const pollingAddress = smartAccountClient?.account?.address || eoaAddress;
