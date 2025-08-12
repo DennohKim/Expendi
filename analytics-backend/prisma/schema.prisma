@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id
+  walletAddress  String   @map("wallet_address")
+  chainName      String   @map("chain_name")
+  totalBalance   String   @map("total_balance")
+  totalSpent     String   @map("total_spent")
+  bucketsCount   Int      @map("buckets_count")
+  createdAt      DateTime @map("created_at")
+  updatedAt      DateTime @map("updated_at")
+  lastSyncedAt   DateTime @default(now()) @map("last_synced_at")
+
+  buckets            Bucket[]
+  userAnalytics      UserAnalytics[]
+  bucketAnalytics    BucketAnalytics[]
+
+  @@unique([walletAddress, chainName])
+  @@index([chainName])
+  @@index([walletAddress])
+  @@map("users")
+}
+
+model Bucket {
+  id            String   @id
+  userId        String   @map("user_id")
+  chainName     String   @map("chain_name")
+  name          String
+  balance       String
+  monthlySpent  String   @map("monthly_spent")
+  monthlyLimit  String   @map("monthly_limit")
+  active        Boolean  @default(true)
+  createdAt     DateTime @map("created_at")
+  updatedAt     DateTime @map("updated_at")
+  lastSyncedAt  DateTime @default(now()) @map("last_synced_at")
+
+  user                User              @relation(fields: [userId], references: [id])
+  transactions        Transaction[]
+  bucketAnalytics     BucketAnalytics[]
+
+  @@index([chainName])
+  @@index([userId, chainName])
+  @@map("buckets")
+}
+
+model Transaction {
+  id              String            @id
+  bucketId        String?           @map("bucket_id")
+  userId          String            @map("user_id")
+  chainName       String            @map("chain_name")
+  type            TransactionType
+  amount          String
+  tokenAddress    String            @map("token_address")
+  blockNumber     String            @map("block_number")
+  blockTimestamp  DateTime          @map("block_timestamp")
+  transactionHash String            @map("transaction_hash")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  bucket          Bucket?           @relation(fields: [bucketId], references: [id])
+
+  @@index([chainName])
+  @@index([userId, chainName])
+  @@index([blockTimestamp])
+  @@index([transactionHash, chainName])
+  @@map("transactions")
+}
+
+model UserAnalytics {
+  id                      String   @id @default(uuid())
+  userId                  String   @map("user_id")
+  chainName               String   @map("chain_name")
+  periodType              PeriodType @map("period_type")
+  periodStart             DateTime @map("period_start")
+  periodEnd               DateTime @map("period_end")
+  totalSpent              String   @map("total_spent")
+  totalDeposited          String   @map("total_deposited")
+  transactionCount        Int      @map("transaction_count")
+  averageTransactionSize  String   @map("average_transaction_size")
+  activeBucketsCount      Int      @map("active_buckets_count")
+  budgetAdherenceRate     Decimal  @map("budget_adherence_rate") @db.Decimal(5,4)
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  user                    User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, chainName, periodType, periodStart])
+  @@index([chainName])
+  @@map("user_analytics")
+}
+
+model BucketAnalytics {
+  id                    String     @id @default(uuid())
+  bucketId              String     @map("bucket_id")
+  userId                String     @map("user_id")
+  chainName             String     @map("chain_name")
+  periodType            PeriodType @map("period_type")
+  periodStart           DateTime   @map("period_start")
+  periodEnd             DateTime   @map("period_end")
+  totalSpent            String     @map("total_spent")
+  totalDeposited        String     @map("total_deposited")
+  transactionCount      Int        @map("transaction_count")
+  withdrawalCount       Int        @map("withdrawal_count")
+  depositCount          Int        @map("deposit_count")
+  budgetUtilization     Decimal    @map("budget_utilization") @db.Decimal(5,4)
+  isOverBudget          Boolean    @map("is_over_budget")
+  daysToBreach          Int?       @map("days_to_breach")
+  lastActivityAt        DateTime?  @map("last_activity_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  bucket                Bucket     @relation(fields: [bucketId], references: [id])
+  user                  User       @relation(fields: [userId], references: [id])
+
+  @@unique([bucketId, chainName, periodType, periodStart])
+  @@index([chainName])
+  @@map("bucket_analytics")
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+  BUCKET_FUNDING
+  BUCKET_SPENDING
+  UNALLOCATED_WITHDRAW
+  EMERGENCY_WITHDRAW
+}
+
+enum PeriodType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
