@@ -90,8 +90,9 @@ export default function OnboardingPage() {
           setStep('completed');
           
           // Hard refresh to ensure all state is reset and gateway detects wallet
-        router.push('/wallet');
-        }
+          setTimeout(() => {
+            window.location.href = '/wallet';
+          }, 1000);        }
          else {
           // Wallet was created but not yet indexed - still proceed with hard refresh
           console.log('Wallet created but not yet indexed, proceeding anyway');
