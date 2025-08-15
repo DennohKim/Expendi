@@ -93,15 +93,15 @@ export default function OnboardingPage() {
           setTimeout(() => {
             window.location.href = '/wallet';
           }, 1000);        }
-         else {
-          // Wallet was created but not yet indexed - still proceed with hard refresh
-          console.log('Wallet created but not yet indexed, proceeding anyway');
-          setStep('completed');
+        //  else {
+        //   // Wallet was created but not yet indexed - still proceed with hard refresh
+        //   console.log('Wallet created but not yet indexed, proceeding anyway');
+        //   setStep('completed');
           
-          setTimeout(() => {
-            window.location.href = '/wallet';
-          }, 1000);
-        }
+        //   setTimeout(() => {
+        //     window.location.href = '/wallet';
+        //   }, 1000);
+        // }
       } else {
         throw new Error('Transaction failed - no transaction hash received');
       }

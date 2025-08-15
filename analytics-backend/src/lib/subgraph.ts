@@ -99,19 +99,19 @@ export const getDeposits = (subgraphUrl: string) => async (
   
   if (userId) whereClause.push(`user: "${userId}"`);
   if (bucketId) whereClause.push(`bucket: "${bucketId}"`);
-  if (fromTimestamp) whereClause.push(`blockTimestamp_gte: "${fromTimestamp}"`);
+  if (fromTimestamp) whereClause.push(`timestamp_gte: "${fromTimestamp}"`);
 
   const whereString = whereClause.length > 0 ? `where: { ${whereClause.join(', ')} }` : '';
 
   const query = `
     query GetDeposits($first: Int!, $skip: Int!) {
-      deposits(first: $first, skip: $skip, ${whereString}, orderBy: blockTimestamp, orderDirection: desc) {
+      deposits(first: $first, skip: $skip, ${whereString}, orderBy: timestamp, orderDirection: desc) {
         id
         type
         amount
-        tokenAddress
+        token
         blockNumber
-        blockTimestamp
+        timestamp
         transactionHash
         user {
           id
@@ -139,19 +139,19 @@ export const getWithdrawals = (subgraphUrl: string) => async (
   
   if (userId) whereClause.push(`user: "${userId}"`);
   if (bucketId) whereClause.push(`bucket: "${bucketId}"`);
-  if (fromTimestamp) whereClause.push(`blockTimestamp_gte: "${fromTimestamp}"`);
+  if (fromTimestamp) whereClause.push(`timestamp_gte: "${fromTimestamp}"`);
 
   const whereString = whereClause.length > 0 ? `where: { ${whereClause.join(', ')} }` : '';
 
   const query = `
     query GetWithdrawals($first: Int!, $skip: Int!) {
-      withdrawals(first: $first, skip: $skip, ${whereString}, orderBy: blockTimestamp, orderDirection: desc) {
+      withdrawals(first: $first, skip: $skip, ${whereString}, orderBy: timestamp, orderDirection: desc) {
         id
         type
         amount
-        tokenAddress
+        token
         blockNumber
-        blockTimestamp
+        timestamp
         transactionHash
         recipient
         user {
@@ -178,18 +178,18 @@ export const getBucketTransfers = (subgraphUrl: string) => async (
   const whereClause: string[] = [];
   
   if (userId) whereClause.push(`user: "${userId}"`);
-  if (fromTimestamp) whereClause.push(`blockTimestamp_gte: "${fromTimestamp}"`);
+  if (fromTimestamp) whereClause.push(`timestamp_gte: "${fromTimestamp}"`);
 
   const whereString = whereClause.length > 0 ? `where: { ${whereClause.join(', ')} }` : '';
 
   const query = `
     query GetBucketTransfers($first: Int!, $skip: Int!) {
-      bucketTransfers(first: $first, skip: $skip, ${whereString}, orderBy: blockTimestamp, orderDirection: desc) {
+      bucketTransfers(first: $first, skip: $skip, ${whereString}, orderBy: timestamp, orderDirection: desc) {
         id
         amount
-        tokenAddress
+        token
         blockNumber
-        blockTimestamp
+        timestamp
         transactionHash
         fromBucket {
           id

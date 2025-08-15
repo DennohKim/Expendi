@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { PrismaClient } from '@prisma/client';
-import dotenv from 'dotenv';
+import { getPrismaClient } from './lib/database';
 
 // Import functional services
 import { createSubgraphService } from './lib/subgraph';
@@ -16,12 +16,9 @@ import createAnalyticsRouter from './routes/functional-analytics';
 import createMultiChainAnalyticsRouter from './routes/functional-multi-chain-analytics';
 import healthRoutes from './routes/health';
 
-// Load environment variables
-dotenv.config();
-
 // Initialize services
 const initializeServices = () => {
-  const prisma = new PrismaClient();
+  const prisma = getPrismaClient();
   const multiChainSubgraph = createMultiChainSubgraphService();
   const analyticsService = createAnalyticsService(prisma);
 
@@ -68,6 +65,9 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
   });
+
+  // Share prisma instance with routes
+  app.locals.prisma = services.prisma;
 
   // Routes
   app.use('/', healthRoutes);

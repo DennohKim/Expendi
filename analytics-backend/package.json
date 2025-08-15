@@ -11,6 +11,10 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "sync:manual": "tsx scripts/manual-sync.ts",
+    "sync:base": "tsx scripts/manual-sync.ts chain base",
+    "sync:all": "tsx scripts/manual-sync.ts all-chains",
+    "sync:status": "tsx scripts/manual-sync.ts status",
     "test": "echo \"No tests specified\" && exit 0",
     "lint": "echo \"No linter configured\" && exit 0"
   },

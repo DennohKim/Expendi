@@ -1,11 +1,13 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { getPrismaClient } from '../lib/database';
 
 const router: Router = Router();
-const prisma = new PrismaClient();
 
 router.get('/health', async (req: Request, res: Response) => {
   try {
+    // Use shared prisma client
+    const prisma = getPrismaClient();
+    
     // Check database connection
     await prisma.$queryRaw`SELECT 1`;
     
@@ -31,6 +33,9 @@ router.get('/health', async (req: Request, res: Response) => {
 
 router.get('/ready', async (req: Request, res: Response) => {
   try {
+    // Use shared prisma client
+    const prisma = getPrismaClient();
+    
     // Check if we can perform basic operations
     const userCount = await prisma.user.count();
     

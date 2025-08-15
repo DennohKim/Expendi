@@ -313,7 +313,7 @@ export const createAnalyticsRouter = (prisma: PrismaClient): Router => {
       // Calculate potential savings
       const abandonedBucketsWithBalance = await Promise.all(
         insights.abandonedBuckets.map(async (bucket) => {
-          const bucketData = await prisma.bucket.findUnique({
+          const bucketData = await prisma.bucket.findFirst({
             where: { id: bucket.bucketId }
           });
           return {
