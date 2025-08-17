@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 interface ExchangeRateResponse {
   data: {
     buying_rate: number;
+    quoted_rate: number;
+    selling_rate: number;
   };
 }
 
@@ -20,8 +22,8 @@ async function fetchExchangeRate(currency: string): Promise<number | null> {
 
     const result: ExchangeRateResponse = await response.json();
     
-    if (result.data && result.data.buying_rate) {
-      return result.data.buying_rate;
+    if (result.data && result.data.quoted_rate) {
+      return result.data.quoted_rate;
     }
 
     return null;
