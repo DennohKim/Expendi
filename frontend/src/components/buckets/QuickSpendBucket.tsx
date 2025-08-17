@@ -72,7 +72,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [recipient, setRecipient] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [recipientMode, setRecipientMode] = useState<'address' | 'cash'>('address');
+  const [recipientMode, setRecipientMode] = useState<'crypto' | 'cash'>('crypto');
   const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
   const [mobileNetwork, setMobileNetwork] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB'>('KES');
@@ -152,8 +152,8 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
 
     // Use the bucket payment mutation
     try {
-      // Convert entered KES to USDC for on-chain spending and validations
-      const amountUsdc = exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : amount;
+      // For crypto payments, amount is already in USDC. For cash payments, convert from local currency
+      const amountUsdc = recipientMode === 'crypto' ? amount : (exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : amount);
 
       const result = await bucketPayment.mutateAsync({
         smartAccountClient,
@@ -238,8 +238,8 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const monthlyLimitFormatted = formatUnits(BigInt(monthlyLimit), 6);
   const remainingBudget = Math.max(0, parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted));
 
-  // New: amount is entered in local currency. Compute USDC equivalent and local currency maximums for UI/validation
-  const usdcEquivalent = amount && exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : null;
+  // For crypto payments, amount is in USDC. For cash payments, amount is in local currency
+  const usdcEquivalent = recipientMode === 'cash' && amount && exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : null;
   const maxUsdc = Math.min(parseFloat(availableBalance), remainingBudget);
   const maxLocalNumber = exchangeRate ? maxUsdc * exchangeRate : undefined;
   const maxLocalLabel = typeof maxLocalNumber === 'number' && isFinite(maxLocalNumber)
@@ -287,12 +287,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           
           <div>
             <Label className="pb-2">Recipient</Label>
-            <Tabs value={recipientMode} onValueChange={(v) => setRecipientMode(v as 'address' | 'cash')} className="w-full">
+            <Tabs value={recipientMode} onValueChange={(v) => setRecipientMode(v as 'crypto' | 'cash')} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="address">Wallet Address</TabsTrigger>
+                <TabsTrigger value="crypto">Crypto</TabsTrigger>
                 <TabsTrigger value="cash">Cash</TabsTrigger>
               </TabsList>
-              <TabsContent value="address" className="space-y-2">
+              <TabsContent value="crypto" className="space-y-2">
                 <Input
                   id="recipient"
                   value={recipient}
@@ -455,21 +455,23 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           
           {selectedBucket && (
             <div>
-              <Label htmlFor="amount" className="pb-2">Amount ({currentCountry.currency})</Label>
+              <Label htmlFor="amount" className="pb-2">
+                Amount ({recipientMode === 'crypto' ? 'USDC' : currentCountry.currency})
+              </Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="1000.00"
-                max={maxLocalNumber}
+                placeholder={recipientMode === 'crypto' ? '100.00' : '1000.00'}
+                max={recipientMode === 'crypto' ? maxUsdc : maxLocalNumber}
                 required
               />
               <div className="text-sm text-muted-foreground mt-1">
-                Maximum: {maxLocalLabel} {currentCountry.currency}
+                Maximum: {recipientMode === 'crypto' ? `${maxUsdc.toFixed(2)} USDC` : `${maxLocalLabel} ${currentCountry.currency}`}
               </div>
-              {usdcEquivalent && (
+              {recipientMode === 'cash' && usdcEquivalent && (
                 <div className="text-sm text-muted-foreground mt-1">
                   Equivalent: {usdcEquivalent} USDC
                 </div>
