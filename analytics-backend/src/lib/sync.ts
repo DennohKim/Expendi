@@ -146,9 +146,9 @@ const syncDepositsForChain = (
           chainName,
           type: mapTransactionType(deposit.type),
           amount: deposit.amount,
-          tokenAddress: deposit.tokenAddress.toLowerCase(),
+          tokenAddress: (deposit.token || '0x0000000000000000000000000000000000000000').toLowerCase(),
           blockNumber: deposit.blockNumber,
-          blockTimestamp: new Date(parseInt(deposit.blockTimestamp) * 1000),
+          blockTimestamp: new Date(parseInt(deposit.timestamp) * 1000),
           transactionHash: deposit.transactionHash
         }
       });
@@ -194,9 +194,9 @@ const syncWithdrawalsForChain = (
           chainName,
           type: mapTransactionType(withdrawal.type),
           amount: withdrawal.amount,
-          tokenAddress: withdrawal.tokenAddress.toLowerCase(),
+          tokenAddress: (withdrawal.token || '0x0000000000000000000000000000000000000000').toLowerCase(),
           blockNumber: withdrawal.blockNumber,
-          blockTimestamp: new Date(parseInt(withdrawal.blockTimestamp) * 1000),
+          blockTimestamp: new Date(parseInt(withdrawal.timestamp) * 1000),
           transactionHash: withdrawal.transactionHash
         }
       });
@@ -242,9 +242,9 @@ const syncBucketTransfersForChain = (
           chainName,
           type: 'TRANSFER',
           amount: transfer.amount,
-          tokenAddress: transfer.tokenAddress.toLowerCase(),
+          tokenAddress: (transfer.token || '0x0000000000000000000000000000000000000000').toLowerCase(),
           blockNumber: transfer.blockNumber,
-          blockTimestamp: new Date(parseInt(transfer.blockTimestamp) * 1000),
+          blockTimestamp: new Date(parseInt(transfer.timestamp) * 1000),
           transactionHash: transfer.transactionHash
         }
       });
@@ -416,9 +416,9 @@ const syncDepositsForUserOnChain = async (
         chainName,
         type: mapTransactionType(deposit.type),
         amount: deposit.amount,
-        tokenAddress: deposit.tokenAddress.toLowerCase(),
+        tokenAddress: (deposit.token || '0x0000000000000000000000000000000000000000').toLowerCase(),
         blockNumber: deposit.blockNumber,
-        blockTimestamp: new Date(parseInt(deposit.blockTimestamp) * 1000),
+        blockTimestamp: new Date(parseInt(deposit.timestamp) * 1000),
         transactionHash: deposit.transactionHash
       }
     });
@@ -451,9 +451,9 @@ const syncWithdrawalsForUserOnChain = async (
         chainName,
         type: mapTransactionType(withdrawal.type),
         amount: withdrawal.amount,
-        tokenAddress: withdrawal.tokenAddress.toLowerCase(),
+        tokenAddress: (withdrawal.token || '0x0000000000000000000000000000000000000000').toLowerCase(),
         blockNumber: withdrawal.blockNumber,
-        blockTimestamp: new Date(parseInt(withdrawal.blockTimestamp) * 1000),
+        blockTimestamp: new Date(parseInt(withdrawal.timestamp) * 1000),
         transactionHash: withdrawal.transactionHash
       }
     });
@@ -486,9 +486,9 @@ const syncBucketTransfersForUserOnChain = async (
         chainName,
         type: 'TRANSFER',
         amount: transfer.amount,
-        tokenAddress: transfer.tokenAddress.toLowerCase(),
+        tokenAddress: (transfer.token || '0x0000000000000000000000000000000000000000').toLowerCase(),
         blockNumber: transfer.blockNumber,
-        blockTimestamp: new Date(parseInt(transfer.blockTimestamp) * 1000),
+        blockTimestamp: new Date(parseInt(transfer.timestamp) * 1000),
         transactionHash: transfer.transactionHash
       }
     });

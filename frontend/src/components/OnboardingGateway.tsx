@@ -65,8 +65,8 @@ export function OnboardingGateway({ children }: OnboardingGatewayProps) {
     }
 
     // If user has a budget wallet but is on onboarding page, redirect to main dashboard
-    if (hasBudgetWallet && isOnboardingPage) {
-      router.push('/');
+    if (hasBudgetWallet) {
+      router.push('/wallet');
       return;
     }
   }, [isConnected, hasBudgetWallet, isLoading, isOnboardingPage, isPolling, router]);

@@ -36,11 +36,11 @@ export interface SeasonalUsagePatterns {
 
 // Calculate bucket usage statistics
 export const calculateBucketUsageStats = (prisma: PrismaClient) => async (
-  userId: string,
+  userCompositeId: string,
   bucketId?: string
 ): Promise<BucketUsageStats[]> => {
   const whereClause = {
-    userId,
+    userId: userCompositeId,
     ...(bucketId && { id: bucketId })
   };
 
@@ -96,10 +96,13 @@ export const calculateBucketUsageStats = (prisma: PrismaClient) => async (
 
 // Get user financial insights
 export const getUserFinancialInsights = (prisma: PrismaClient) => async (
-  userId: string
+  walletAddress: string
 ): Promise<UserFinancialInsights> => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  // Find user by wallet address (could be on any chain)
+  const user = await prisma.user.findFirst({
+    where: { 
+      walletAddress: walletAddress.toLowerCase()
+    },
     include: {
       buckets: {
         where: { active: true }
@@ -108,10 +111,10 @@ export const getUserFinancialInsights = (prisma: PrismaClient) => async (
   });
 
   if (!user) {
-    throw new Error(`User ${userId} not found`);
+    throw new Error(`User with wallet address ${walletAddress} not found`);
   }
 
-  const bucketStats = await calculateBucketUsageStats(prisma)(userId);
+  const bucketStats = await calculateBucketUsageStats(prisma)(user.id);
   
   // Most used bucket (by transaction count)
   const mostUsedBucket = bucketStats.reduce((max, bucket) => 
@@ -152,7 +155,7 @@ export const getUserFinancialInsights = (prisma: PrismaClient) => async (
   });
 
   return {
-    userId,
+    userId: user.walletAddress,
     totalBalance: user.totalBalance,
     totalSpent: user.totalSpent,
     activeBuckets: user.buckets.length,

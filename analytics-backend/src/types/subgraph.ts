@@ -30,9 +30,22 @@ export interface SubgraphTransaction {
     name: string;
   };
   amount: string;
-  tokenAddress: string;
+  token: string;
   blockNumber: string;
-  blockTimestamp: string;
+  timestamp: string;
+  transactionHash: string;
+}
+
+export interface SubgraphBucketTransferBase {
+  id: string;
+  bucket?: {
+    id: string;
+    name: string;
+  };
+  amount: string;
+  token: string;
+  blockNumber: string;
+  timestamp: string;
   transactionHash: string;
 }
 
@@ -51,7 +64,7 @@ export interface SubgraphWithdrawal extends SubgraphTransaction {
   };
 }
 
-export interface SubgraphBucketTransfer extends SubgraphTransaction {
+export interface SubgraphBucketTransfer extends SubgraphBucketTransferBase {
   fromBucket: {
     id: string;
     name: string;
