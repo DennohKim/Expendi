@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 interface ValidationRequest {
   type: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
   shortcode: string;
-  mobile_network: 'Safaricom' | 'Airtel' | 'MTN' | 'AirtelTigo' | 'Telcel';
+  mobile_network: string; // Support all mobile networks from different countries
   currency_code?: string;
 }
 

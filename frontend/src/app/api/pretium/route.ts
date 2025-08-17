@@ -8,10 +8,12 @@ interface PayRequest extends Record<string, unknown> {
   transaction_hash: string;
   amount: string;
   shortcode: string;
+  account_number?: string; // Required for PAYBILL in KES
   type: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
   mobile_network?: string;
   callback_url?: string;
   chain?: string;
+  selectedCountry?: 'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB';
 }
 
 async function makeRequest(endpoint: string, data: Record<string, unknown>, currency?: string) {
@@ -38,14 +40,18 @@ async function makeRequest(endpoint: string, data: Record<string, unknown>, curr
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { selectedCountry, ...payData } = body;
     
     // This should be a direct pay request according to Pretium API docs
-    const requestData: PayRequest = {
-      ...body,
+    const requestData: Omit<PayRequest, 'selectedCountry'> = {
+      ...payData,
       chain: body.chain || 'BASE', // Default chain as per updated docs
     };
     
-    const result = await makeRequest('pay', requestData);
+    // Use selectedCountry to determine currency code for endpoint (for non-Kenya countries)
+    const currency = selectedCountry && selectedCountry !== 'KES' ? selectedCountry : undefined;
+    
+    const result = await makeRequest('pay', requestData, currency);
     return NextResponse.json(result);
   } catch (error) {
     console.error('Pretium API error:', error);

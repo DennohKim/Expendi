@@ -5,11 +5,12 @@ interface MobilePaymentRequest {
   transaction_hash: string;
   amount: string;
   shortcode: string;
-  account_number?: string; // Required for PAYBILL type
+  account_number?: string; // Required for PAYBILL type in KES
   type: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
-  mobile_network: 'Safaricom' | 'Airtel';
+  mobile_network: string;
   callback_url: string;
   chain: string;
+  selectedCountry: 'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB';
 }
 
 interface MobilePaymentResponse {

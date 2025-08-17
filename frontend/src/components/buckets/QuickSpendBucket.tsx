@@ -47,7 +47,23 @@ interface UserBucket {
   tokenBalances: TokenBalance[];
 }
 
+// Country configuration
+const COUNTRIES = {
+  KES: { name: 'Kenya', currency: 'KES', symbol: 'KES' },
+  UGX: { name: 'Uganda', currency: 'UGX', symbol: 'UGX' },
+  GHS: { name: 'Ghana', currency: 'GHS', symbol: 'GHS' },
+  CDF: { name: 'DR Congo', currency: 'CDF', symbol: 'CDF' },
+  ETB: { name: 'Ethiopia', currency: 'ETB', symbol: 'ETB' },
+} as const;
 
+// Mobile networks by country
+const MOBILE_NETWORKS = {
+  KES: ['Safaricom', 'Airtel'],
+  UGX: ['MTN', 'Airtel'],
+  GHS: ['MTN', 'AirtelTigo'],
+  CDF: ['Airtel Money', 'Orange Money'],
+  ETB: ['Telebirr', 'Cbe Birr'],
+} as const;
 
 export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
 
@@ -56,12 +72,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [recipient, setRecipient] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [recipientMode, setRecipientMode] = useState<'address' | 'phone'>('address');
+  const [recipientMode, setRecipientMode] = useState<'address' | 'cash'>('address');
   const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
-  const [mobileNetwork, setMobileNetwork] = useState<'Safaricom' | 'Airtel'>('Safaricom');
+  const [mobileNetwork, setMobileNetwork] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB'>('KES');
   const [selectedBucketName, setSelectedBucketName] = useState('');
   // Use TanStack Query for exchange rate
-  const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate('KES');
+  const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
   
   // Use TanStack Query for phone number validation
   const { 
@@ -71,8 +88,8 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   } = useDebouncedValidation({
     phoneNumber,
     paymentType,
-    mobileNetwork,
-    enabled: phoneNumber.length >= 10,
+    mobileNetwork: mobileNetwork || 'Safaricom', // Fallback to avoid empty string
+    enabled: phoneNumber.length >= 10 && mobileNetwork !== '',
   });
 
   // Use TanStack Query for bucket payments
@@ -149,6 +166,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
         accountNumber,
         paymentType,
         mobileNetwork,
+        selectedCountry,
         availableBalance: usdcBalance,
         currentSpent,
         monthlyLimit,
@@ -199,18 +217,37 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     }
   }, [paymentType]);
 
+  // Reset relevant fields when country changes
+  React.useEffect(() => {
+    setPhoneNumber('');
+    setAccountNumber('');
+    setMobileNetwork('');
+    
+    // Set default payment type
+    setPaymentType('MOBILE');
+    
+    // Set default mobile network if available
+    const networks = MOBILE_NETWORKS[selectedCountry];
+    if (networks.length > 0) {
+      setMobileNetwork(networks[0] as string);
+    }
+  }, [selectedCountry]);
+
   const availableBalance = formatUnits(usdcBalance, 6);
   const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
   const monthlyLimitFormatted = formatUnits(BigInt(monthlyLimit), 6);
   const remainingBudget = Math.max(0, parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted));
 
-  // New: amount is entered in KES. Compute USDC equivalent and KES maximums for UI/validation
+  // New: amount is entered in local currency. Compute USDC equivalent and local currency maximums for UI/validation
   const usdcEquivalent = amount && exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : null;
   const maxUsdc = Math.min(parseFloat(availableBalance), remainingBudget);
-  const maxKesNumber = exchangeRate ? maxUsdc * exchangeRate : undefined;
-  const maxKesLabel = typeof maxKesNumber === 'number' && isFinite(maxKesNumber)
-    ? maxKesNumber.toFixed(2)
+  const maxLocalNumber = exchangeRate ? maxUsdc * exchangeRate : undefined;
+  const maxLocalLabel = typeof maxLocalNumber === 'number' && isFinite(maxLocalNumber)
+    ? maxLocalNumber.toFixed(2)
     : '—';
+  
+  const currentCountry = COUNTRIES[selectedCountry];
+  const availableNetworks = MOBILE_NETWORKS[selectedCountry];
 
   return (
     <Card>
@@ -250,7 +287,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           
           <div>
             <Label className="pb-2">Recipient</Label>
-            <Tabs value={recipientMode} onValueChange={(v) => setRecipientMode(v as 'address' | 'phone')} className="w-full">
+            <Tabs value={recipientMode} onValueChange={(v) => setRecipientMode(v as 'address' | 'cash')} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="address">Wallet Address</TabsTrigger>
                 <TabsTrigger value="cash">Cash</TabsTrigger>
@@ -266,34 +303,60 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                   Enter the wallet address to send USDC to
                 </div>
               </TabsContent>
-              <TabsContent value="cash" className="space-y-4">
-                <div className="flex justify-between items-center pt-4">
-                <div className="space-y-2">
-                  <Label>Payment Type</Label>
-                  <Select value={paymentType} onValueChange={(value: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS') => setPaymentType(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment type" />
+              <TabsContent value="cash" className="space-y-3">
+                {/* Country Selection - Only for fiat payments */}
+                <div>
+                  <Label htmlFor="country-select" className="pb-2">Select Country</Label>
+                  <Select value={selectedCountry} onValueChange={(value) => setSelectedCountry(value as typeof selectedCountry)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a country" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="MOBILE">Mobile Number</SelectItem>
-                      <SelectItem value="PAYBILL">Paybill</SelectItem>
-                      <SelectItem value="BUY_GOODS">Buy Goods</SelectItem>
+                      {Object.entries(COUNTRIES).map(([code, country]) => (
+                        <SelectItem key={code} value={code}>
+                          {country.name} ({country.currency})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label>Mobile Network</Label>
-                  <Select value={mobileNetwork} onValueChange={(value) => setMobileNetwork(value as 'Safaricom' | 'Airtel')}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select network" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Safaricom">Safaricom</SelectItem>
-                      <SelectItem value="Airtel">Airtel</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <div className="flex justify-between items-center pt-4">
+                {/* Payment Type - Only for Kenya */}
+                {selectedCountry === 'KES' && (
+                  <div className="space-y-2">
+                    <Label>Payment Type</Label>
+                    <Select value={paymentType} onValueChange={(value: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS') => setPaymentType(value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MOBILE">Mobile Number</SelectItem>
+                        <SelectItem value="PAYBILL">Paybill</SelectItem>
+                        <SelectItem value="BUY_GOODS">Buy Goods</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {/* Mobile Network - For all mobile money countries */}
+                {availableNetworks.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Mobile Network</Label>
+                    <Select value={mobileNetwork} onValueChange={setMobileNetwork}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select network" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableNetworks.map((network) => (
+                          <SelectItem key={network} value={network}>
+                            {network}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 
                 </div>
                 
@@ -315,12 +378,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-blue-700 font-medium">Exchange Rate:</span>
-                      <span className="text-blue-900">1 USDC = {exchangeRate.toFixed(2)} KES</span>
+                      <span className="text-blue-900">1 USDC = {exchangeRate.toFixed(2)} {currentCountry.currency}</span>
                     </div>
                     {amount && (
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-blue-700">You will send:</span>
-                        <span className="text-blue-900 font-medium">{parseFloat(amount).toFixed(2)} KES</span>
+                        <span className="text-blue-900 font-medium">{parseFloat(amount).toFixed(2)} {currentCountry.currency}</span>
                       </div>
                     )}
                     {usdcEquivalent && (
@@ -332,10 +395,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                   </div>
                 ) : null}
                
+                {/* Phone/Shortcode field - For all mobile money countries */}
                 <div className="space-y-2">
                   <Label htmlFor="phone">
-                    {paymentType === 'MOBILE' ? 'Phone Number' : 
-                     paymentType === 'PAYBILL' ? 'Paybill Number' : 'Till Number'}
+                    {selectedCountry === 'KES' ? (
+                      paymentType === 'MOBILE' ? 'Phone Number' : 
+                      paymentType === 'PAYBILL' ? 'Paybill Number' : 'Till Number'
+                    ) : 'Phone Number'}
                   </Label>
                   <div className="space-y-2">
                     <Input
@@ -344,8 +410,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                       onChange={(e) => {
                         setPhoneNumber(e.target.value);
                       }}
-                      placeholder={paymentType === 'MOBILE' ? '0712345678' : 
-                                 paymentType === 'PAYBILL' ? '123456' : '890123'}
+                      placeholder={
+                        selectedCountry === 'KES' 
+                          ? (paymentType === 'MOBILE' ? '0712345678' : 
+                             paymentType === 'PAYBILL' ? '123456' : '890123')
+                          : '0712345678'
+                      }
                     />
                     {isValidating && (
                       <div className="text-sm text-blue-600">
@@ -359,16 +429,16 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                     </div>
                   )}
                   <div className="text-sm text-muted-foreground">
-                    Enter the {paymentType.toLowerCase()} number to send Kenya Shillings to
+                    Enter the {selectedCountry === 'KES' ? paymentType.toLowerCase() : 'phone'} number to send {currentCountry.currency} to
                   </div>
                 </div>
                 
-                {/* Account Number field - only shown for PAYBILL */}
-                {paymentType === 'PAYBILL' && (
+                {/* Account Number field - only shown for PAYBILL in Kenya */}
+                {selectedCountry === 'KES' && paymentType === 'PAYBILL' && (
                   <div className="space-y-2">
-                    <Label htmlFor="account-number">Account Number</Label>
+                    <Label htmlFor="paybill-account-number">Account Number</Label>
                     <Input
-                      id="account-number"
+                      id="paybill-account-number"
                       value={accountNumber}
                       onChange={(e) => setAccountNumber(e.target.value)}
                       placeholder="Enter account number"
@@ -385,7 +455,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           
           {selectedBucket && (
             <div>
-              <Label htmlFor="amount" className="pb-2">Amount (KES)</Label>
+              <Label htmlFor="amount" className="pb-2">Amount ({currentCountry.currency})</Label>
               <Input
                 id="amount"
                 type="number"
@@ -393,11 +463,11 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="1000.00"
-                max={maxKesNumber}
+                max={maxLocalNumber}
                 required
               />
               <div className="text-sm text-muted-foreground mt-1">
-                Maximum: {maxKesLabel} KES
+                Maximum: {maxLocalLabel} {currentCountry.currency}
               </div>
               {usdcEquivalent && (
                 <div className="text-sm text-muted-foreground mt-1">
@@ -413,14 +483,15 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
               disabled={
                 bucketPayment.isProcessing || 
                 !amount || 
-                (!recipient && !phoneNumber) || 
-                (paymentType === 'PAYBILL' && !accountNumber) ||
+                (!recipient && !phoneNumber) ||
+                (selectedCountry === 'KES' && paymentType === 'PAYBILL' && !accountNumber) ||
+                !mobileNetwork ||
                 !selectedBucketName || 
                 !exchangeRate
               } 
               variant="primary"
             >
-              {bucketPayment.isProcessing ? 'Processing...' : recipientMode === 'phone' ? 'Send KES' : 'Send USDC'}
+              {bucketPayment.isProcessing ? 'Processing...' : recipientMode === 'cash' ? `Send ${currentCountry.currency}` : 'Send USDC'}
             </Button>
           </div>
         </form>

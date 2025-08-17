@@ -17,9 +17,10 @@ interface BucketPaymentRequest {
   // Payment method - either recipient or mobile payment data
   recipient?: string;
   phoneNumber?: string;
-  accountNumber?: string; // Required for PAYBILL type
+  accountNumber?: string; // Required for PAYBILL type in KES
   paymentType?: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
-  mobileNetwork?: 'Safaricom' | 'Airtel';
+  mobileNetwork?: string; // Updated to allow any network based on country
+  selectedCountry?: 'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB';
   
   // Balance validation data
   availableBalance: bigint;
@@ -50,7 +51,8 @@ export function useBucketPayment() {
         phoneNumber,
         accountNumber,
         paymentType = 'MOBILE',
-        mobileNetwork = 'Safaricom',
+        mobileNetwork,
+        selectedCountry = 'KES',
         availableBalance,
         currentSpent,
         monthlyLimit,
@@ -66,16 +68,21 @@ export function useBucketPayment() {
         throw new Error('Please enter a valid amount');
       }
 
+      // Mobile money countries validation
       if (!recipient && !phoneNumber) {
         throw new Error('Please enter either a recipient address or phone number');
       }
-
+      
       if (recipient && !isAddress(recipient)) {
         throw new Error('Please enter a valid recipient address');
       }
-
-      if (paymentType === 'PAYBILL' && !accountNumber) {
+      
+      if (selectedCountry === 'KES' && paymentType === 'PAYBILL' && !accountNumber) {
         throw new Error('Account number is required for Paybill payments');
+      }
+      
+      if (phoneNumber && !mobileNetwork) {
+        throw new Error('Please select a mobile network');
       }
 
       if (!smartAccountClient?.account) {
@@ -129,9 +136,10 @@ export function useBucketPayment() {
           shortcode: phoneNumber,
           ...(accountNumber && { account_number: accountNumber }),
           type: paymentType,
-          mobile_network: mobileNetwork,
+          mobile_network: mobileNetwork || '',
           callback_url: "http://localhost:3000/api/pretium/callback",
           chain: "BASE",
+          selectedCountry,
         });
 
         // Generate receipt if transaction_code is available
