@@ -55,6 +55,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
   const [recipientMode, setRecipientMode] = useState<'address' | 'phone'>('address');
   const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
   const [mobileNetwork, setMobileNetwork] = useState<'Safaricom' | 'Airtel'>('Safaricom');
@@ -145,6 +146,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
         amount: amountUsdc,
         recipient,
         phoneNumber,
+        accountNumber,
         paymentType,
         mobileNetwork,
         availableBalance: usdcBalance,
@@ -159,6 +161,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       setAmount('');
       setRecipient('');
       setPhoneNumber('');
+      setAccountNumber('');
       clearValidation();
       
       // Refetch buckets to update the UI
@@ -188,6 +191,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       clearValidation();
     }
   }, [phoneNumber]);
+
+  // Clear account number when payment type is not PAYBILL
+  React.useEffect(() => {
+    if (paymentType !== 'PAYBILL') {
+      setAccountNumber('');
+    }
+  }, [paymentType]);
 
   const availableBalance = formatUnits(usdcBalance, 6);
   const currentSpentFormatted = formatUnits(BigInt(currentSpent), 6);
@@ -243,7 +253,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
             <Tabs value={recipientMode} onValueChange={(v) => setRecipientMode(v as 'address' | 'phone')} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="address">Wallet Address</TabsTrigger>
-                <TabsTrigger value="phone">Phone Number</TabsTrigger>
+                <TabsTrigger value="cash">Cash</TabsTrigger>
               </TabsList>
               <TabsContent value="address" className="space-y-2">
                 <Input
@@ -256,7 +266,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                   Enter the wallet address to send USDC to
                 </div>
               </TabsContent>
-              <TabsContent value="phone" className="space-y-4">
+              <TabsContent value="cash" className="space-y-4">
                 <div className="flex justify-between items-center pt-4">
                 <div className="space-y-2">
                   <Label>Payment Type</Label>
@@ -352,6 +362,23 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                     Enter the {paymentType.toLowerCase()} number to send Kenya Shillings to
                   </div>
                 </div>
+                
+                {/* Account Number field - only shown for PAYBILL */}
+                {paymentType === 'PAYBILL' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="account-number">Account Number</Label>
+                    <Input
+                      id="account-number"
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      placeholder="Enter account number"
+                      required={paymentType === 'PAYBILL'}
+                    />
+                    <div className="text-sm text-muted-foreground">
+                      Enter the account number for this paybill
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -383,7 +410,14 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           <div className="flex justify-end gap-2">
             <Button 
               type="submit" 
-              disabled={bucketPayment.isProcessing || !amount || (!recipient && !phoneNumber) || !selectedBucketName || !exchangeRate} 
+              disabled={
+                bucketPayment.isProcessing || 
+                !amount || 
+                (!recipient && !phoneNumber) || 
+                (paymentType === 'PAYBILL' && !accountNumber) ||
+                !selectedBucketName || 
+                !exchangeRate
+              } 
               variant="primary"
             >
               {bucketPayment.isProcessing ? 'Processing...' : recipientMode === 'phone' ? 'Send KES' : 'Send USDC'}

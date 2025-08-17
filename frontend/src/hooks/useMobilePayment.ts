@@ -5,6 +5,7 @@ interface MobilePaymentRequest {
   transaction_hash: string;
   amount: string;
   shortcode: string;
+  account_number?: string; // Required for PAYBILL type
   type: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
   mobile_network: 'Safaricom' | 'Airtel';
   callback_url: string;
