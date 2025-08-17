@@ -6,7 +6,7 @@ const PRETIUM_API_KEY = process.env.PRETIUM_API_KEY || '';
 interface ValidationRequest extends Record<string, unknown> {
   type: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
   shortcode: string;
-  mobile_network: 'Safaricom' | 'Airtel' | 'MTN' | 'AirtelTigo' | 'Telcel';
+  mobile_network: string; // Support all mobile networks from different countries
   currency_code?: string;
 }
 

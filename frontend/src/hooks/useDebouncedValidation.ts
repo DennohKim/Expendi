@@ -4,7 +4,7 @@ import { useValidatePhoneNumber } from './useValidatePhoneNumber';
 interface UseDebouncedValidationProps {
   phoneNumber: string;
   paymentType: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
-  mobileNetwork: 'Safaricom' | 'Airtel';
+  mobileNetwork: string;
   enabled?: boolean;
   debounceMs?: number;
 }
