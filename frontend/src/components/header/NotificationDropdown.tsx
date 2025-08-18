@@ -1,13 +1,11 @@
 
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
-  DropdownMenuTrigger, 
-  DropdownMenuItem 
+  DropdownMenuTrigger,  
 } from "@/components/ui/dropdown-menu";
 
 export default function NotificationDropdown() {
