@@ -25,7 +25,7 @@ interface BucketUsageResponse {
 
 const fetchBucketUsage = async (userAddress: string): Promise<BucketUsageResponse> => {
   const baseUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
-  const response = await fetch(`${baseUrl}/api/analytics/users/${userAddress}/bucket-usage`);
+  const response = await fetch(`${baseUrl}/api/V2/analytics/chains/base/users/${userAddress}/bucket-usage`);
   
   if (!response.ok) {
     throw new Error(`Failed to fetch bucket usage: ${response.statusText}`);

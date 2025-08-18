@@ -27,7 +27,7 @@ interface UserInsights {
 
 const fetchUserInsights = async (userAddress: string): Promise<UserInsights> => {
   const baseUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
-  const response = await fetch(`${baseUrl}/api/analytics/users/${userAddress}/insights`);
+  const response = await fetch(`${baseUrl}/api/V2/analytics/chains/base/users/${userAddress}/insights`);
   
   if (!response.ok) {
     throw new Error(`Failed to fetch user insights: ${response.statusText}`);

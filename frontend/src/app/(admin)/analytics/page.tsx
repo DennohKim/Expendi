@@ -13,7 +13,6 @@ import { TrendingUp, DollarSign, Activity, AlertTriangle, Calendar, RefreshCw } 
 import { useUserInsights } from '@/hooks/analytics/useUserInsights';
 import { useBucketUsage } from '@/hooks/analytics/useBucketUsage';
 import { useBudgetEfficiency } from '@/hooks/analytics/useBudgetEfficiency';
-import { useAbandonedBuckets } from '@/hooks/analytics/useAbandonedBuckets';
 
 export default function AnalyticsPage() {
   const { address: eoaAddress } = useAccount();
@@ -24,13 +23,14 @@ export default function AnalyticsPage() {
     [smartAccountReady, smartAccountAddress, eoaAddress]
   );
 
+  const queryAddressToLower = queryAddress?.toLowerCase();
   // Use TanStack Query hooks
   const {
     data: insights,
     isLoading: insightsLoading,
     error: insightsError,
     refetch: refetchInsights
-  } = useUserInsights(queryAddress);
+  } = useUserInsights(queryAddressToLower);
 
   console.log("insights", insights);
 
@@ -39,33 +39,25 @@ export default function AnalyticsPage() {
     isLoading: bucketUsageLoading,
     error: bucketUsageError,
     refetch: refetchBucketUsage
-  } = useBucketUsage(queryAddress);
+  } = useBucketUsage(queryAddressToLower);
 
   const {
     data: budgetEfficiencyData,
     isLoading: budgetEfficiencyLoading,
     error: budgetEfficiencyError,
     refetch: refetchBudgetEfficiency
-  } = useBudgetEfficiency(queryAddress);
-
-  const {
-    data: abandonedBucketsData,
-    isLoading: abandonedBucketsLoading,
-    error: abandonedBucketsError,
-    refetch: refetchAbandonedBuckets
-  } = useAbandonedBuckets(queryAddress);
+  } = useBudgetEfficiency(queryAddressToLower);
 
   const bucketUsage = bucketUsageData?.buckets || [];
   const budgetEfficiency = budgetEfficiencyData?.bucketEfficiency || [];
   
-  const loading = insightsLoading || bucketUsageLoading || budgetEfficiencyLoading || abandonedBucketsLoading;
-  const error = insightsError || bucketUsageError || budgetEfficiencyError || abandonedBucketsError;
+  const loading = insightsLoading || bucketUsageLoading || budgetEfficiencyLoading;
+  const error = insightsError || bucketUsageError || budgetEfficiencyError;
 
   const refetchAll = () => {
     refetchInsights();
     refetchBucketUsage();
     refetchBudgetEfficiency();
-    refetchAbandonedBuckets();
   };
 
   if (loading) {
@@ -169,8 +161,12 @@ export default function AnalyticsPage() {
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{insights.mostUsedBucket.transactionCount}</div>
-              <p className="text-xs text-muted-foreground">{insights.mostUsedBucket.bucketName}</p>
+              <div className="text-2xl font-bold">
+                {insights.mostUsedBucket ? insights.mostUsedBucket.transactionCount : '0'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {insights.mostUsedBucket ? insights.mostUsedBucket.bucketName : 'No data'}
+              </p>
             </CardContent>
           </Card>
 
@@ -277,9 +273,11 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <p className="font-medium">{insights.mostUsedBucket.bucketName}</p>
+                    <p className="font-medium">
+                      {insights.mostUsedBucket ? insights.mostUsedBucket.bucketName : 'No data'}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {insights.mostUsedBucket.transactionCount} transactions
+                      {insights.mostUsedBucket ? `${insights.mostUsedBucket.transactionCount} transactions` : 'No transactions'}
                     </p>
                   </div>
                 </CardContent>
@@ -294,9 +292,11 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <p className="font-medium">{insights.highestSpendingBucket.bucketName}</p>
+                    <p className="font-medium">
+                      {insights.highestSpendingBucket ? insights.highestSpendingBucket.bucketName : 'No data'}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatCurrency(insights.highestSpendingBucket.totalSpent)} spent
+                      {insights.highestSpendingBucket ? formatCurrency(insights.highestSpendingBucket.totalSpent) : '$0.00 USDC'} spent
                     </p>
                   </div>
                 </CardContent>
@@ -311,9 +311,11 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <p className="font-medium">{insights.mostFundedBucket.bucketName}</p>
+                    <p className="font-medium">
+                      {insights.mostFundedBucket ? insights.mostFundedBucket.bucketName : 'No data'}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatCurrency(insights.mostFundedBucket.totalFunded)} funded
+                      {insights.mostFundedBucket ? formatCurrency(insights.mostFundedBucket.totalFunded) : '$0.00 USDC'} funded
                     </p>
                   </div>
                 </CardContent>
@@ -334,22 +336,10 @@ export default function AnalyticsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {abandonedBucketsData && abandonedBucketsData.abandonedBuckets?.length > 0 ? (
+              {insights && insights.abandonedBuckets?.length > 0 ? (
                 <div className="space-y-4">
-                  {abandonedBucketsData.potentialSavings && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <p className="font-medium">Potential Savings</p>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(abandonedBucketsData.potentialSavings)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Available in abandoned buckets
-                      </p>
-                    </div>
-                  )}
-                  
                   <div className="space-y-3">
-                    {abandonedBucketsData.abandonedBuckets.map((bucket) => (
+                    {insights.abandonedBuckets.map((bucket: any) => (
                       <div key={bucket.bucketId} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium">{bucket.bucketName}</p>
