@@ -56,7 +56,7 @@ export const createMultiChainAnalyticsRouter = (prisma: PrismaClient): Router =>
       const { chainName, userId } = chainUserParamsSchema.parse(req.params);
       const compositeUserId = `${chainName}:${userId}`;
       
-      const insights = await analyticsService.getUserFinancialInsights(compositeUserId);
+      const insights = await analyticsService.getUserFinancialInsights(userId);
       
       res.json({
         success: true,

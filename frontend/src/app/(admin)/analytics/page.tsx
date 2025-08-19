@@ -13,10 +13,12 @@ import { TrendingUp, DollarSign, Activity, AlertTriangle, Calendar, RefreshCw } 
 import { useUserInsights } from '@/hooks/analytics/useUserInsights';
 import { useBucketUsage } from '@/hooks/analytics/useBucketUsage';
 import { useBudgetEfficiency } from '@/hooks/analytics/useBudgetEfficiency';
+import { formatUnits } from 'viem';
 
 export default function AnalyticsPage() {
   const { address: eoaAddress } = useAccount();
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
+  const [syncing, setSyncing] = React.useState(false);
   
   const queryAddress = React.useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress,
@@ -40,6 +42,7 @@ export default function AnalyticsPage() {
     error: bucketUsageError,
     refetch: refetchBucketUsage
   } = useBucketUsage(queryAddressToLower);
+  console.log("bucketUsageData", bucketUsageData);
 
   const {
     data: budgetEfficiencyData,
@@ -54,10 +57,30 @@ export default function AnalyticsPage() {
   const loading = insightsLoading || bucketUsageLoading || budgetEfficiencyLoading;
   const error = insightsError || bucketUsageError || budgetEfficiencyError;
 
-  const refetchAll = () => {
-    refetchInsights();
-    refetchBucketUsage();
-    refetchBudgetEfficiency();
+  const refetchAll = async () => {
+    if (!queryAddressToLower) return;
+    
+    setSyncing(true);
+    try {
+      // First sync the user data
+      const analyticsApiUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
+      await fetch(`${analyticsApiUrl}/api/v2/sync/user/${queryAddressToLower}`, {
+        method: 'POST'
+      });
+      
+      // Then refetch all the analytics data
+      refetchInsights();
+      refetchBucketUsage();
+      refetchBudgetEfficiency();
+    } catch (error) {
+      console.error('Failed to sync user data:', error);
+      // Still refetch the existing data even if sync fails
+      refetchInsights();
+      refetchBucketUsage();
+      refetchBudgetEfficiency();
+    } finally {
+      setSyncing(false);
+    }
   };
 
   if (loading) {
@@ -79,10 +102,11 @@ export default function AnalyticsPage() {
         </div>
         <button 
           onClick={refetchAll}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          disabled={syncing}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <RefreshCw className="h-4 w-4" />
-          <span>Retry</span>
+          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+          <span>{syncing ? 'Syncing...' : 'Retry'}</span>
         </button>
       </div>
     );
@@ -90,21 +114,24 @@ export default function AnalyticsPage() {
 
   const formatCurrency = (value: string, showSymbol: boolean = true) => {
     const num = parseFloat(value);
-    if (isNaN(num)) return showSymbol ? '$0.00 USDC' : '0.00';
+    if (isNaN(num)) return showSymbol ? '$ 0.00' : '0.00';
+    
+    // Convert from USDC with 6 decimal places
+    const valueInUnits = num / 1000000;
     
     // For USDC with 6 decimal places, show appropriate precision
     let formattedAmount: string;
-    if (num === 0) {
+    if (valueInUnits === 0) {
       formattedAmount = '0.00';
-    } else if (num < 0.01) {
-      formattedAmount = num.toFixed(6); // Show full precision for very small amounts
-    } else if (num < 1) {
-      formattedAmount = num.toFixed(4); // Show 4 decimal places for amounts less than 1
+    } else if (valueInUnits < 0.01) {
+      formattedAmount = valueInUnits.toFixed(6); // Show full precision for very small amounts
+    } else if (valueInUnits < 1) {
+      formattedAmount = valueInUnits.toFixed(4); // Show 4 decimal places for amounts less than 1
     } else {
-      formattedAmount = num.toFixed(2); // Show 2 decimal places for larger amounts
+      formattedAmount = valueInUnits.toFixed(2); // Show 2 decimal places for larger amounts
     }
     
-    return showSymbol ? `$${formattedAmount} USDC` : formattedAmount;
+    return showSymbol ? `$ ${formattedAmount}` : formattedAmount;
   };
 
   const getStatusColor = (status: string) => {
@@ -122,11 +149,11 @@ export default function AnalyticsPage() {
         <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
         <button 
           onClick={refetchAll}
-          disabled={loading}
+          disabled={loading || syncing}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <RefreshCw className={`h-4 w-4 ${loading || syncing ? 'animate-spin' : ''}`} />
+          <span>{syncing ? 'Syncing...' : 'Refresh'}</span>
         </button>
       </div>
 
@@ -139,19 +166,19 @@ export default function AnalyticsPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(insights.totalSpending)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(insights.totalSpent)}</div>
               <p className="text-xs text-muted-foreground">Across all buckets</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Transaction</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(insights.averageTransactionAmount)}</div>
-              <p className="text-xs text-muted-foreground">Per transaction</p>
+              <div className="text-2xl font-bold">{formatCurrency(insights.totalBalance)}</div>
+              <p className="text-xs text-muted-foreground">Current balance</p>
             </CardContent>
           </Card>
 
@@ -161,9 +188,9 @@ export default function AnalyticsPage() {
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              {/* <div className="text-2xl font-bold">
                 {insights.mostUsedBucket ? insights.mostUsedBucket.transactionCount : '0'}
-              </div>
+              </div> */}
               <p className="text-xs text-muted-foreground">
                 {insights.mostUsedBucket ? insights.mostUsedBucket.bucketName : 'No data'}
               </p>
@@ -315,7 +342,7 @@ export default function AnalyticsPage() {
                       {insights.mostFundedBucket ? insights.mostFundedBucket.bucketName : 'No data'}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {insights.mostFundedBucket ? formatCurrency(insights.mostFundedBucket.totalFunded) : '$0.00 USDC'} funded
+                      {insights.mostFundedBucket ? formatCurrency(insights.mostFundedBucket.totalDeposited) : '$0.00 USDC'} funded
                     </p>
                   </div>
                 </CardContent>
@@ -344,7 +371,10 @@ export default function AnalyticsPage() {
                         <div>
                           <p className="font-medium">{bucket.bucketName}</p>
                           <p className="text-sm text-muted-foreground">
-                            {bucket.daysSinceLastActivity} days since last activity
+                            {bucket.lastActivity ? 
+                              `${Math.floor((Date.now() - new Date(bucket.lastActivity).getTime()) / (1000 * 60 * 60 * 24))} days since last activity` : 
+                              'No recent activity'
+                            }
                           </p>
                         </div>
                         <Badge variant="secondary">

@@ -1,28 +1,38 @@
 import { useQuery } from '@tanstack/react-query';
 
 interface UserInsights {
-  totalSpending: string; // USDC amount with 6 decimal places
-  averageTransactionAmount: string; // USDC amount with 6 decimal places
+  userId: string;
+  totalBalance: string; // USDC amount with 6 decimal places
+  totalSpent: string; // USDC amount with 6 decimal places
+  activeBuckets: number;
   mostUsedBucket: {
     bucketId: string;
     bucketName: string;
     transactionCount: number;
-  };
+  } | null;
   highestSpendingBucket: {
     bucketId: string;
     bucketName: string;
     totalSpent: string; // USDC amount with 6 decimal places
-  };
+  } | null;
   mostFundedBucket: {
     bucketId: string;
     bucketName: string;
-    totalFunded: string; // USDC amount with 6 decimal places
-  };
+    totalDeposited: string; // USDC amount with 6 decimal places
+  } | null;
+  budgetAdherenceRate: number;
   abandonedBuckets: Array<{
     bucketId: string;
     bucketName: string;
-    daysSinceLastActivity: number;
+    transactionCount: number;
+    totalSpent: string;
+    totalDeposited: string;
+    lastActivity: string | null;
+    budgetUtilization: number;
+    isOverBudget: boolean;
   }>;
+  chainName: string;
+  walletAddress: string;
 }
 
 const fetchUserInsights = async (userAddress: string): Promise<UserInsights> => {

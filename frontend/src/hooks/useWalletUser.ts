@@ -96,9 +96,9 @@ export function useWalletUser() {
   const wallet = embeddedWallet; // Only use embedded wallet, never external ones
   const address = wallet?.address;
   
-  console.log('Available wallets:', wallets.map(w => ({ type: w.walletClientType, address: w.address })));
-  console.log('Selected wallet (ONLY embedded):', { type: wallet?.walletClientType, address });
-  console.log('🎯 Using ONLY Privy embedded wallet address:', address);
+  //console.log('Available wallets:', wallets.map(w => ({ type: w.walletClientType, address: w.address })));
+  //console.log('Selected wallet (ONLY embedded):', { type: wallet?.walletClientType, address });
+  //console.log('🎯 Using ONLY Privy embedded wallet address:', address);
   
   // Only consider connected if we have an embedded wallet
   const isConnected = authenticated && !!embeddedWallet && !!address;
@@ -142,12 +142,12 @@ export function useWalletUser() {
       });
 
       // Check if user already has a budget wallet (check both EOA and smart account)
-      console.log('Checking for existing wallets...');
+      //'Checking for existing wallets...');
       const eoaWallet = await checkExistingBudgetWallet(walletAddress);
-      console.log('EOA existing wallet:', eoaWallet);
+      //console.log('EOA existing wallet:', eoaWallet);
       
       if (eoaWallet) {
-        console.log('✅ Found existing EOA wallet, returning it');
+        //console.log('✅ Found existing EOA wallet, returning it');
         setWalletCreationState({
           isCreating: false,
           step: 'completed',
@@ -158,12 +158,12 @@ export function useWalletUser() {
       
       // If using smart account, also check if smart account has a wallet
       if (smartAccountReady && smartAccountClient?.account?.address) {
-        console.log('Checking if smart account has existing wallet...');
+        //console.log('Checking if smart account has existing wallet...');
         const smartAccountWallet = await checkExistingBudgetWallet(smartAccountClient.account.address);
-        console.log('Smart account existing wallet:', smartAccountWallet);
+        //console.log('Smart account existing wallet:', smartAccountWallet);
         
         if (smartAccountWallet) {
-          console.log('✅ Found existing smart account wallet, returning it');
+          //console.log('✅ Found existing smart account wallet, returning it');
           setWalletCreationState({
             isCreating: false,
             step: 'completed',
@@ -187,10 +187,10 @@ export function useWalletUser() {
       setWalletCreationState(prev => ({ ...prev, step: 'creating' }));
       
       // Since we wait for smart account to be ready, this should always use sponsored transaction
-      console.log('Creating wallet with gas sponsorship - Smart account ready:', smartAccountReady, 'Client available:', !!smartAccountClient);
+      //console.log('Creating wallet with gas sponsorship - Smart account ready:', smartAccountReady, 'Client available:', !!smartAccountClient);
       
       // Create or get budget wallet
-      console.log('Creating/getting budget wallet with smart account support...');
+      //console.log('Creating/getting budget wallet with smart account support...');
       const result = await createOrGetBudgetWallet(
         writeContractAsync, 
         walletAddress as `0x${string}`, 
@@ -198,7 +198,7 @@ export function useWalletUser() {
       );
       
       if (result.alreadyExists && result.budgetWalletAddress) {
-        console.log('✅ Wallet already exists:', result.budgetWalletAddress);
+        //console.log('✅ Wallet already exists:', result.budgetWalletAddress);
         setWalletCreationState({
           isCreating: false,
           step: 'completed',
@@ -215,7 +215,7 @@ export function useWalletUser() {
 
       // Note: With the new implementation, we rely on subgraph polling in the UI
       // For this legacy hook, we'll wait a bit then return a placeholder
-      console.log('Wallet creation transaction submitted:', result.txHash);
+      //console.log('Wallet creation transaction submitted:', result.txHash);
       
       // Wait for subgraph indexing (simplified approach for this legacy hook)
       await new Promise(resolve => setTimeout(resolve, 5000));
@@ -282,7 +282,7 @@ export function useWalletUser() {
       try {
         const subgraphUrl = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
         if (!subgraphUrl) {
-          console.warn('NEXT_PUBLIC_SUBGRAPH_URL not configured, skipping subgraph data');
+          //console.warn('NEXT_PUBLIC_SUBGRAPH_URL not configured, skipping subgraph data');
         } else {
           const subgraphResponse = await subgraphClient.request<{ user: SubgraphUser }>(`
             query GetUser($walletAddress: ID!) {
@@ -372,7 +372,7 @@ export function useWalletUser() {
       };
 
       // Note: API sync endpoint removed since backend integration is being removed
-      console.log('User sync completed (local only):', user);
+      //console.log('User sync completed (local only):', user);
 
       return user;
     } catch (error) {
@@ -393,7 +393,7 @@ export function useWalletUser() {
     walletAddress: string,
     userMetadata: { email?: string; username?: string; avatar_url?: string } = {}
   ) => {
-    console.log('walletAddress', walletAddress);
+    //console.log('walletAddress', walletAddress);
     try {
       // Update state to show wallet creation starting
       setWalletCreationState(prev => ({
@@ -405,7 +405,7 @@ export function useWalletUser() {
 
       // Step 1: Create or get budget wallet
       const budgetWalletAddress = await createOrGetBudgetWallet(walletAddress);
-      console.log('Budget wallet address obtained:', budgetWalletAddress);
+      //console.log('Budget wallet address obtained:', budgetWalletAddress);
 
       // Update state to show syncing phase
       setWalletCreationState(prev => ({

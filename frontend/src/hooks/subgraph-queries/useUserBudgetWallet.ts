@@ -88,7 +88,7 @@ export function useUserBudgetWallet(userAddress: string | undefined) {
       console.error('GraphQL query error:', error);
     },
     onCompleted: (data) => {
-      console.log('GraphQL query completed:', data);
+      //console.log('GraphQL query completed:', data);
     }
   });
 
