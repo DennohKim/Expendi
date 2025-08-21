@@ -1,9 +1,12 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { formatUnits } from 'viem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 import { FundBucketButton } from './FundBucketButton';
 import { SpendBucketButton } from './SpendBucketButton';
 
@@ -136,6 +139,16 @@ export const BucketCard = React.memo(function BucketCard({ bucket }: BucketCardP
             monthlyLimit={BigInt(bucket.monthlyLimit)}
             usdcBalance={calculations.totalTokenBalanceRaw} // Use raw BigInt value directly
           />
+        </div>
+        
+        {/* View Details Button */}
+        <div className="pt-2">
+          <Link href={`/buckets/${bucket.id}`} className="w-full">
+            <Button variant="outline" className="w-full">
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </Button>
+          </Link>
         </div>
       </CardContent>
     </Card>

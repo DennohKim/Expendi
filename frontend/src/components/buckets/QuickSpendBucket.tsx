@@ -120,6 +120,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       label: b.name
     }));
 
+  // Auto-select bucket if only one is available
+  React.useEffect(() => {
+    if (bucketOptions.length === 1 && !selectedBucketName) {
+      setSelectedBucketName(bucketOptions[0].value);
+    }
+  }, [bucketOptions, selectedBucketName]);
+
   const usdcBalance = selectedBucket?.tokenBalances?.reduce((total, tokenBalance) => {
     const balance = BigInt(tokenBalance.balance);
     return total + balance;
