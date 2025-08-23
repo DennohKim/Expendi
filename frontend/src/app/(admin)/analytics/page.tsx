@@ -13,7 +13,17 @@ import { TrendingUp, DollarSign, Activity, AlertTriangle, Calendar, RefreshCw } 
 import { useUserInsights } from '@/hooks/analytics/useUserInsights';
 import { useBucketUsage } from '@/hooks/analytics/useBucketUsage';
 import { useBudgetEfficiency } from '@/hooks/analytics/useBudgetEfficiency';
-import { formatUnits } from 'viem';
+
+interface AbandonedBucket {
+  bucketId: string;
+  bucketName: string;
+  transactionCount: number;
+  totalSpent: string;
+  totalDeposited: string;
+  lastActivity: string | null;
+  budgetUtilization: number;
+  isOverBudget: boolean;
+}
 
 export default function AnalyticsPage() {
   const { address: eoaAddress } = useAccount();
@@ -222,7 +232,7 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Budget Efficiency</CardTitle>
-              <CardDescription>How efficiently you're using your bucket budgets</CardDescription>
+              <CardDescription>How efficiently you&apos;re using your bucket budgets</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -366,7 +376,7 @@ export default function AnalyticsPage() {
               {insights && insights.abandonedBuckets?.length > 0 ? (
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    {insights.abandonedBuckets.map((bucket: any) => (
+                    {insights.abandonedBuckets.map((bucket: AbandonedBucket) => (
                       <div key={bucket.bucketId} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <p className="font-medium">{bucket.bucketName}</p>

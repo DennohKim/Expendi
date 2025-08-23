@@ -86,9 +86,6 @@ export function useUserBudgetWallet(userAddress: string | undefined) {
     notifyOnNetworkStatusChange: true,
     onError: (error) => {
       console.error('GraphQL query error:', error);
-    },
-    onCompleted: (data) => {
-      //console.log('GraphQL query completed:', data);
     }
   });
 

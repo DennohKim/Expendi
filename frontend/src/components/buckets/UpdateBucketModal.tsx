@@ -11,7 +11,6 @@ import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
-import { createBudgetWalletUtils } from "@/lib/contracts/budget-wallet";
 import { useAnalytics } from "@/hooks/useAnalytics";
 
 interface Bucket {
