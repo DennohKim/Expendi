@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { useUserBuckets } from '@/hooks/subgraph-queries/getUserBuckets';
 import { QuickSpendBucket } from '@/components/buckets/QuickSpendBucket';
+import { UpdateBucketModal } from '@/components/buckets/UpdateBucketModal';
 
 interface TokenBalance {
   id: string;
@@ -74,10 +75,14 @@ export default function BucketDetailsPage() {
   const [transferAmount, setTransferAmount] = React.useState('');
   const [targetBucketId, setTargetBucketId] = React.useState('');
   
+  // Update bucket modal state
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = React.useState(false);
+  
   const bucket = React.useMemo(() => {
     if (!data?.user?.buckets) return null;
     return data.user.buckets.find((b: Bucket) => b.id === bucketId);
   }, [data, bucketId]);
+  console.log(bucket);
 
   const transactions = React.useMemo(() => {
     if (!data?.user) return [];
@@ -214,7 +219,12 @@ export default function BucketDetailsPage() {
           </div>
         </div>
         <div className='flex gap-2'>
-          <Button variant="outline">Update Bucket</Button>
+          <Button 
+            variant="outline"
+            onClick={() => setIsUpdateModalOpen(true)}
+          >
+            Update Bucket
+          </Button>
           <Button variant="destructive">Delete Bucket</Button>
         </div>
       </div>
@@ -444,6 +454,15 @@ export default function BucketDetailsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Update Bucket Modal */}
+      {bucket && (
+        <UpdateBucketModal
+          bucket={bucket}
+          isOpen={isUpdateModalOpen}
+          onOpenChange={setIsUpdateModalOpen}
+        />
+      )}
     </div>
   );
 }
