@@ -3,8 +3,8 @@
 import React from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAccount } from 'wagmi';
-import { formatUnits } from 'viem';
-import { ArrowLeft, Wallet, TrendingUp, TrendingDown, Calendar, Activity, Send, ArrowLeftRight } from 'lucide-react';
+import { formatUnits, parseUnits } from 'viem';
+import { ArrowLeft, Wallet, TrendingUp, TrendingDown, Calendar, Activity, ArrowLeftRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,9 @@ import { useUserBuckets } from '@/hooks/subgraph-queries/getUserBuckets';
 import { useUserBudgetWallet } from '@/hooks/subgraph-queries/useUserBudgetWallet';
 import { QuickSpendBucket } from '@/components/buckets/QuickSpendBucket';
 import { UpdateBucketModal } from '@/components/buckets/UpdateBucketModal';
-import { createBudgetWalletUtils } from '@/lib/contracts/budget-wallet';
 import { getNetworkConfig } from '@/lib/contracts/config';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { toast } from 'sonner';
-import { parseUnits } from 'viem';
 
 interface TokenBalance {
   id: string;
@@ -94,7 +92,7 @@ export default function BucketDetailsPage() {
   const bucket = React.useMemo(() => {
     if (!data?.user?.buckets) return null;
     console.log('Looking for bucketId:', bucketId);
-    console.log('Available buckets:', data.user.buckets.map(b => ({ id: b.id, name: b.name })));
+    console.log('Available buckets:', data.user.buckets.map((b: Bucket) => ({ id: b.id, name: b.name })));
     
     // First try exact match
     let found = data.user.buckets.find((b: Bucket) => b.id === bucketId);
@@ -112,8 +110,8 @@ export default function BucketDetailsPage() {
     if (!data?.user) return { allTransactions: [], displayedTransactions: [], hasMoreTransactions: false };
     
     console.log('Filtering transactions for bucketId:', bucketId);
-    console.log('All deposits:', data.user.deposits?.map(d => ({ id: d.id, bucketId: d.bucket.id, bucketName: d.bucket.name })));
-    console.log('All withdrawals:', data.user.withdrawals?.map(w => ({ id: w.id, bucketId: w.bucket.id, bucketName: w.bucket.name })));
+    console.log('All deposits:', data.user.deposits?.map((d: Transaction) => ({ id: d.id, bucketId: d.bucket.id, bucketName: d.bucket.name })));
+    console.log('All withdrawals:', data.user.withdrawals?.map((w: Transaction) => ({ id: w.id, bucketId: w.bucket.id, bucketName: w.bucket.name })));
     
     const deposits = (data.user.deposits || []).filter((d: Transaction) => 
       d.bucket.id === bucketId || d.bucket.id.trim() === bucketId.trim()
@@ -229,7 +227,7 @@ export default function BucketDetailsPage() {
       }
 
       // Find target bucket name
-      const targetBucket = otherBuckets.find(b => b.id === targetBucketId);
+      const targetBucket = otherBuckets.find((b: Bucket) => b.id === targetBucketId);
       if (!targetBucket) {
         toast.error('Target bucket not found');
         return;
@@ -278,7 +276,7 @@ export default function BucketDetailsPage() {
       // Track failed transfer
       track('bucket_transfer_failed', {
         from_bucket: bucket.name,
-        to_bucket: otherBuckets.find(b => b.id === targetBucketId)?.name || 'Unknown',
+        to_bucket: otherBuckets.find((b: Bucket) => b.id === targetBucketId)?.name || 'Unknown',
         amount: parseFloat(transferAmount),
         error: error instanceof Error ? error.message : 'Unknown error',
         wallet_address: walletData.user.walletsCreated[0].wallet
@@ -517,7 +515,7 @@ export default function BucketDetailsPage() {
                     <div className="space-y-2">
                       <Label htmlFor="target-bucket">Transfer to Bucket</Label>
                       <Select value={targetBucketId} onValueChange={setTargetBucketId}>
-                        <SelectTrigger>
+                        <SelectTrigger className='w-full'>
                           <SelectValue placeholder="Select destination bucket" />
                         </SelectTrigger>
                         <SelectContent>
@@ -532,8 +530,9 @@ export default function BucketDetailsPage() {
                             
                             return (
                               <SelectItem key={otherBucket.id} value={otherBucket.id}>
-                                <div className="flex justify-between w-full">
+                                <div className="flex justify-between space-x-1 w-full">
                                   <span>{otherBucket.name}</span>
+                                  <span> - </span>
                                   <span className="text-muted-foreground text-sm">
                                     {otherAvailableBalance} USDC
                                   </span>
