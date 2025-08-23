@@ -14,8 +14,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { useUserBuckets } from '@/hooks/subgraph-queries/getUserBuckets';
+import { useUserBudgetWallet } from '@/hooks/subgraph-queries/useUserBudgetWallet';
 import { QuickSpendBucket } from '@/components/buckets/QuickSpendBucket';
 import { UpdateBucketModal } from '@/components/buckets/UpdateBucketModal';
+import { createBudgetWalletUtils } from '@/lib/contracts/budget-wallet';
+import { getNetworkConfig } from '@/lib/contracts/config';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { toast } from 'sonner';
+import { parseUnits } from 'viem';
 
 interface TokenBalance {
   id: string;
@@ -59,41 +65,71 @@ interface Transaction {
 export default function BucketDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const bucketId = params.id as string;
+  const bucketId = decodeURIComponent(params.id as string);
   
   const { address: eoaAddress } = useAccount();
-  const { smartAccountAddress, smartAccountReady } = useSmartAccount();
+  const { smartAccountAddress, smartAccountReady, smartAccountClient } = useSmartAccount();
+  const { track } = useAnalytics();
   
   const queryAddress = React.useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress,
     [smartAccountReady, smartAccountAddress, eoaAddress]
   );
 
-  const { data, loading, error } = useUserBuckets(queryAddress);
+  const { data, loading, error, refetch: refetchBuckets } = useUserBuckets(queryAddress);
+  const { data: walletData } = useUserBudgetWallet(queryAddress);
   
   // Transfer state
   const [transferAmount, setTransferAmount] = React.useState('');
   const [targetBucketId, setTargetBucketId] = React.useState('');
+  const [isTransferring, setIsTransferring] = React.useState(false);
   
   // Update bucket modal state
   const [isUpdateModalOpen, setIsUpdateModalOpen] = React.useState(false);
   
+  // Transaction pagination state
+  const [displayedTransactionCount, setDisplayedTransactionCount] = React.useState(10);
+  const [isLoadingMoreTransactions, setIsLoadingMoreTransactions] = React.useState(false);
+  
   const bucket = React.useMemo(() => {
     if (!data?.user?.buckets) return null;
-    return data.user.buckets.find((b: Bucket) => b.id === bucketId);
+    console.log('Looking for bucketId:', bucketId);
+    console.log('Available buckets:', data.user.buckets.map(b => ({ id: b.id, name: b.name })));
+    
+    // First try exact match
+    let found = data.user.buckets.find((b: Bucket) => b.id === bucketId);
+    
+    // If not found, try trimming spaces from bucket names
+    if (!found) {
+      found = data.user.buckets.find((b: Bucket) => b.id.trim() === bucketId.trim());
+    }
+    
+    return found;
   }, [data, bucketId]);
-  console.log(bucket);
+  console.log('Found bucket:', bucket);
 
-  const transactions = React.useMemo(() => {
-    if (!data?.user) return [];
+  const { allTransactions, displayedTransactions, hasMoreTransactions } = React.useMemo(() => {
+    if (!data?.user) return { allTransactions: [], displayedTransactions: [], hasMoreTransactions: false };
     
-    const deposits = (data.user.deposits || []).filter((d: Transaction) => d.bucket.id === bucketId);
-    const withdrawals = (data.user.withdrawals || []).filter((w: Transaction) => w.bucket.id === bucketId);
+    console.log('Filtering transactions for bucketId:', bucketId);
+    console.log('All deposits:', data.user.deposits?.map(d => ({ id: d.id, bucketId: d.bucket.id, bucketName: d.bucket.name })));
+    console.log('All withdrawals:', data.user.withdrawals?.map(w => ({ id: w.id, bucketId: w.bucket.id, bucketName: w.bucket.name })));
     
-    return [...deposits, ...withdrawals]
-      .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
-      .slice(0, 10); // Show latest 10 transactions
-  }, [data, bucketId]);
+    const deposits = (data.user.deposits || []).filter((d: Transaction) => 
+      d.bucket.id === bucketId || d.bucket.id.trim() === bucketId.trim()
+    );
+    const withdrawals = (data.user.withdrawals || []).filter((w: Transaction) => 
+      w.bucket.id === bucketId || w.bucket.id.trim() === bucketId.trim()
+    );
+    
+    const allTransactions = [...deposits, ...withdrawals]
+      .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp));
+    
+    const displayedTransactions = allTransactions.slice(0, displayedTransactionCount);
+    const hasMoreTransactions = allTransactions.length > displayedTransactionCount;
+    
+    return { allTransactions, displayedTransactions, hasMoreTransactions };
+  }, [data, bucketId, displayedTransactionCount]);
 
   const otherBuckets = React.useMemo(() => {
     if (!data?.user?.buckets) return [];
@@ -138,41 +174,122 @@ export default function BucketDetailsPage() {
     });
   }, []);
 
+  const handleLoadMoreTransactions = React.useCallback(async () => {
+    if (isLoadingMoreTransactions) return; // Prevent multiple simultaneous loads
+    
+    setIsLoadingMoreTransactions(true);
+    
+    // Simulate loading delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setDisplayedTransactionCount(prev => prev + 10);
+    setIsLoadingMoreTransactions(false);
+  }, [isLoadingMoreTransactions]);
+
+  // Handle scroll event for infinite scroll
+  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    
+    // Load more when user scrolls to within 100px of the bottom
+    if (scrollHeight - scrollTop <= clientHeight + 100 && hasMoreTransactions && !isLoadingMoreTransactions) {
+      handleLoadMoreTransactions();
+    }
+  }, [hasMoreTransactions, isLoadingMoreTransactions, handleLoadMoreTransactions]);
+
   const handleTransfer = React.useCallback(async () => {
     if (!transferAmount || !targetBucketId || !bucket) {
       return;
     }
 
+    if (!walletData?.user?.walletsCreated[0].wallet) {
+      toast.error('Budget wallet not found');
+      return;
+    }
+
+    if (!smartAccountClient?.account) {
+      toast.error('Smart account not available');
+      return;
+    }
+
     try {
+      setIsTransferring(true);
+      toast.info('Initiating transfer...');
+
+      // Get network config for USDC address
+      const networkConfig = getNetworkConfig();
+      const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
+
       // Convert amount to proper units (USDC has 6 decimals)
-      const amountInUnits = parseFloat(transferAmount) * 1e6;
+      const amountInUsdc = parseUnits(transferAmount, 6);
       const availableBalance = parseFloat(calculations?.availableBalance || '0');
       
       if (parseFloat(transferAmount) > availableBalance) {
-        alert('Insufficient balance for transfer');
+        toast.error('Insufficient balance for transfer');
         return;
       }
 
-      // TODO: Implement actual transfer logic using smart contracts
-      // This would involve calling the bucket contract to transfer funds
-      console.log('Transfer:', {
-        from: bucket.id,
-        to: targetBucketId,
-        amount: amountInUnits
+      // Find target bucket name
+      const targetBucket = otherBuckets.find(b => b.id === targetBucketId);
+      if (!targetBucket) {
+        toast.error('Target bucket not found');
+        return;
+      }
+
+      // Track transfer start
+      track('bucket_transfer_started', {
+        from_bucket: bucket.name,
+        to_bucket: targetBucket.name,
+        amount: parseFloat(transferAmount),
+        wallet_address: walletData.user.walletsCreated[0].wallet
       });
+
+      // Use smart account client for gas sponsorship
+      const txHash = await smartAccountClient.writeContract({
+        address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
+        abi: (await import('@/lib/contracts/budget-wallet')).BUDGET_WALLET_ABI,
+        functionName: 'transferBetweenBuckets',
+        args: [bucket.name, targetBucket.name, amountInUsdc, usdcAddress],
+        account: smartAccountClient.account,
+        chain: smartAccountClient.chain
+      });
+
+      // Track successful transfer
+      track('bucket_transfer_completed', {
+        from_bucket: bucket.name,
+        to_bucket: targetBucket.name,
+        amount: parseFloat(transferAmount),
+        transaction_hash: txHash,
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      });
+
+      toast.success(`Successfully transferred ${transferAmount} USDC from ${bucket.name} to ${targetBucket.name}`);
+      console.log('Transfer completed with transaction hash:', txHash);
 
       // Reset form
       setTransferAmount('');
       setTargetBucketId('');
       
-      // Show success message (replace with proper toast)
-      alert('Transfer initiated successfully!');
+      // Refetch data to update balances
+      setTimeout(() => {
+        refetchBuckets();
+      }, 1000);
       
     } catch (error) {
+      // Track failed transfer
+      track('bucket_transfer_failed', {
+        from_bucket: bucket.name,
+        to_bucket: otherBuckets.find(b => b.id === targetBucketId)?.name || 'Unknown',
+        amount: parseFloat(transferAmount),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      });
+
       console.error('Transfer failed:', error);
-      alert('Transfer failed. Please try again.');
+      toast.error('Transfer failed. Please try again.');
+    } finally {
+      setIsTransferring(false);
     }
-  }, [transferAmount, targetBucketId, bucket, calculations]);
+  }, [transferAmount, targetBucketId, bucket, calculations, walletData, smartAccountClient, otherBuckets, track, refetchBuckets]);
 
   if (loading) {
     return (
@@ -225,7 +342,6 @@ export default function BucketDetailsPage() {
           >
             Update Bucket
           </Button>
-          <Button variant="destructive">Delete Bucket</Button>
         </div>
       </div>
 
@@ -282,52 +398,74 @@ export default function BucketDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Recent Transactions */}
+          {/* Transactions */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Activity className="w-5 h-5 mr-2" />
-                Recent Transactions
+                Transactions
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              {transactions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+            <CardContent className="p-0">
+              {allTransactions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground px-6">
                   No transactions found for this bucket
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {transactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-full ${
-                          'recipient' in transaction ? 'bg-red-100' : 'bg-green-100'
-                        }`}>
-                          {'recipient' in transaction ? (
-                            <TrendingDown className="w-4 h-4 text-red-600" />
-                          ) : (
-                            <TrendingUp className="w-4 h-4 text-green-600" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            {'recipient' in transaction ? 'Withdrawal' : 'Deposit'}
+                <div className="flex flex-col h-[650px]">
+                  {/* Scrollable transactions container with infinite scroll */}
+                  <div 
+                    className="flex-1 overflow-y-auto px-6 py-4"
+                    onScroll={handleScroll}
+                  >
+                    <div className="space-y-3 pr-2">
+                      {displayedTransactions.map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-full ${
+                              'recipient' in transaction ? 'bg-red-100' : 'bg-green-100'
+                            }`}>
+                              {'recipient' in transaction ? (
+                                <TrendingDown className="w-4 h-4 text-red-600" />
+                              ) : (
+                                <TrendingUp className="w-4 h-4 text-green-600" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium">
+                                {'recipient' in transaction ? 'Withdrawal' : 'Deposit'}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {formatDate(transaction.timestamp)}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatDate(transaction.timestamp)}
+                          <div className="text-right">
+                            <div className={`font-medium ${
+                              'recipient' in transaction ? 'text-red-600' : 'text-green-600'
+                            }`}>
+                              {'recipient' in transaction ? '-' : '+'}
+                              {formatUnits(BigInt(transaction.amount), 6)} USDC
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-medium ${
-                          'recipient' in transaction ? 'text-red-600' : 'text-green-600'
-                        }`}>
-                          {'recipient' in transaction ? '-' : '+'}
-                          {formatUnits(BigInt(transaction.amount), 6)} USDC
+                      ))}
+                      
+                      {/* Loading indicator at the bottom */}
+                      {isLoadingMoreTransactions && (
+                        <div className="flex justify-center py-4">
+                          <div className="text-sm text-muted-foreground">Loading more transactions...</div>
                         </div>
-                      </div>
+                      )}
+                      
+                      {/* End of transactions indicator */}
+                      {!hasMoreTransactions && displayedTransactions.length > 0 && (
+                        <div className="flex justify-center py-4 text-sm text-muted-foreground">
+                          All transactions loaded ({allTransactions.length} total)
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -416,10 +554,10 @@ export default function BucketDetailsPage() {
                       onClick={handleTransfer}
                       className="w-full"
                       variant="primary"
-                      disabled={!transferAmount || !targetBucketId || parseFloat(transferAmount) <= 0}
+                      disabled={!transferAmount || !targetBucketId || parseFloat(transferAmount) <= 0 || isTransferring}
                     >
                       <ArrowLeftRight className="w-4 h-4 mr-2" />
-                      Transfer Funds
+                      {isTransferring ? 'Transferring...' : 'Transfer Funds'}
                     </Button>
                   </div>
                 </TabsContent>
