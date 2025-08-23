@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 
 interface UserInsights {
   userId: string;
-  totalBalance: string; // USDC amount with 6 decimal places
   totalSpent: string; // USDC amount with 6 decimal places
   activeBuckets: number;
   mostUsedBucket: {

@@ -18,6 +18,13 @@ const monthQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/, 'Month must be in YYYY-MM format').optional()
 });
 
+const timeSeriesQuerySchema = z.object({
+  period: z.enum(['daily', 'monthly', 'yearly']).default('monthly'),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  bucketId: z.string().optional()
+});
+
 // Create multi-chain analytics router
 export const createMultiChainAnalyticsRouter = (prisma: PrismaClient): Router => {
   const router = Router();
@@ -189,7 +196,16 @@ export const createMultiChainAnalyticsRouter = (prisma: PrismaClient): Router =>
       const { month } = monthQuerySchema.parse(req.query);
       const compositeUserId = `${chainName}:${userId}`;
       
-      let whereClause: any = { userId: compositeUserId, chainName };
+      let whereClause: any = { 
+        userId: compositeUserId, 
+        chainName,
+        // Exclude transactions from UNALLOCATED bucket
+        bucket: {
+          NOT: {
+            name: 'UNALLOCATED'
+          }
+        }
+      };
       
       if (month) {
         const [year, monthNum] = month.split('-').map(Number);
@@ -262,6 +278,65 @@ export const createMultiChainAnalyticsRouter = (prisma: PrismaClient): Router =>
       });
     } catch (error) {
       console.error('Error fetching chain-specific bucket activity:', error);
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Chain-specific bucket usage time series data
+  router.get('/chains/:chainName/users/:userId/bucket-time-series', async (req, res) => {
+    try {
+      const { chainName, userId } = chainUserParamsSchema.parse(req.params);
+      const { period, from, to, bucketId } = timeSeriesQuerySchema.parse(req.query);
+      const compositeUserId = `${chainName}:${userId}`;
+      
+      const fromDate = from ? new Date(from) : undefined;
+      const toDate = to ? new Date(to) : undefined;
+      const compositeBucketId = bucketId ? `${chainName}:${bucketId}` : undefined;
+      
+      const timeSeriesData = await analyticsService.getBucketUsageTimeSeries(
+        compositeUserId,
+        period,
+        fromDate,
+        toDate,
+        compositeBucketId
+      );
+      
+      // Clean bucket IDs by removing chain prefix for response
+      const cleanedBuckets = timeSeriesData.buckets.map(bucket => ({
+        ...bucket,
+        bucketId: bucket.bucketId.replace(`${chainName}:`, ''),
+        chainName
+      }));
+      
+      // Calculate summary statistics
+      const totalSpentAcrossAllBuckets = cleanedBuckets.reduce((total, bucket) => {
+        const bucketTotal = bucket.data.reduce((sum, dataPoint) => sum + dataPoint.totalSpent, 0);
+        return total + bucketTotal;
+      }, 0);
+      
+      const averageSpentPerPeriod = timeSeriesData.totalPeriods > 0 ? 
+        totalSpentAcrossAllBuckets / timeSeriesData.totalPeriods : 0;
+      
+      res.json({
+        success: true,
+        data: {
+          ...timeSeriesData,
+          buckets: cleanedBuckets,
+          chainName,
+          walletAddress: userId,
+          summary: {
+            totalSpentAcrossAllBuckets,
+            averageSpentPerPeriod: Math.round(averageSpentPerPeriod * 100) / 100,
+            activeBuckets: cleanedBuckets.length,
+            periodRange: `${timeSeriesData.dateRange.from.toISOString().split('T')[0]} to ${timeSeriesData.dateRange.to.toISOString().split('T')[0]}`
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching chain-specific bucket time series:', error);
       res.status(400).json({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

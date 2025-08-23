@@ -19,6 +19,13 @@ const monthQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/, 'Month must be in YYYY-MM format').optional()
 });
 
+const timeSeriesQuerySchema = z.object({
+  period: z.enum(['daily', 'monthly', 'yearly']).default('monthly'),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  bucketId: z.string().optional()
+});
+
 // Create router with analytics service
 export const createAnalyticsRouter = (prisma: PrismaClient): Router => {
   const analyticsService = createAnalyticsService(prisma);
@@ -232,7 +239,11 @@ export const createAnalyticsRouter = (prisma: PrismaClient): Router => {
       const buckets = await prisma.bucket.findMany({
         where: { 
           userId,
-          active: true
+          active: true,
+          // Exclude UNALLOCATED bucket from budget efficiency
+          NOT: {
+            name: 'UNALLOCATED'
+          }
         }
       });
       
@@ -337,6 +348,53 @@ export const createAnalyticsRouter = (prisma: PrismaClient): Router => {
       });
     } catch (error) {
       console.error('Error fetching abandoned buckets:', error);
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get bucket usage time series data
+  router.get('/users/:userId/bucket-time-series', async (req, res) => {
+    try {
+      const { userId } = userParamsSchema.parse(req.params);
+      const { period, from, to, bucketId } = timeSeriesQuerySchema.parse(req.query);
+      
+      const fromDate = from ? new Date(from) : undefined;
+      const toDate = to ? new Date(to) : undefined;
+      
+      const timeSeriesData = await analyticsService.getBucketUsageTimeSeries(
+        userId,
+        period,
+        fromDate,
+        toDate,
+        bucketId
+      );
+      
+      // Calculate summary statistics
+      const totalSpentAcrossAllBuckets = timeSeriesData.buckets.reduce((total, bucket) => {
+        const bucketTotal = bucket.data.reduce((sum, dataPoint) => sum + dataPoint.totalSpent, 0);
+        return total + bucketTotal;
+      }, 0);
+      
+      const averageSpentPerPeriod = timeSeriesData.totalPeriods > 0 ? 
+        totalSpentAcrossAllBuckets / timeSeriesData.totalPeriods : 0;
+      
+      res.json({
+        success: true,
+        data: {
+          ...timeSeriesData,
+          summary: {
+            totalSpentAcrossAllBuckets,
+            averageSpentPerPeriod: Math.round(averageSpentPerPeriod * 100) / 100,
+            activeBuckets: timeSeriesData.buckets.length,
+            periodRange: `${timeSeriesData.dateRange.from.toISOString().split('T')[0]} to ${timeSeriesData.dateRange.to.toISOString().split('T')[0]}`
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching bucket time series:', error);
       res.status(400).json({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

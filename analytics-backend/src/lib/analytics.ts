@@ -13,7 +13,6 @@ export interface BucketUsageStats {
 
 export interface UserFinancialInsights {
   userId: string;
-  totalBalance: string;
   totalSpent: string;
   activeBuckets: number;
   mostUsedBucket: BucketUsageStats | null;
@@ -36,6 +35,26 @@ export interface SeasonalUsagePatterns {
   spendingTrend: 'increasing' | 'decreasing' | 'stable';
 }
 
+export interface BucketTimeSeriesData {
+  bucketId: string;
+  bucketName: string;
+  data: Array<{
+    period: string;
+    totalSpent: number;
+    timestamp: Date;
+  }>;
+}
+
+export interface BucketUsageTimeSeries {
+  period: 'daily' | 'monthly' | 'yearly';
+  buckets: BucketTimeSeriesData[];
+  totalPeriods: number;
+  dateRange: {
+    from: Date;
+    to: Date;
+  };
+}
+
 // Calculate bucket usage statistics
 export const calculateBucketUsageStats = (prisma: PrismaClient) => async (
   userCompositeId: string,
@@ -43,6 +62,10 @@ export const calculateBucketUsageStats = (prisma: PrismaClient) => async (
 ): Promise<BucketUsageStats[]> => {
   const whereClause = {
     userId: userCompositeId,
+    // Exclude UNALLOCATED bucket from analytics
+    NOT: {
+      name: 'UNALLOCATED'
+    },
     ...(bucketId && { id: bucketId })
   };
 
@@ -107,7 +130,13 @@ export const getUserFinancialInsights = (prisma: PrismaClient) => async (
     },
     include: {
       buckets: {
-        where: { active: true }
+        where: { 
+          active: true,
+          // Exclude UNALLOCATED bucket from financial insights
+          NOT: {
+            name: 'UNALLOCATED'
+          }
+        }
       }
     }
   });
@@ -137,23 +166,15 @@ export const getUserFinancialInsights = (prisma: PrismaClient) => async (
   console.log(`Debug: Transaction types:`, userTransactions.map(t => t.type));
   
   // Calculate amounts by type for debugging
-  const spendingTransactions = userTransactions.filter(t => ['BUCKET_SPENDING', 'WITHDRAWAL', 'UNALLOCATED_WITHDRAW', 'EMERGENCY_WITHDRAW'].includes(t.type));
+  const spendingTransactions = userTransactions.filter(t => ['BUCKET_SPENDING', 'WITHDRAWAL', 'EMERGENCY_WITHDRAW'].includes(t.type));
   const totalSpentDebug = spendingTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
   console.log(`Debug: Spending transactions count: ${spendingTransactions.length}`);
   console.log(`Debug: Total spent (from ${spendingTransactions.length} transactions): ${totalSpentDebug}`);
   
-  // Calculate total deposited (includes deposits and bucket funding)
-  const totalDeposited = userTransactions
-    .filter(t => ['DEPOSIT', 'BUCKET_FUNDING'].includes(t.type))
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
-  // Calculate total spent (includes all withdrawal types)
+  // Calculate total spent from actual spending transactions (excluding UNALLOCATED transfers)
   const calculatedTotalSpent = userTransactions
-    .filter(t => ['BUCKET_SPENDING', 'WITHDRAWAL', 'UNALLOCATED_WITHDRAW', 'EMERGENCY_WITHDRAW'].includes(t.type))
+    .filter(t => ['BUCKET_SPENDING', 'WITHDRAWAL', 'EMERGENCY_WITHDRAW'].includes(t.type))
     .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    
-  // Calculate current balance (total deposited minus total spent)
-  const calculatedTotalBalance = totalDeposited - calculatedTotalSpent;
   
   // Most used bucket (by transaction count)
   const mostUsedBucket = bucketStats.reduce((max, bucket) => 
@@ -195,7 +216,6 @@ export const getUserFinancialInsights = (prisma: PrismaClient) => async (
 
   return {
     userId: user.walletAddress,
-    totalBalance: calculatedTotalBalance.toString(),
     totalSpent: calculatedTotalSpent.toString(),
     activeBuckets: user.buckets.length,
     mostUsedBucket,
@@ -424,12 +444,160 @@ export const getSeasonalUsagePatterns = (prisma: PrismaClient) => async (
   };
 };
 
+// Get bucket usage time series data
+export const getBucketUsageTimeSeries = (prisma: PrismaClient) => async (
+  userId: string,
+  period: 'daily' | 'monthly' | 'yearly',
+  fromDate?: Date,
+  toDate?: Date,
+  bucketId?: string
+): Promise<BucketUsageTimeSeries> => {
+  const now = new Date();
+  const defaultFromDate = new Date(now.getFullYear() - 1, 0, 1); // 1 year ago
+  const defaultToDate = now;
+
+  const from = fromDate || defaultFromDate;
+  const to = toDate || defaultToDate;
+
+  // Get user buckets
+  const whereClause: any = {
+    userId,
+    active: true,
+    // Exclude UNALLOCATED bucket from time series analytics
+    NOT: {
+      name: 'UNALLOCATED'
+    },
+    ...(bucketId && { id: bucketId })
+  };
+
+  const buckets = await prisma.bucket.findMany({
+    where: whereClause,
+    include: {
+      transactions: {
+        where: {
+          blockTimestamp: {
+            gte: from,
+            lte: to
+          },
+          type: {
+            in: ['BUCKET_SPENDING', 'WITHDRAWAL']
+          }
+        },
+        orderBy: {
+          blockTimestamp: 'asc'
+        }
+      }
+    }
+  });
+
+  // Group transactions by time period
+  const groupTransactionsByPeriod = (transactions: any[], period: 'daily' | 'monthly' | 'yearly') => {
+    const grouped = new Map<string, { totalSpent: number; timestamp: Date }>();
+
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.blockTimestamp);
+      let periodKey: string;
+      let periodStart: Date;
+
+      switch (period) {
+        case 'daily':
+          periodKey = date.toISOString().substring(0, 10); // YYYY-MM-DD
+          periodStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          break;
+        case 'monthly':
+          periodKey = date.toISOString().substring(0, 7); // YYYY-MM
+          periodStart = new Date(date.getFullYear(), date.getMonth(), 1);
+          break;
+        case 'yearly':
+          periodKey = date.getFullYear().toString(); // YYYY
+          periodStart = new Date(date.getFullYear(), 0, 1);
+          break;
+      }
+
+      if (!grouped.has(periodKey)) {
+        grouped.set(periodKey, { totalSpent: 0, timestamp: periodStart });
+      }
+
+      const existing = grouped.get(periodKey)!;
+      existing.totalSpent += parseFloat(transaction.amount);
+    });
+
+    return Array.from(grouped.entries()).map(([period, data]) => ({
+      period,
+      totalSpent: data.totalSpent,
+      timestamp: data.timestamp
+    })).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  };
+
+  // Fill in missing periods with zero values
+  const fillMissingPeriods = (data: any[], period: 'daily' | 'monthly' | 'yearly', from: Date, to: Date) => {
+    const filled = [];
+    const current = new Date(from);
+
+    while (current <= to) {
+      let periodKey: string;
+      let nextPeriod: Date;
+
+      switch (period) {
+        case 'daily':
+          periodKey = current.toISOString().substring(0, 10);
+          nextPeriod = new Date(current);
+          nextPeriod.setDate(nextPeriod.getDate() + 1);
+          break;
+        case 'monthly':
+          periodKey = current.toISOString().substring(0, 7);
+          nextPeriod = new Date(current);
+          nextPeriod.setMonth(nextPeriod.getMonth() + 1);
+          break;
+        case 'yearly':
+          periodKey = current.getFullYear().toString();
+          nextPeriod = new Date(current);
+          nextPeriod.setFullYear(nextPeriod.getFullYear() + 1);
+          break;
+        default:
+          throw new Error(`Invalid period: ${period}`);
+      }
+
+      const existingData = data.find(d => d.period === periodKey);
+      filled.push({
+        period: periodKey,
+        totalSpent: existingData?.totalSpent || 0,
+        timestamp: new Date(current)
+      });
+
+      current.setTime(nextPeriod.getTime());
+    }
+
+    return filled;
+  };
+
+  // Process each bucket
+  const bucketsTimeSeries: BucketTimeSeriesData[] = buckets.map(bucket => {
+    const groupedData = groupTransactionsByPeriod(bucket.transactions, period);
+    const filledData = fillMissingPeriods(groupedData, period, from, to);
+
+    return {
+      bucketId: bucket.id,
+      bucketName: bucket.name,
+      data: filledData
+    };
+  });
+
+  return {
+    period,
+    buckets: bucketsTimeSeries,
+    totalPeriods: bucketsTimeSeries.length > 0 ? bucketsTimeSeries[0].data.length : 0,
+    dateRange: { from, to }
+  };
+};
+
 // Create analytics service with all functions
 export const createAnalyticsService = (prisma: PrismaClient) => ({
   calculateBucketUsageStats: calculateBucketUsageStats(prisma),
   getUserFinancialInsights: getUserFinancialInsights(prisma),
   calculateMonthlyAnalytics: calculateMonthlyAnalytics(prisma),
-  getSeasonalUsagePatterns: getSeasonalUsagePatterns(prisma)
+  getSeasonalUsagePatterns: getSeasonalUsagePatterns(prisma),
+  getBucketUsageTimeSeries: getBucketUsageTimeSeries(prisma)
 });
 
 export type AnalyticsService = ReturnType<typeof createAnalyticsService>;
