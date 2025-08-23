@@ -1,40 +1,30 @@
-# Base Docker Compose Configuration
-# Use docker-compose.dev.yml for development
-# Use docker-compose.prod.yml for production
-#
-# Usage:
-#   Development: docker-compose -f docker-compose.dev.yml up
-#   Production:  docker-compose -f docker-compose.prod.yml up
-#
-# This file is kept for reference and can be removed if not needed.
-
 version: '3.8'
 
 services:
-  postgres:
+  postgres-dev:
     image: postgres:15-alpine
-    container_name: expendi-analytics-db
+    container_name: expendi-analytics-db-dev
     environment:
-      POSTGRES_DB: expendi_analytics
+      POSTGRES_DB: expendi_analytics_dev
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: dev_password
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  analytics-backend:
+  analytics-backend-dev:
     build: .
-    container_name: expendi-analytics-backend
+    container_name: expendi-analytics-backend-dev
     ports:
       - "3001:3001"
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/expendi_analytics
+      - DATABASE_URL=postgresql://postgres:dev_password@postgres-dev:5432/expendi_analytics_dev
       - PORT=3001
       - NODE_ENV=development
       - SUBGRAPH_URL_BASE_MAINNET=${SUBGRAPH_URL_BASE_MAINNET:-https://api.studio.thegraph.com/query/118246/expendi-base/v1.0.0}
@@ -49,7 +39,7 @@ services:
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */5 * * * *}
       - ANALYTICS_INTERVAL=${ANALYTICS_INTERVAL:-0 0 * * *}
     depends_on:
-      postgres:
+      postgres-dev:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -58,13 +48,13 @@ services:
       timeout: 10s
       retries: 3
 
-  redis:
+  redis-dev:
     image: redis:7-alpine
-    container_name: expendi-redis
+    container_name: expendi-redis-dev
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - redis_dev_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -72,5 +62,5 @@ services:
       retries: 3
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_dev_data:
+  redis_dev_data:

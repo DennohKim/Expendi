@@ -13,11 +13,16 @@ build/
 .env.local
 .env.development
 .env.production
+.env.dev
+.env.prod
+.env.railway
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
+
+data_backup.sql
 
 # Logs
 logs/
