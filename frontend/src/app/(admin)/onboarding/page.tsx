@@ -93,15 +93,15 @@ export default function OnboardingPage() {
           setTimeout(() => {
             window.location.href = '/wallet';
           }, 1000);        }
-         else {
-          // Wallet was created but not yet indexed - still proceed with hard refresh
-          console.log('Wallet created but not yet indexed, proceeding anyway');
-          setStep('completed');
+        //  else {
+        //   // Wallet was created but not yet indexed - still proceed with hard refresh
+        //   console.log('Wallet created but not yet indexed, proceeding anyway');
+        //   setStep('completed');
           
-          setTimeout(() => {
-            window.location.href = '/wallet';
-          }, 1000);
-        }
+        //   setTimeout(() => {
+        //     window.location.href = '/wallet';
+        //   }, 1000);
+        // }
       } else {
         throw new Error('Transaction failed - no transaction hash received');
       }
@@ -166,11 +166,11 @@ export default function OnboardingPage() {
           {!authenticated || !eoaAddress ? (
             <>
               <div className="bg-[#ff7e5f]/5 dark:bg-[#ff7e5f]/10 border border-[#ff7e5f] dark:border-[#ff7e5f] rounded-lg p-4">
-                <h3 className="font-medium text-black dark:text-white mb-2">
-                  Connect Your Wallet
+                <h3 className="font-semibold text-black dark:text-white mb-2">
+                  Sign in
                 </h3>
                 <p className="text-sm text-black dark:text-white">
-                  To get started with Expendi, you need to connect your wallet first. This will allow you to create and manage your budget account.
+                  To get started with Expendi, you need to sign in first. This will allow you to create and manage your budget account.
                 </p>
               </div>
 
@@ -181,7 +181,7 @@ export default function OnboardingPage() {
                 className='w-full'
               >
                 <Wallet className="w-4 h-4" />
-                <span>{!ready ? 'Loading...' : 'Connect Wallet'}</span>
+                <span>{!ready ? 'Loading...' : 'Sign in'}</span>
               </Button>
             </>
           ) : (

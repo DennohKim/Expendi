@@ -21,6 +21,8 @@ export interface UserFinancialInsights {
   mostFundedBucket: BucketUsageStats | null;
   budgetAdherenceRate: number;
   abandonedBuckets: BucketUsageStats[];
+  chainName: string;
+  walletAddress: string;
 }
 
 export interface SeasonalUsagePatterns {
@@ -36,11 +38,11 @@ export interface SeasonalUsagePatterns {
 
 // Calculate bucket usage statistics
 export const calculateBucketUsageStats = (prisma: PrismaClient) => async (
-  userId: string,
+  userCompositeId: string,
   bucketId?: string
 ): Promise<BucketUsageStats[]> => {
   const whereClause = {
-    userId,
+    userId: userCompositeId,
     ...(bucketId && { id: bucketId })
   };
 
@@ -96,10 +98,13 @@ export const calculateBucketUsageStats = (prisma: PrismaClient) => async (
 
 // Get user financial insights
 export const getUserFinancialInsights = (prisma: PrismaClient) => async (
-  userId: string
+  walletAddress: string
 ): Promise<UserFinancialInsights> => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  // Find user by wallet address (could be on any chain)
+  const users = await prisma.user.findMany({
+    where: { 
+      walletAddress: walletAddress.toLowerCase()
+    },
     include: {
       buckets: {
         where: { active: true }
@@ -107,11 +112,48 @@ export const getUserFinancialInsights = (prisma: PrismaClient) => async (
     }
   });
 
-  if (!user) {
-    throw new Error(`User ${userId} not found`);
-  }
+  console.log(`Debug: Found ${users.length} users for wallet ${walletAddress}`);
+  users.forEach(u => console.log(`Debug: User ID: ${u.id}, Chain: ${u.chainName}, Buckets: ${u.buckets.length}`));
 
-  const bucketStats = await calculateBucketUsageStats(prisma)(userId);
+  if (users.length === 0) {
+    throw new Error(`User with wallet address ${walletAddress} not found`);
+  }
+  
+  // If multiple users, prefer the one with the most buckets or most recent
+  const user = users.reduce((prev, current) => 
+    current.buckets.length > prev.buckets.length ? current : prev
+  );
+
+  const bucketStats = await calculateBucketUsageStats(prisma)(user.id);
+  
+  // Calculate actual totalBalance and totalSpent from transactions
+  const userTransactions = await prisma.transaction.findMany({
+    where: { userId: user.id }
+  });
+  
+  // Debug logging
+  console.log(`Debug: User ID: ${user.id}, Wallet: ${walletAddress}`);
+  console.log(`Debug: Found ${userTransactions.length} transactions`);
+  console.log(`Debug: Transaction types:`, userTransactions.map(t => t.type));
+  
+  // Calculate amounts by type for debugging
+  const spendingTransactions = userTransactions.filter(t => ['BUCKET_SPENDING', 'WITHDRAWAL', 'UNALLOCATED_WITHDRAW', 'EMERGENCY_WITHDRAW'].includes(t.type));
+  const totalSpentDebug = spendingTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  console.log(`Debug: Spending transactions count: ${spendingTransactions.length}`);
+  console.log(`Debug: Total spent (from ${spendingTransactions.length} transactions): ${totalSpentDebug}`);
+  
+  // Calculate total deposited (includes deposits and bucket funding)
+  const totalDeposited = userTransactions
+    .filter(t => ['DEPOSIT', 'BUCKET_FUNDING'].includes(t.type))
+    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+  // Calculate total spent (includes all withdrawal types)
+  const calculatedTotalSpent = userTransactions
+    .filter(t => ['BUCKET_SPENDING', 'WITHDRAWAL', 'UNALLOCATED_WITHDRAW', 'EMERGENCY_WITHDRAW'].includes(t.type))
+    .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+  // Calculate current balance (total deposited minus total spent)
+  const calculatedTotalBalance = totalDeposited - calculatedTotalSpent;
   
   // Most used bucket (by transaction count)
   const mostUsedBucket = bucketStats.reduce((max, bucket) => 
@@ -152,15 +194,17 @@ export const getUserFinancialInsights = (prisma: PrismaClient) => async (
   });
 
   return {
-    userId,
-    totalBalance: user.totalBalance,
-    totalSpent: user.totalSpent,
+    userId: user.walletAddress,
+    totalBalance: calculatedTotalBalance.toString(),
+    totalSpent: calculatedTotalSpent.toString(),
     activeBuckets: user.buckets.length,
     mostUsedBucket,
     highestSpendingBucket,
     mostFundedBucket,
     budgetAdherenceRate: Math.round(budgetAdherenceRate * 100) / 100,
-    abandonedBuckets
+    abandonedBuckets,
+    chainName: user.chainName || 'base',
+    walletAddress: user.walletAddress
   };
 };
 

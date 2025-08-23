@@ -52,13 +52,22 @@ export function CreateBucket() {
 
   const { refetch: refetchBuckets } = useUserBuckets(queryAddress)
   const { data: walletData, refetch } = useUserBudgetWallet(queryAddress)
-  console.log("walletData", walletData)
-
-
-
 
   const handleCreateBucket = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Trim bucket name and validate
+    const trimmedBucketName = bucketName.trim()
+    
+    if (!trimmedBucketName) {
+      toast.error('Bucket name cannot be empty')
+      return
+    }
+    
+    if (trimmedBucketName !== bucketName) {
+      toast.error('Bucket name cannot have leading or trailing spaces')
+      return
+    }
     
     if (!walletData?.user?.walletsCreated[0].wallet) {
       toast.error('Budget wallet not found')
@@ -92,7 +101,7 @@ export function CreateBucket() {
       toast.info('Creating bucket...')
 
       track('bucket_creation_started', {
-        bucket_name: bucketName,
+        bucket_name: trimmedBucketName,
         monthly_limit: parseFloat(monthlyLimit),
         wallet_address: walletData.user.walletsCreated[0].wallet
       })
@@ -103,13 +112,13 @@ export function CreateBucket() {
       const walletUtils = createBudgetWalletUtils(walletData.user.walletsCreated[0].wallet as `0x${string}`)
       const txHash = await walletUtils.createBucket(
         () => Promise.reject(new Error('Account not available')),
-        bucketName,
+        trimmedBucketName,
         limitInUsdc,
         clientToUse
       )
 
       track('bucket_created_successfully', {
-        bucket_name: bucketName,
+        bucket_name: trimmedBucketName,
         monthly_limit: parseFloat(monthlyLimit),
         transaction_hash: txHash,
         wallet_address: walletData.user.walletsCreated[0].wallet
@@ -134,7 +143,7 @@ export function CreateBucket() {
 
     } catch (error) {
       track('bucket_creation_failed', {
-        bucket_name: bucketName,
+        bucket_name: trimmedBucketName,
         monthly_limit: parseFloat(monthlyLimit),
         error: error instanceof Error ? error.message : 'Unknown error',
         wallet_address: walletData.user.walletsCreated[0].wallet

@@ -174,6 +174,35 @@ export const updateBucket = (walletAddress: `0x${string}`) => async (
   });
 };
 
+export const transferBetweenBuckets = (walletAddress: `0x${string}`) => async (
+  writeContractAsync: (args: WriteContractArgs) => Promise<`0x${string}`>,
+  fromBucket: string,
+  toBucket: string,
+  amount: bigint,
+  token: `0x${string}` = ETH_ADDRESS,
+  smartAccountClient?: SmartAccountClient
+) => {
+  // Use smart account client for gas sponsorship if available
+  if (smartAccountClient?.account) {
+    return await smartAccountClient.writeContract({
+      address: walletAddress,
+      abi: BUDGET_WALLET_ABI,
+      functionName: 'transferBetweenBuckets',
+      args: [fromBucket, toBucket, amount, token],
+      account: smartAccountClient.account,
+      chain: smartAccountClient.chain
+    });
+  }
+  
+  // Fallback to regular wagmi call
+  return await writeContractAsync({
+    address: walletAddress,
+    abi: BUDGET_WALLET_ABI,
+    functionName: 'transferBetweenBuckets',
+    args: [fromBucket, toBucket, amount, token]
+  });
+};
+
 // Helper function to create budget wallet utilities
 export function createBudgetWalletUtils(walletAddress: `0x${string}`) {
   return {
@@ -186,6 +215,7 @@ export function createBudgetWalletUtils(walletAddress: `0x${string}`) {
     getUnallocatedBalance: getUnallocatedBalance(walletAddress),
     getTotalBalance: getTotalBalance(walletAddress),
     spendFromBucket: spendFromBucket(walletAddress),
-    updateBucket: updateBucket(walletAddress)
+    updateBucket: updateBucket(walletAddress),
+    transferBetweenBuckets: transferBetweenBuckets(walletAddress)
   };
 }

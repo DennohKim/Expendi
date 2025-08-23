@@ -534,7 +534,7 @@ const WalletPage = () => {
             </div>
 
             {/* Additional Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                   Unallocated
@@ -549,14 +549,6 @@ const WalletPage = () => {
                 </p>
                 <p className="text-xl font-semibold text-gray-900 dark:text-white">
                   {formatBalance(allocatedBalance)} USDC
-                </p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Wallet Status
-                </p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Active
                 </p>
               </div>
             </div>

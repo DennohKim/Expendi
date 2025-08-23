@@ -26,9 +26,10 @@ interface FundBucketButtonProps {
   bucketName: string;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "secondary";
+  className?: string;
 }
 
-export function FundBucketButton({ bucketName, size = "sm", variant = "outline" }: FundBucketButtonProps) {
+export function FundBucketButton({ bucketName, size = "sm", variant = "outline", className }: FundBucketButtonProps) {
   const { address } = useAccount();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [amount, setAmount] = useState('');
@@ -51,7 +52,6 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
 
    // Calculate unallocated balance directly from UNALLOCATED bucket
    const userData = walletData?.user;
-   console.log("User data:", userData)
    
    // Calculate unallocated balance from UNALLOCATED bucket
    const unallocatedBalance = userData?.buckets?.find((bucket: { name: string }) => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: TokenBalance) => {
@@ -176,7 +176,7 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline" 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button data-tour="fund-bucket" variant={variant} size={size}>
+        <Button data-tour="fund-bucket" variant={variant} size={size} className={className}>
           <Wallet />
           Fund
         </Button>

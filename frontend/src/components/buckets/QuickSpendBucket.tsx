@@ -79,6 +79,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [selectedBucketName, setSelectedBucketName] = useState('');
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
+
   
   // Use TanStack Query for phone number validation
   const { 
@@ -118,6 +119,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       value: b.name,
       label: b.name
     }));
+
+  // Auto-select bucket if only one is available
+  React.useEffect(() => {
+    if (bucketOptions.length === 1 && !selectedBucketName) {
+      setSelectedBucketName(bucketOptions[0].value);
+    }
+  }, [bucketOptions, selectedBucketName]);
 
   const usdcBalance = selectedBucket?.tokenBalances?.reduce((total, tokenBalance) => {
     const balance = BigInt(tokenBalance.balance);

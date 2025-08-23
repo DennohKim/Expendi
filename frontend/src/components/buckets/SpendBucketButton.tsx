@@ -23,6 +23,7 @@ interface SpendBucketButtonProps {
   usdcBalance: bigint;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline" | "secondary";
+  className?: string;
 }
 
 export function SpendBucketButton({ 
@@ -31,7 +32,8 @@ export function SpendBucketButton({
   monthlyLimit, 
   usdcBalance,
   size = "sm", 
-  variant = "outline" 
+  variant = "outline",
+  className
 }: SpendBucketButtonProps) {
   const { address } = useAccount();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -155,7 +157,7 @@ export function SpendBucketButton({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button data-tour="spend-from-bucket" variant={variant} size={size}>
+        <Button data-tour="spend-from-bucket" variant={variant} size={size} className={className}>
           <Send />
           Spend
         </Button>
