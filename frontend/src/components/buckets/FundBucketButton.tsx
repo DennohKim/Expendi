@@ -52,7 +52,6 @@ export function FundBucketButton({ bucketName, size = "sm", variant = "outline",
 
    // Calculate unallocated balance directly from UNALLOCATED bucket
    const userData = walletData?.user;
-   console.log("User data:", userData)
    
    // Calculate unallocated balance from UNALLOCATED bucket
    const unallocatedBalance = userData?.buckets?.find((bucket: { name: string }) => bucket.name === 'UNALLOCATED')?.tokenBalances?.reduce((sum: bigint, tokenBalance: TokenBalance) => {

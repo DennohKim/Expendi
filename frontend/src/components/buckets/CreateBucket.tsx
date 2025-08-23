@@ -52,10 +52,6 @@ export function CreateBucket() {
 
   const { refetch: refetchBuckets } = useUserBuckets(queryAddress)
   const { data: walletData, refetch } = useUserBudgetWallet(queryAddress)
-  console.log("walletData", walletData)
-
-
-
 
   const handleCreateBucket = async (e: React.FormEvent) => {
     e.preventDefault()

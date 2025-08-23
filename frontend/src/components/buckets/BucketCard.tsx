@@ -130,8 +130,9 @@ export const BucketCard = React.memo(function BucketCard({ bucket }: BucketCardP
 
        
 
-        {/* Action Buttons */}
-        <div className="pt-2 flex gap-2">
+<div className='flex justify-between'>
+  {/* Action Buttons */}
+  <div className="pt-2 flex gap-2">
           <FundBucketButton bucketName={bucket.name} />
           <SpendBucketButton 
             bucketName={bucket.name}
@@ -144,12 +145,14 @@ export const BucketCard = React.memo(function BucketCard({ bucket }: BucketCardP
         {/* View Details Button */}
         <div className="pt-2">
           <Link href={`/buckets/${bucket.id}`} className="w-full">
-            <Button variant="outline" className="w-full">
-              <Eye className="w-4 h-4 mr-2" />
-              View Details
+            <Button variant="outline" className="w-full" size="sm">
+              <Eye className="w-4 h-4" />
+              View
             </Button>
           </Link>
         </div>
+</div>
+      
       </CardContent>
     </Card>
   );
