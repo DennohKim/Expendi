@@ -100,9 +100,10 @@ export default function WalletDropdown() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent 
-        className="absolute right-0 mt-[17px] flex w-[280px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark"
+        className="absolute mt-[17px] flex w-[280px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:right-0 sm:left-auto left-0"
         side="bottom"
-        align="end"
+        align="start"
+        sideOffset={8}
       >
         {/* User Info Section */}
         <div className="pb-4 border-b border-gray-200 dark:border-gray-800">

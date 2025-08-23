@@ -183,7 +183,7 @@ const AppHeader: React.FC = () => {
             </div>
           </div>
           {/* <!-- Wallet Connection Area --> */}
-          <div className="order-2 w-full lg:order-none lg:w-auto">
+          <div className="order-2 w-full flex justify-start lg:order-none lg:w-auto lg:flex-none">
             <WalletDropdown />
           </div>
     
