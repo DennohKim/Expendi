@@ -13,6 +13,7 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path: string;
+  disabled?: boolean;
 };
 
 const navItems: NavItem[] = [
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
     icon: <BarChart3 />,
     name: "Analytics",
     path: "/analytics",
+    disabled: true,
   },
   {
     icon: <Wallet2Icon />,
@@ -53,25 +55,38 @@ const AppSidebar: React.FC = () => {
     <ul className="flex flex-col gap-4">
       {navItems.map((nav) => (
         <li key={nav.name}>
-          <Link
-            href={nav.path}
-            className={`menu-item group ${
-              isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
-            }`}
-          >
-            <span
-              className={`${
-                isActive(nav.path)
-                  ? "menu-item-icon-active"
-                  : "menu-item-icon-inactive"
+          {nav.disabled ? (
+            <div
+              className={`menu-item group menu-item-inactive opacity-50 cursor-not-allowed`}
+            >
+              <span className="menu-item-icon-inactive">
+                {nav.icon}
+              </span>
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <span className={`menu-item-text`}>{nav.name}</span>
+              )}
+            </div>
+          ) : (
+            <Link
+              href={nav.path}
+              className={`menu-item group ${
+                isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
               }`}
             >
-              {nav.icon}
-            </span>
-            {(isExpanded || isHovered || isMobileOpen) && (
-              <span className={`menu-item-text`}>{nav.name}</span>
-            )}
-          </Link>
+              <span
+                className={`${
+                  isActive(nav.path)
+                    ? "menu-item-icon-active"
+                    : "menu-item-icon-inactive"
+                }`}
+              >
+                {nav.icon}
+              </span>
+              {(isExpanded || isHovered || isMobileOpen) && (
+                <span className={`menu-item-text`}>{nav.name}</span>
+              )}
+            </Link>
+          )}
         </li>
       ))}
     </ul>
