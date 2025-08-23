@@ -109,10 +109,7 @@ export default function BucketDetailsPage() {
   const { allTransactions, displayedTransactions, hasMoreTransactions } = React.useMemo(() => {
     if (!data?.user) return { allTransactions: [], displayedTransactions: [], hasMoreTransactions: false };
     
-    console.log('Filtering transactions for bucketId:', bucketId);
-    console.log('All deposits:', data.user.deposits?.map((d: Transaction) => ({ id: d.id, bucketId: d.bucket.id, bucketName: d.bucket.name })));
-    console.log('All withdrawals:', data.user.withdrawals?.map((w: Transaction) => ({ id: w.id, bucketId: w.bucket.id, bucketName: w.bucket.name })));
-    
+   
     const deposits = (data.user.deposits || []).filter((d: Transaction) => 
       d.bucket.id === bucketId || d.bucket.id.trim() === bucketId.trim()
     );
@@ -413,10 +410,10 @@ export default function BucketDetailsPage() {
                 <div className="flex flex-col h-[650px]">
                   {/* Scrollable transactions container with infinite scroll */}
                   <div 
-                    className="flex-1 overflow-y-auto px-6 py-4"
+                    className="flex-1 overflow-y-auto px-2 py-4"
                     onScroll={handleScroll}
                   >
-                    <div className="space-y-3 pr-2">
+                    <div className="space-y-3">
                       {displayedTransactions.map((transaction) => (
                         <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center space-x-3">
@@ -443,7 +440,7 @@ export default function BucketDetailsPage() {
                               'recipient' in transaction ? 'text-red-600' : 'text-green-600'
                             }`}>
                               {'recipient' in transaction ? '-' : '+'}
-                              {formatUnits(BigInt(transaction.amount), 6)} USDC
+                             $ {formatUnits(BigInt(transaction.amount), 6)}
                             </div>
                           </div>
                         </div>
