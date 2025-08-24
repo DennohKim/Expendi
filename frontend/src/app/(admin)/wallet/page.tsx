@@ -571,6 +571,7 @@ const WalletPage = () => {
           unallocatedBalance={unallocatedBalance || BigInt(0)}
           handleDeposit={handleDeposit} 
           isDepositing={isDepositing}
+          userAddress={smartAccountAddress || eoaAddress}
           onDepositSuccess={() => {
             // Refresh balances after successful deposit
             setTimeout(() => {
