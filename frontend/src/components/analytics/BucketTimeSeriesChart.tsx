@@ -15,10 +15,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar, TrendingUp, RefreshCw } from 'lucide-react';
-import { useBucketTimeSeries, BucketTimeSeriesData } from '@/hooks/analytics/useBucketTimeSeries';
+import { useBucketTimeSeries } from '@/hooks/analytics/useBucketTimeSeries';
 
 interface BucketTimeSeriesChartProps {
   userAddress: string | undefined;
+}
+
+// Add proper types for chart data and tooltip
+interface ChartDataPoint {
+  period: string;
+  [key: string]: string | number;
+}
+
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    dataKey: string;
+    value: number;
+    color: string;
+  }>;
+  label?: string;
 }
 
 const COLORS = [
@@ -73,7 +89,7 @@ const BucketTimeSeriesChart: React.FC<BucketTimeSeriesChartProps> = ({ userAddre
     
     // Transform data for recharts - keep raw values for chart, formatting happens in display
     return sortedPeriods.map(period => {
-      const dataPoint: any = { period };
+      const dataPoint: ChartDataPoint = { period };
       
       timeSeriesData.buckets.forEach(bucket => {
         const bucketDataPoint = bucket.data.find(d => d.period === period);
@@ -112,20 +128,20 @@ const BucketTimeSeriesChart: React.FC<BucketTimeSeriesChartProps> = ({ userAddre
     }
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
           <p className="font-medium text-gray-900 mb-2">
-            {formatPeriodLabel(label)}
+            {formatPeriodLabel(label || '')}
           </p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
               {entry.dataKey}: {formatCurrency(entry.value)}
             </p>
           ))}
           <p className="text-sm text-gray-500 mt-1 border-t pt-1">
-            Total: {formatCurrency(payload.reduce((sum: number, entry: any) => sum + entry.value, 0))}
+            Total: {formatCurrency(payload.reduce((sum: number, entry) => sum + entry.value, 0))}
           </p>
         </div>
       );

@@ -28,6 +28,35 @@ export interface BucketTimeSeriesResponse {
   };
 }
 
+// API response interfaces to match the actual response structure
+interface ApiBucketTimeSeriesDataPoint {
+  period: string;
+  totalSpent: number;
+  timestamp: string; // API returns ISO string
+}
+
+interface ApiBucketTimeSeriesData {
+  bucketId: string;
+  bucketName: string;
+  data: ApiBucketTimeSeriesDataPoint[];
+}
+
+interface ApiBucketTimeSeriesResponse {
+  period: 'daily' | 'monthly' | 'yearly';
+  buckets: ApiBucketTimeSeriesData[];
+  totalPeriods: number;
+  dateRange: {
+    from: string; // API returns ISO string
+    to: string; // API returns ISO string
+  };
+  summary: {
+    totalSpentAcrossAllBuckets: number;
+    averageSpentPerPeriod: number;
+    activeBuckets: number;
+    periodRange: string;
+  };
+}
+
 interface BucketTimeSeriesParams {
   period?: 'daily' | 'monthly' | 'yearly';
   from?: Date;
@@ -62,15 +91,15 @@ const fetchBucketTimeSeries = async (
   }
   
   // Transform the data to ensure dates are properly parsed
-  const transformedData = {
+  const transformedData: BucketTimeSeriesResponse = {
     ...data.data,
     dateRange: {
       from: new Date(data.data.dateRange.from),
       to: new Date(data.data.dateRange.to)
     },
-    buckets: data.data.buckets.map((bucket: any) => ({
+    buckets: data.data.buckets.map((bucket: ApiBucketTimeSeriesData) => ({
       ...bucket,
-      data: bucket.data.map((dataPoint: any) => ({
+      data: bucket.data.map((dataPoint: ApiBucketTimeSeriesDataPoint) => ({
         ...dataPoint,
         timestamp: new Date(dataPoint.timestamp)
       }))
