@@ -6,13 +6,13 @@ import { useSmartAccount } from '@/context/SmartAccountContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { TrendingUp, DollarSign, Activity, AlertTriangle, Calendar, RefreshCw } from 'lucide-react';
 
 // Import the TanStack Query hooks
 import { useUserInsights } from '@/hooks/analytics/useUserInsights';
 import { useBucketUsage } from '@/hooks/analytics/useBucketUsage';
-import { useBudgetEfficiency } from '@/hooks/analytics/useBudgetEfficiency';
+import { Button } from '@/components/ui/button';
+import BucketTimeSeriesChart from '@/components/analytics/BucketTimeSeriesChart';
 
 interface AbandonedBucket {
   bucketId: string;
@@ -52,20 +52,11 @@ export default function AnalyticsPage() {
     error: bucketUsageError,
     refetch: refetchBucketUsage
   } = useBucketUsage(queryAddressToLower);
-  console.log("bucketUsageData", bucketUsageData);
-
-  const {
-    data: budgetEfficiencyData,
-    isLoading: budgetEfficiencyLoading,
-    error: budgetEfficiencyError,
-    refetch: refetchBudgetEfficiency
-  } = useBudgetEfficiency(queryAddressToLower);
 
   const bucketUsage = bucketUsageData?.buckets || [];
-  const budgetEfficiency = budgetEfficiencyData?.bucketEfficiency || [];
   
-  const loading = insightsLoading || bucketUsageLoading || budgetEfficiencyLoading;
-  const error = insightsError || bucketUsageError || budgetEfficiencyError;
+  const loading = insightsLoading || bucketUsageLoading;
+  const error = insightsError || bucketUsageError;
 
   const refetchAll = async () => {
     if (!queryAddressToLower) return;
@@ -81,13 +72,11 @@ export default function AnalyticsPage() {
       // Then refetch all the analytics data
       refetchInsights();
       refetchBucketUsage();
-      refetchBudgetEfficiency();
     } catch (error) {
       console.error('Failed to sync user data:', error);
       // Still refetch the existing data even if sync fails
       refetchInsights();
       refetchBucketUsage();
-      refetchBudgetEfficiency();
     } finally {
       setSyncing(false);
     }
@@ -110,14 +99,14 @@ export default function AnalyticsPage() {
         <div className="text-red-500">
           {error instanceof Error ? error.message : 'Failed to load analytics data'}
         </div>
-        <button 
+        <Button 
           onClick={refetchAll}
           disabled={syncing}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="primary"
         >
           <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
           <span>{syncing ? 'Syncing...' : 'Retry'}</span>
-        </button>
+        </Button>
       </div>
     );
   }
@@ -143,20 +132,11 @@ export default function AnalyticsPage() {
     
     return showSymbol ? `$ ${formattedAmount}` : formattedAmount;
   };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'healthy': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      case 'warning': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'over_budget': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-    }
-  };
-
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Analytics Dashboard</h1>
+        <h1 className="text-xl font-bold tracking-tight">Analytics Dashboard</h1>
         <button 
           onClick={refetchAll}
           disabled={loading || syncing}
@@ -183,12 +163,12 @@ export default function AnalyticsPage() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Active Buckets</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(insights.totalBalance)}</div>
-              <p className="text-xs text-muted-foreground">Current balance</p>
+              <div className="text-2xl font-bold">{insights.activeBuckets}</div>
+              <p className="text-xs text-muted-foreground">Bucket count</p>
             </CardContent>
           </Card>
 
@@ -220,50 +200,18 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      <Tabs defaultValue="efficiency" className="space-y-4">
+      <Tabs defaultValue="usage" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="efficiency">Budget Efficiency</TabsTrigger>
           <TabsTrigger value="usage">Bucket Usage</TabsTrigger>
           <TabsTrigger value="insights">Top Performers</TabsTrigger>
           <TabsTrigger value="abandoned">Abandoned Buckets</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="efficiency" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Budget Efficiency</CardTitle>
-              <CardDescription>How efficiently you&apos;re using your bucket budgets</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {budgetEfficiency.map((bucket) => (
-                  <div key={bucket.bucketId} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium">{bucket.bucketName}</p>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getStatusColor(bucket.status)}>
-                            {bucket.status.replace('_', ' ')}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {formatCurrency(bucket.monthlySpent, false)} / {formatCurrency(bucket.monthlyLimit, false)} USDC
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">{bucket.utilizationRate.toFixed(1)}%</p>
-                        <p className="text-xs text-muted-foreground">utilization</p>
-                      </div>
-                    </div>
-                    <Progress value={bucket.utilizationRate} className="h-2" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="usage" className="space-y-4">
+          {/* Time Series Chart */}
+          <BucketTimeSeriesChart userAddress={queryAddressToLower} />
+          
+          {/* Bucket Usage Statistics */}
           <Card>
             <CardHeader>
               <CardTitle>Bucket Usage Statistics</CardTitle>

@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: expendi-analytics-db-dev
+    environment:
+      POSTGRES_DB: expendi_analytics_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  analytics-backend-dev:
+    build: .
+    container_name: expendi-analytics-backend-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://postgres:dev_password@postgres-dev:5432/expendi_analytics_dev
+      - PORT=3001
+      - NODE_ENV=development
+      - SUBGRAPH_URL_BASE_MAINNET=${SUBGRAPH_URL_BASE_MAINNET:-https://api.studio.thegraph.com/query/118246/expendi-base/v1.0.0}
+      - SUBGRAPH_URL_BASE_SEPOLIA=${SUBGRAPH_URL_BASE_SEPOLIA:-}
+      - SUBGRAPH_URL_CELO_MAINNET=${SUBGRAPH_URL_CELO_MAINNET:-}
+      - SUBGRAPH_URL_CELO_ALFAJORES=${SUBGRAPH_URL_CELO_ALFAJORES:-}
+      - SUBGRAPH_URL_SCROLL_MAINNET=${SUBGRAPH_URL_SCROLL_MAINNET:-}
+      - SUBGRAPH_URL_SCROLL_SEPOLIA=${SUBGRAPH_URL_SCROLL_SEPOLIA:-}
+      - DEFAULT_CHAIN=${DEFAULT_CHAIN:-base}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-900000}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */5 * * * *}
+      - ANALYTICS_INTERVAL=${ANALYTICS_INTERVAL:-0 0 * * *}
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis-dev:
+    image: redis:7-alpine
+    container_name: expendi-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:

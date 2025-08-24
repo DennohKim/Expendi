@@ -1,3 +1,13 @@
+# Base Docker Compose Configuration
+# Use docker-compose.dev.yml for development
+# Use docker-compose.prod.yml for production
+#
+# Usage:
+#   Development: docker-compose -f docker-compose.dev.yml up
+#   Production:  docker-compose -f docker-compose.prod.yml up
+#
+# This file is kept for reference and can be removed if not needed.
+
 version: '3.8'
 
 services:

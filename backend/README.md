@@ -505,6 +505,39 @@ docker-compose -f docker-compose.yml up -d
 
 # Check container health
 docker-compose ps
+
+ Development Commands Used:
+
+  # Start dev containers
+  docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
+
+  # Run migration in dev
+  docker exec expendi-analytics-backend-dev npx prisma migrate dev
+
+  # Check dev database tables
+  docker exec expendi-analytics-db-dev psql -U postgres -d expendi_analytics_dev -c "\dt"
+
+  # Check data counts in dev
+  docker exec expendi-analytics-db-dev psql -U postgres -d expendi_analytics_dev -c "SELECT COUNT(*) FROM 
+  users;"
+
+  Production Commands (equivalent):
+
+  # Start prod containers
+  docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+  # Run migration in prod
+  docker exec expendi-analytics-backend-prod npx prisma migrate deploy
+
+  # Check prod database tables
+  docker exec expendi-analytics-db-prod psql -U postgres -d expendi_analytics_prod -c "\dt"
+
+  # Check data counts in prod
+  docker exec expendi-analytics-db-prod psql -U postgres -d expendi_analytics_prod -c "SELECT COUNT(*) FROM
+   users;"
+
+  # Sync data to prod (from host machine)
+  npm run sync:base  # or sync:all
 ```
 
 ## Contributing

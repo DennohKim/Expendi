@@ -6,10 +6,12 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:prod": "npx prisma migrate deploy && npx prisma generate && node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "sync:manual": "tsx scripts/manual-sync.ts",
     "sync:base": "tsx scripts/manual-sync.ts chain base",
