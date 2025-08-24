@@ -41,22 +41,6 @@ interface ApiBucketTimeSeriesData {
   data: ApiBucketTimeSeriesDataPoint[];
 }
 
-interface ApiBucketTimeSeriesResponse {
-  period: 'daily' | 'monthly' | 'yearly';
-  buckets: ApiBucketTimeSeriesData[];
-  totalPeriods: number;
-  dateRange: {
-    from: string; // API returns ISO string
-    to: string; // API returns ISO string
-  };
-  summary: {
-    totalSpentAcrossAllBuckets: number;
-    averageSpentPerPeriod: number;
-    activeBuckets: number;
-    periodRange: string;
-  };
-}
-
 interface BucketTimeSeriesParams {
   period?: 'daily' | 'monthly' | 'yearly';
   from?: Date;
