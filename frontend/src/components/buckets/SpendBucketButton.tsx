@@ -7,14 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { parseUnits, formatUnits, isAddress } from "viem";
+import { formatUnits } from "viem";
 import { useAccount } from "wagmi";
 import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWallet";
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
-import { BUDGET_WALLET_ABI } from "@/lib/contracts/budget-wallet";
 import { useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
-import { getNetworkConfig } from "@/lib/contracts/config";
 import {
   Select,
   SelectContent,
@@ -74,7 +72,6 @@ export function SpendBucketButton({
   const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
   const [mobileNetwork, setMobileNetwork] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB'>('KES');
-  const [isSpending, setIsSpending] = useState(false);
 
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
@@ -95,10 +92,6 @@ export function SpendBucketButton({
   const bucketPayment = useBucketPayment();
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
-
-  // Get network configuration for current chain
-  const networkConfig = getNetworkConfig();
-  const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
   const queryAddress = useMemo(() => 
     smartAccountReady && smartAccountAddress ? smartAccountAddress : address,
