@@ -13,7 +13,6 @@ import { useUserBudgetWallet } from "@/hooks/subgraph-queries/useUserBudgetWalle
 import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 import { useSmartAccount } from "@/context/SmartAccountContext";
 import { useAllTransactions } from "@/hooks/subgraph-queries/getAllTransactions";
-import { getNetworkConfig } from "@/lib/contracts/config";
 import {
   Select,
   SelectContent,
