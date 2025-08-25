@@ -47,7 +47,6 @@ frontend/*.tsbuildinfo
 frontend/next-env.d.ts
 
 # Package manager
-pnpm-lock.yaml
 package-lock.json
 yarn.lock
 
