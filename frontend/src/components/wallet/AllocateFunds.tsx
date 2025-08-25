@@ -86,7 +86,14 @@ const AllocateFunds = ({
       currency_code: 'KES' as const
     };
     
-    onrampMutation.mutate(requestData);
+    onrampMutation.mutate(requestData, {
+      onSuccess: () => {
+        // Clear the form fields on successful onramp
+        setOnrampAmount('');
+        setPhoneNumber('');
+        setMobileNetwork('Safaricom');
+      }
+    });
   }
 
   // Calculate USDC equivalent
