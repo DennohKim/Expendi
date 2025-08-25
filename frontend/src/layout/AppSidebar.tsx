@@ -36,7 +36,7 @@ const navItems: NavItem[] = [
     icon: <BarChart3 />,
     name: "Analytics",
     path: "/analytics",
-    disabled: false,
+    disabled: true,
   },
   {
     icon: <Wallet2Icon />,
