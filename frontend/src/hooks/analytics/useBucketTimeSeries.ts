@@ -52,7 +52,8 @@ const fetchBucketTimeSeries = async (
   userAddress: string,
   params: BucketTimeSeriesParams = {}
 ): Promise<BucketTimeSeriesResponse> => {
-  const baseUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
+  const baseUrl = "https://expendi-production.up.railway.app";
+  // const baseUrl = "http://localhost:3001";
   
   const searchParams = new URLSearchParams();
   if (params.period) searchParams.append('period', params.period);
