@@ -10,6 +10,7 @@ import { createSubgraphService } from './lib/subgraph';
 import { createMultiChainSubgraphService } from './lib/multi-chain-subgraph';
 import { syncAllChains, syncChain, syncUserAcrossChains, fullSync } from './lib/sync';
 import { createAnalyticsService } from './lib/analytics';
+import { createCronService, CronService } from './lib/cron';
 
 // Import routes
 import createAnalyticsRouter from './routes/functional-analytics';
@@ -21,11 +22,13 @@ const initializeServices = () => {
   const prisma = getPrismaClient();
   const multiChainSubgraph = createMultiChainSubgraphService();
   const analyticsService = createAnalyticsService(prisma);
+  const cronService = createCronService(prisma);
 
   return {
     prisma,
     multiChainSubgraph,
     analyticsService,
+    cronService,
     // Legacy single-chain service for backward compatibility
     legacySubgraph: createSubgraphService(
       process.env.SUBGRAPH_URL_BASE_MAINNET || 
@@ -136,6 +139,44 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
       }
     });
 
+    // Cron job status endpoint
+    app.get('/api/v2/cron/status', (req, res) => {
+      try {
+        const status = services.cronService.getStatus();
+        res.json({ success: true, data: status });
+      } catch (error) {
+        res.status(500).json({ 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Failed to get cron status' 
+        });
+      }
+    });
+
+    // Start/stop cron jobs endpoints
+    app.post('/api/v2/cron/start', (req, res) => {
+      try {
+        services.cronService.start();
+        res.json({ success: true, message: 'Cron jobs started' });
+      } catch (error) {
+        res.status(500).json({ 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Failed to start cron jobs' 
+        });
+      }
+    });
+
+    app.post('/api/v2/cron/stop', (req, res) => {
+      try {
+        services.cronService.stop();
+        res.json({ success: true, message: 'Cron jobs stopped' });
+      } catch (error) {
+        res.status(500).json({ 
+          success: false, 
+          error: error instanceof Error ? error.message : 'Failed to stop cron jobs' 
+        });
+      }
+    });
+
     // Legacy single-chain sync endpoint for backward compatibility
     app.post('/api/sync/full', async (req, res) => {
       try {
@@ -196,11 +237,17 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
   return { app, services };
 };
 
-// Graceful shutdown handler
-export const setupGracefulShutdown = (services: { prisma: PrismaClient }) => {
+// Graceful shutdown handler  
+export const setupGracefulShutdown = (services: { prisma: PrismaClient; cronService: CronService }) => {
   const gracefulShutdown = async (signal: string) => {
     console.log(`Received ${signal}, shutting down gracefully...`);
+    
+    // Stop cron jobs first
+    services.cronService.stop();
+    
+    // Disconnect database
     await services.prisma.$disconnect();
+    
     process.exit(0);
   };
 
@@ -217,8 +264,15 @@ export const startServer = async (port: number = 3001) => {
     await services.prisma.$connect();
     console.log('Database connected successfully');
 
+    // Start cron jobs (unless disabled)
+    if (process.env.DISABLE_CRON !== 'true') {
+      services.cronService.start();
+    } else {
+      console.log('⚠️ Cron jobs disabled by DISABLE_CRON environment variable');
+    }
+
     // Setup graceful shutdown
-    setupGracefulShutdown(services);
+    setupGracefulShutdown({ prisma: services.prisma, cronService: services.cronService });
 
     // Start HTTP server
     const server = app.listen(port, () => {
