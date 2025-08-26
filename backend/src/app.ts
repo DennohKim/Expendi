@@ -74,9 +74,9 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
   app.use('/api/analytics', createAnalyticsRouter(services.prisma));
   app.use('/api/v2/analytics', createMultiChainAnalyticsRouter(services.prisma));
 
-  // Development endpoints
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔧 Development mode - adding manual sync endpoints');
+  // Sync endpoints (enabled in development or when explicitly enabled)
+  if (process.env.NODE_ENV === 'development' || process.env.ENABLE_SYNC_ENDPOINTS === 'true') {
+    console.log('🔧 Manual sync endpoints enabled');
 
     // Multi-chain sync endpoints
     app.post('/api/v2/sync/all-chains', async (req, res) => {
@@ -227,8 +227,8 @@ export const startServer = async (port: number = 3001) => {
       console.log(`📈 Analytics API available at http://localhost:${port}/api/analytics`);
       console.log(`🌐 Multi-chain API available at http://localhost:${port}/api/v2/analytics`);
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 Development mode - sync endpoints available');
+      if (process.env.NODE_ENV === 'development' || process.env.ENABLE_SYNC_ENDPOINTS === 'true') {
+        console.log('🔄 Sync endpoints available');
         console.log('💡 Use /api/v2/sync/* endpoints for multi-chain operations');
       }
     });
