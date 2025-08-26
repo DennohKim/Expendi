@@ -19,7 +19,8 @@ interface BucketActivityResponse {
 }
 
 const fetchBucketActivity = async (userAddress: string, month?: string): Promise<BucketActivityResponse> => {
-  const baseUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
+  const baseUrl = "https://expendi-production.up.railway.app";
+  // const baseUrl = "http://localhost:3001";
   const url = new URL(`${baseUrl}/api/V2/analytics/chains/base/users/${userAddress}/bucket-activity`);
   
   if (month) {

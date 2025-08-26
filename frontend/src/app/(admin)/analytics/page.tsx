@@ -64,7 +64,7 @@ export default function AnalyticsPage() {
     setSyncing(true);
     try {
       // First sync the user data
-      const analyticsApiUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
+      const analyticsApiUrl = "https://expendi-production.up.railway.app";
       await fetch(`${analyticsApiUrl}/api/v2/sync/user/${queryAddressToLower}`, {
         method: 'POST'
       });
