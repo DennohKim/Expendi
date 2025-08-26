@@ -57,7 +57,7 @@ export default function NotificationDropdown() {
       </DropdownMenuTrigger>
       
       <DropdownMenuContent 
-        className="absolute mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] -right-5 left-auto "
+        className="absolute mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0 lg:left-auto -right-3 left-auto"
         side="bottom"
         align="end"
         sideOffset={8}
