@@ -518,7 +518,7 @@ export default function Transactions() {
           </p>
         </div>
 
-        <div className="flex items-center justify-end gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-gray-500" />
         </div>
