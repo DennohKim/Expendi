@@ -19,7 +19,7 @@ interface BucketActivityResponse {
 }
 
 const fetchBucketActivity = async (userAddress: string, month?: string): Promise<BucketActivityResponse> => {
-  const baseUrl = "https://expendi-production.up.railway.app";
+  const baseUrl = "https://expendi-kn6h.onrender.com";
   // const baseUrl = "http://localhost:3001";
   const url = new URL(`${baseUrl}/api/V2/analytics/chains/base/users/${userAddress}/bucket-activity`);
   

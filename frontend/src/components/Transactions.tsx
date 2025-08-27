@@ -13,6 +13,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   ArrowDownLeft, 
   ArrowUpRight, 
@@ -20,7 +27,8 @@ import {
   ExternalLink,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Filter
 } from "lucide-react";
 import { useAllTransactions, type AllTransactionsData } from "@/hooks/subgraph-queries/getAllTransactions";
 
@@ -142,7 +150,7 @@ function PaginationControls({ currentPage, totalItems, itemsPerPage, onPageChang
           return (
             <Button
               key={page}
-              variant={currentPage === page ? "default" : "outline"}
+              variant={currentPage === page ? "primary" : "outline"}
               size="sm"
               onClick={() => onPageChange(page)}
               className="h-8 w-8 p-0"
@@ -404,9 +412,60 @@ export default function Transactions() {
   const [depositPage, setDepositPage] = useState(1);
   const [withdrawalPage, setWithdrawalPage] = useState(1);
   const [transferPage, setTransferPage] = useState(1);
+  const [selectedBucket, setSelectedBucket] = useState<string>("all");
   
   const { data, loading, error } = useAllTransactions(smartAccountAddress, first);
   
+  // Get unique bucket names from all transaction types
+  const availableBuckets = useMemo(() => {
+    if (!data) return [];
+    
+    const bucketNames = new Set<string>();
+    
+    // Add bucket names from deposits
+    data.deposits?.forEach(deposit => {
+      if (deposit.bucket?.name) {
+        bucketNames.add(deposit.bucket.name);
+      }
+    });
+    
+    // Add bucket names from withdrawals
+    data.withdrawals?.forEach(withdrawal => {
+      if (withdrawal.bucket?.name) {
+        bucketNames.add(withdrawal.bucket.name);
+      }
+    });
+    
+    // Add bucket names from transfers (both from and to)
+    data.bucketTransfers?.forEach(transfer => {
+      if (transfer.fromBucket?.name) {
+        bucketNames.add(transfer.fromBucket.name);
+      }
+      if (transfer.toBucket?.name) {
+        bucketNames.add(transfer.toBucket.name);
+      }
+    });
+    
+    return Array.from(bucketNames).sort();
+  }, [data]);
+
+  // Filter transactions based on selected bucket
+  const filteredData = useMemo(() => {
+    if (!data || selectedBucket === "all") return data;
+    
+    return {
+      deposits: data.deposits?.filter(deposit => 
+        deposit.bucket?.name === selectedBucket
+      ) || [],
+      withdrawals: data.withdrawals?.filter(withdrawal => 
+        withdrawal.bucket?.name === selectedBucket
+      ) || [],
+      bucketTransfers: data.bucketTransfers?.filter(transfer => 
+        transfer.fromBucket?.name === selectedBucket || transfer.toBucket?.name === selectedBucket
+      ) || []
+    };
+  }, [data, selectedBucket]);
+
   // Debug logging - remove after fixing
   if (data && !loading) {
     console.log('Transaction data received:', data);
@@ -417,14 +476,14 @@ export default function Transactions() {
   
 
   const transactionCounts = useMemo(() => {
-    if (!data) return { deposits: 0, withdrawals: 0, transfers: 0 };
+    if (!filteredData) return { deposits: 0, withdrawals: 0, transfers: 0 };
     
     return {
-      deposits: data.deposits?.length || 0,
-      withdrawals: data.withdrawals?.length || 0,
-      transfers: data.bucketTransfers?.length || 0,
+      deposits: filteredData.deposits?.length || 0,
+      withdrawals: filteredData.withdrawals?.length || 0,
+      transfers: filteredData.bucketTransfers?.length || 0,
     };
-  }, [data]);
+  }, [filteredData]);
 
   if (!smartAccountAddress) {
     return (
@@ -459,12 +518,38 @@ export default function Transactions() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            Showing transactions with 10 per page
-          </div>
+        <div className="flex items-center justify-end gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-gray-500" />
         </div>
+        <Select value={selectedBucket} onValueChange={setSelectedBucket}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Select a bucket" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Buckets</SelectItem>
+            {availableBuckets.map((bucketName) => (
+              <SelectItem key={bucketName} value={bucketName}>
+                {bucketName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {selectedBucket !== "all" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedBucket("all")}
+            className="h-8 px-3"
+          >
+            Clear Filter
+          </Button>
+        )}
       </div>
+      </div>
+
+      {/* Bucket Filter */}
+     
 
       {/* Tabs */}
       <Tabs defaultValue="deposits" className="w-full">
@@ -482,7 +567,7 @@ export default function Transactions() {
 
         <TabsContent value="deposits" className="mt-6">
           <DepositsTable 
-            data={data} 
+            data={filteredData} 
             loading={loading} 
             currentPage={depositPage}
             onPageChange={setDepositPage}
@@ -492,7 +577,7 @@ export default function Transactions() {
 
         <TabsContent value="withdrawals" className="mt-6">
           <WithdrawalsTable 
-            data={data} 
+            data={filteredData} 
             loading={loading} 
             currentPage={withdrawalPage}
             onPageChange={setWithdrawalPage}
@@ -502,7 +587,7 @@ export default function Transactions() {
 
         <TabsContent value="transfers" className="mt-6">
           <TransfersTable 
-            data={data} 
+            data={filteredData} 
             loading={loading} 
             currentPage={transferPage}
             onPageChange={setTransferPage}
