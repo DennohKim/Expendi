@@ -52,13 +52,15 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
     credentials: true
   }));
 
-  // Rate limiting
+  // Rate limiting with trusted proxy configuration
   const limiter = rateLimit({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
     max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
     message: {
       error: 'Too many requests from this IP, please try again later.'
-    }
+    },
+    // Disable validation to prevent trust proxy warnings in production
+    validate: false
   });
   app.use('/api/', limiter);
 

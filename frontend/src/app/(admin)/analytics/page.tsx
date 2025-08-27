@@ -53,7 +53,15 @@ export default function AnalyticsPage() {
     refetch: refetchBucketUsage
   } = useBucketUsage(queryAddressToLower);
 
-  const bucketUsage = bucketUsageData?.buckets || [];
+  const bucketUsage = React.useMemo(() => {
+    const buckets = bucketUsageData?.buckets || [];
+    // Sort buckets by total spent from highest to lowest
+    return [...buckets].sort((a, b) => {
+      const aSpent = parseFloat(a.totalSpent) || 0;
+      const bSpent = parseFloat(b.totalSpent) || 0;
+      return bSpent - aSpent; // Descending order (highest first)
+    });
+  }, [bucketUsageData?.buckets]);
   
   const loading = insightsLoading || bucketUsageLoading;
   const error = insightsError || bucketUsageError;
