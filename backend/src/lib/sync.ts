@@ -294,10 +294,11 @@ export const syncChain = (
       return;
     }
 
-    await Promise.all([
-      syncUsersForChain(prisma, multiChainService, chainName)(),
-      syncTransactionsForChain(prisma, multiChainService, chainName)()
-    ]);
+    // Sync users first (which includes their buckets)
+    await syncUsersForChain(prisma, multiChainService, chainName)();
+    
+    // Then sync transactions (which reference the buckets)
+    await syncTransactionsForChain(prisma, multiChainService, chainName)();
 
     console.log(`✅ Sync completed for ${chainName}`);
   } catch (error) {

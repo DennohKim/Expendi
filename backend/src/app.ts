@@ -42,6 +42,9 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
   const app = express();
   const services = initializeServices();
 
+  // Trust proxy for production deployments (Railway, Heroku, etc.)
+  app.set('trust proxy', true);
+
   // Security middleware
   app.use(helmet());
   app.use(cors({
