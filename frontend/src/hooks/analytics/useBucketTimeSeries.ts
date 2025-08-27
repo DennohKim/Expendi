@@ -52,8 +52,8 @@ const fetchBucketTimeSeries = async (
   userAddress: string,
   params: BucketTimeSeriesParams = {}
 ): Promise<BucketTimeSeriesResponse> => {
-  // const baseUrl = "https://expendi-kn6h.onrender.com";
-  const baseUrl = "http://localhost:3001";
+  const baseUrl = "https://expendi-kn6h.onrender.com";
+  // const baseUrl = "http://localhost:3001";
   
   const searchParams = new URLSearchParams();
   if (params.period) searchParams.append('period', params.period);
