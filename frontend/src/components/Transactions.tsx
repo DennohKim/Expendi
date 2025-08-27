@@ -31,7 +31,6 @@ import {
   Filter
 } from "lucide-react";
 import { useAllTransactions, type AllTransactionsData } from "@/hooks/subgraph-queries/getAllTransactions";
-import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 
 const formatAmount = (amount: string, decimals: string, symbol: string) => {
   // Debug logging - remove this after fixing the issue
