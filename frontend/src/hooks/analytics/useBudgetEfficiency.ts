@@ -25,7 +25,7 @@ interface BudgetEfficiencyResponse {
 }
 
 const fetchBudgetEfficiency = async (userAddress: string): Promise<BudgetEfficiencyResponse> => {
-  const baseUrl = "https://expendi-production.up.railway.app";
+  const baseUrl = "https://expendi-kn6h.onrender.com";
   // const baseUrl = "http://localhost:3001";
   const response = await fetch(`${baseUrl}/api/analytics/users/${userAddress}/budget-efficiency`);
   

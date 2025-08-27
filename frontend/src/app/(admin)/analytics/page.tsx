@@ -64,7 +64,7 @@ export default function AnalyticsPage() {
     setSyncing(true);
     try {
       // First sync the user data
-      const analyticsApiUrl = "https://expendi-production.up.railway.app";
+      const analyticsApiUrl = "https://expendi-kn6h.onrender.com";
       await fetch(`${analyticsApiUrl}/api/v2/sync/user/${queryAddressToLower}`, {
         method: 'POST'
       });
@@ -137,14 +137,14 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight">Analytics Dashboard</h1>
-        <button 
+        <Button 
           onClick={refetchAll}
           disabled={loading || syncing}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          variant="primary"
         >
           <RefreshCw className={`h-4 w-4 ${loading || syncing ? 'animate-spin' : ''}`} />
           <span>{syncing ? 'Syncing...' : 'Refresh'}</span>
-        </button>
+        </Button>
       </div>
 
       {/* Overview Cards */}
@@ -181,7 +181,7 @@ export default function AnalyticsPage() {
               {/* <div className="text-2xl font-bold">
                 {insights.mostUsedBucket ? insights.mostUsedBucket.transactionCount : '0'}
               </div> */}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm font-bold">
                 {insights.mostUsedBucket ? insights.mostUsedBucket.bucketName : 'No data'}
               </p>
             </CardContent>
