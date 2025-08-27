@@ -416,7 +416,6 @@ export default function Transactions() {
   const [selectedBucket, setSelectedBucket] = useState<string>("all");
   
   const { data, loading, error } = useAllTransactions(smartAccountAddress, first);
-  const { data: bucketsData } = useUserBuckets(smartAccountAddress);
   
   // Get unique bucket names from all transaction types
   const availableBuckets = useMemo(() => {
