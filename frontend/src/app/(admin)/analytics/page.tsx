@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
     setSyncing(true);
     try {
       // First sync the user data
-      const analyticsApiUrl = "https://expendi-kn6h.onrender.com";
+      const analyticsApiUrl = "https://expendi-production-ab42.up.railway.app";
       await fetch(`${analyticsApiUrl}/api/v2/sync/user/${queryAddressToLower}`, {
         method: 'POST'
       });

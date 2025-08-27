@@ -35,7 +35,7 @@ interface UserInsights {
 }
 
 const fetchUserInsights = async (userAddress: string): Promise<UserInsights> => {
-  const baseUrl = "https://expendi-kn6h.onrender.com";
+  const baseUrl = "https://expendi-production-ab42.up.railway.app";
   // const baseUrl = "http://localhost:3001";
   const response = await fetch(`${baseUrl}/api/V2/analytics/chains/base/users/${userAddress}/insights`);
   
