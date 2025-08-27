@@ -52,7 +52,7 @@ const fetchBucketTimeSeries = async (
   userAddress: string,
   params: BucketTimeSeriesParams = {}
 ): Promise<BucketTimeSeriesResponse> => {
-  const baseUrl = "https://expendi-kn6h.onrender.com";
+  const baseUrl = "https://expendi-production-ab42.up.railway.app";
   // const baseUrl = "http://localhost:3001";
   
   const searchParams = new URLSearchParams();
