@@ -42,16 +42,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { selectedCountry, ...payData } = body;
     
+    // Enhanced logging for production debugging
+    console.log('Pretium API request body:', JSON.stringify(body, null, 2));
+    console.log('Selected country:', selectedCountry);
+    
     // This should be a direct pay request according to Pretium API docs
     const requestData: Omit<PayRequest, 'selectedCountry'> = {
       ...payData,
       chain: body.chain || 'BASE', // Default chain as per updated docs
     };
     
+    console.log('Request data being sent to Pretium:', JSON.stringify(requestData, null, 2));
+    
     // Use selectedCountry to determine currency code for endpoint (for non-Kenya countries)
     const currency = selectedCountry && selectedCountry !== 'KES' ? selectedCountry : undefined;
     
+    console.log('Currency for endpoint:', currency);
+    console.log('Pretium base URI:', PRETIUM_BASE_URI);
+    
     const result = await makeRequest('pay', requestData, currency);
+    
+    console.log('Pretium API response:', JSON.stringify(result, null, 2));
+    console.log('Transaction code in response:', result.transaction_code);
+    
     return NextResponse.json(result);
   } catch (error) {
     console.error('Pretium API error:', error);

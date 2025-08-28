@@ -143,8 +143,31 @@ export function useBucketPayment() {
           selectedCountry,
         });
 
+        // Enhanced logging for production debugging
         console.log('Mobile payment result:', paymentResult);
-        console.log('Transaction code from payment result:', paymentResult.transaction_code);
+        console.log('Payment result keys:', Object.keys(paymentResult));
+        console.log('Full payment result structure:', JSON.stringify(paymentResult, null, 2));
+        
+        // Try multiple ways to extract transaction code for production compatibility
+        let transactionCode = (paymentResult as { transaction_code?: string }).transaction_code;
+        
+        if (!transactionCode) {
+          console.warn('⚠️ Transaction code not found in primary location, trying alternatives...');
+          
+          // Try alternative extraction methods for production
+          transactionCode = 
+            (paymentResult as { data?: { transaction_code?: string } }).data?.transaction_code ||
+            (paymentResult as { code?: string }).code ||
+            (paymentResult as { id?: string }).id;
+            
+          if (transactionCode) {
+            console.log('Found transaction code via alternative method:', transactionCode);
+          } else {
+            console.error('❌ Transaction code not found in any expected location!');
+          }
+        } else {
+          console.log('Found transaction code in primary location:', transactionCode);
+        }
 
         // Generate receipt if transaction_code is available
         // if (paymentResult.transaction_code) {
@@ -163,7 +186,7 @@ export function useBucketPayment() {
         return { 
           txHash, 
           paymentResult,
-          transactionCode: (paymentResult as { transaction_code?: string }).transaction_code as string
+          transactionCode: transactionCode as string
         };
       } else {
         // Regular wallet transfer

@@ -8,6 +8,7 @@ import { useWalletCreationPolling } from '@/hooks/useWalletCreationPolling';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { Loader2 } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
+import { useBudgetWalletStore } from '@/store/budgetWalletStore';
 
 interface OnboardingGatewayProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export function OnboardingGateway({ children }: OnboardingGatewayProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { authenticated } = usePrivy();
+  const { setWalletStatus } = useBudgetWalletStore();
 
   useEffect(() => {
     if (!authenticated) {
@@ -44,6 +46,14 @@ export function OnboardingGateway({ children }: OnboardingGatewayProps) {
     }
     setWasPolling(isPolling);
   }, [isPolling, wasPolling, refreshWalletCheck]);
+
+  // Update cache when wallet status changes from false to true (wallet created)
+  useEffect(() => {
+    if (hasBudgetWallet === true && pollingAddress) {
+      console.log('📦 Updating cache: wallet created for address', pollingAddress);
+      setWalletStatus(pollingAddress, true);
+    }
+  }, [hasBudgetWallet, pollingAddress, setWalletStatus]);
 
   const isOnboardingPage = pathname === '/onboarding';
 
