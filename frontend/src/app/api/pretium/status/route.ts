@@ -56,6 +56,9 @@ export async function POST(request: NextRequest) {
     
     const result = await makeStatusRequest(statusData, currency);
     
+    // Log the status response
+    console.log('Pretium status response:', result);
+    
     // Generate receipt data from status response
     const receipt = {
       ...result,

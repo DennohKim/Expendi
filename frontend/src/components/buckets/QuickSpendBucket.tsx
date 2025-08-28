@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useDebouncedValidation } from "@/hooks/useDebouncedValidation";
 import { useBucketPayment } from "@/hooks/useBucketPayment";
+import { PaymentStatusModal } from "@/components/modals/PaymentStatusModal";
 
 interface TokenBalance {
   id: string;
@@ -77,6 +78,8 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [mobileNetwork, setMobileNetwork] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB'>('KES');
   const [selectedBucketName, setSelectedBucketName] = useState('');
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [lastTransactionCode, setLastTransactionCode] = useState<string | null>(null);
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
 
@@ -182,6 +185,17 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       });
 
       console.log('Bucket spend transaction hash:', result.txHash);
+
+      // Show status modal for mobile payments
+      console.log('Payment result:', result);
+      if (result.transactionCode) {
+        console.log('Setting transaction code:', result.transactionCode);
+        setLastTransactionCode(result.transactionCode);
+        setIsStatusModalOpen(true);
+        console.log('Modal should now be open');
+      } else {
+        console.log('No transaction code in result');
+      }
 
       // Reset form
       setAmount('');
@@ -506,6 +520,14 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
           </div>
         </form>
       </CardContent>
+      
+      {/* Payment Status Modal */}
+      <PaymentStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        transactionCode={lastTransactionCode}
+        currency={selectedCountry}
+      />
     </Card>
   );
 }

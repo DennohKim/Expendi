@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useDebouncedValidation } from "@/hooks/useDebouncedValidation";
 import { useBucketPayment } from "@/hooks/useBucketPayment";
+import { PaymentStatusModal } from "@/components/modals/PaymentStatusModal";
 
 // Country configuration
 const COUNTRIES = {
@@ -72,6 +73,8 @@ export function SpendBucketButton({
   const [paymentType, setPaymentType] = useState<'MOBILE' | 'PAYBILL' | 'BUY_GOODS'>('MOBILE');
   const [mobileNetwork, setMobileNetwork] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB'>('KES');
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [lastTransactionCode, setLastTransactionCode] = useState<string | null>(null);
 
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
@@ -145,6 +148,12 @@ export function SpendBucketButton({
       });
 
       console.log('Bucket spend transaction hash:', result.txHash);
+
+      // Show status modal for mobile payments
+      if (result.transactionCode) {
+        setLastTransactionCode(result.transactionCode);
+        setIsStatusModalOpen(true);
+      }
 
       // Reset form and close dialog
       setAmount('');
@@ -457,6 +466,14 @@ export function SpendBucketButton({
           </div>
         </form>
       </DialogContent>
+      
+      {/* Payment Status Modal */}
+      <PaymentStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        transactionCode={lastTransactionCode}
+        currency={selectedCountry}
+      />
     </Dialog>
   );
 }
