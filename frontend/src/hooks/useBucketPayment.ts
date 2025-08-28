@@ -156,9 +156,9 @@ export function useBucketPayment() {
           
           // Try alternative extraction methods for production
           transactionCode = 
-            (paymentResult as any).data?.transaction_code ||
-            (paymentResult as any).code ||
-            (paymentResult as any).id;
+            (paymentResult as { data?: { transaction_code?: string } }).data?.transaction_code ||
+            (paymentResult as { code?: string }).code ||
+            (paymentResult as { id?: string }).id;
             
           if (transactionCode) {
             console.log('Found transaction code via alternative method:', transactionCode);
