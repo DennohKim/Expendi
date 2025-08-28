@@ -8,8 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Clock, XCircle, AlertCircle, Copy, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
+import { CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import Lottie from "lottie-react";
 import successAnimation from "../../../public/Success.json";
@@ -34,18 +33,7 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-const getStatusColor = (status: string) => {
-  switch (status.toUpperCase()) {
-    case 'COMPLETE':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'FAILED':
-      return 'bg-red-100 text-red-800 border-red-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
+
 
 export function PaymentStatusModal({ 
   isOpen, 
@@ -84,16 +72,6 @@ export function PaymentStatusModal({
       console.log('Payment Status:', paymentStatus.data.data.status);
     }
   }, [paymentStatus.data, paymentStatus.isPending, paymentStatus.isError, paymentStatus.error]);
-
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard`);
-  };
-
-  const handleViewTransaction = (txHash: string) => {
-    const url = `https://basescan.org/tx/${txHash}`;
-    window.open(url, '_blank');
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
