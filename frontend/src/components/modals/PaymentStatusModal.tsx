@@ -33,28 +33,21 @@ const getStatusIcon = (status: string) => {
   }
 };
 
-
-
 export function PaymentStatusModal({ 
   isOpen, 
   onClose, 
   transactionCode, 
   currency 
 }: PaymentStatusModalProps) {
-  // Early return if modal is not open
-  if (!isOpen) {
-    return null;
-  }
-
   const paymentStatus = usePaymentStatus();
 
   useEffect(() => {
-    if (transactionCode) {
+    if (isOpen && transactionCode) {
       console.log('PaymentStatusModal useEffect triggered:', { isOpen, transactionCode, currency });
       console.log('Triggering payment status mutation with:', { transaction_code: transactionCode, currency });
       paymentStatus.mutate({ transaction_code: transactionCode, currency });
     }
-  }, [transactionCode, currency, paymentStatus.mutate]);
+  }, [isOpen, transactionCode, currency, paymentStatus.mutate]);
 
   useEffect(() => {
     console.log('Payment Status Mutation State:', {
@@ -81,8 +74,11 @@ export function PaymentStatusModal({
     }).format(parseFloat(amount));
   };
 
+  // Early return if modal is not open
+  if (!isOpen) {
+    return null;
+  }
 
-  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
        
