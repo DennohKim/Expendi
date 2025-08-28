@@ -163,7 +163,7 @@ export function useBucketPayment() {
         return { 
           txHash, 
           paymentResult,
-          transactionCode: paymentResult.data.transaction_code as string
+          transactionCode: (paymentResult as { transaction_code?: string }).transaction_code as string
         };
       } else {
         // Regular wallet transfer
