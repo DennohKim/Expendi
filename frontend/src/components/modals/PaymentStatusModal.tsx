@@ -49,16 +49,13 @@ export function PaymentStatusModal({
   const paymentStatus = usePaymentStatus();
 
   useEffect(() => {
-    console.log('PaymentStatusModal useEffect triggered:', { isOpen, transactionCode, currency });
-    if (isOpen && transactionCode) {
+    if (transactionCode) {
+      console.log('PaymentStatusModal useEffect triggered:', { isOpen, transactionCode, currency });
       console.log('Triggering payment status mutation with:', { transaction_code: transactionCode, currency });
       paymentStatus.mutate({ transaction_code: transactionCode, currency });
-    } else {
-      console.log('Not triggering mutation because:', { isOpen, hasTransactionCode: !!transactionCode });
     }
-  }, [isOpen, transactionCode, currency]);
+  }, [transactionCode, currency, paymentStatus.mutate]);
 
-  // Debug logging
   useEffect(() => {
     console.log('Payment Status Mutation State:', {
       isPending: paymentStatus.isPending,
