@@ -61,7 +61,8 @@
     "tailwind-merge": "^2.6.0",
     "ts-invariant": "^0.10.3",
     "viem": "^2.31.7",
-    "wagmi": "^2.0.0"
+    "wagmi": "^2.0.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
