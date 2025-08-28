@@ -8,8 +8,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Clock, XCircle, AlertCircle, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
@@ -55,13 +53,37 @@ export function PaymentStatusModal({
   transactionCode, 
   currency 
 }: PaymentStatusModalProps) {
+  // Early return if modal is not open
+  if (!isOpen) {
+    return null;
+  }
+
   const paymentStatus = usePaymentStatus();
 
   useEffect(() => {
+    console.log('PaymentStatusModal useEffect triggered:', { isOpen, transactionCode, currency });
     if (isOpen && transactionCode) {
+      console.log('Triggering payment status mutation with:', { transaction_code: transactionCode, currency });
       paymentStatus.mutate({ transaction_code: transactionCode, currency });
+    } else {
+      console.log('Not triggering mutation because:', { isOpen, hasTransactionCode: !!transactionCode });
     }
   }, [isOpen, transactionCode, currency]);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Payment Status Mutation State:', {
+      isPending: paymentStatus.isPending,
+      isError: paymentStatus.isError,
+      error: paymentStatus.error,
+      data: paymentStatus.data
+    });
+    
+    if (paymentStatus.data) {
+      console.log('Payment Status Data:', paymentStatus.data);
+      console.log('Payment Status:', paymentStatus.data.data.status);
+    }
+  }, [paymentStatus.data, paymentStatus.isPending, paymentStatus.isError, paymentStatus.error]);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -84,17 +106,24 @@ export function PaymentStatusModal({
     }).format(parseFloat(amount));
   };
 
+
+  
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
        
       <DialogContent className="max-w-[90%] mx-auto max-h-[90vh] overflow-y-auto px-4 sm:px-6">
-      <DialogHeader>
-        <DialogTitle>
-            {
-            paymentStatus.data && (
-            <>
+        <DialogHeader>
+          <DialogTitle>
+            <p className="text-2xl font-bold hidden">
+              {paymentStatus.data && paymentStatus.data.data.status === 'COMPLETE' ? 'Payment Success!' : 'Payment Status'}
+            </p>
+          </DialogTitle>
+        </DialogHeader>
+        
+        {paymentStatus.data && paymentStatus.data.data.status === 'COMPLETE' && (
+          <>
             {/* Header with Success Icon */}
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 mb-6">
               {/* Success Icon */}
               <div className="flex justify-center">
                 <div className="w-24 h-24">
@@ -105,50 +134,63 @@ export function PaymentStatusModal({
                   />
                 </div>
               </div>
+              <p className="text-2xl font-bold">
+              Payment Success!
+            </p>
               
-              {/* Title */}
-              <div>
-                <h3 className="text-2xl font-bold" style={{ color: '#111827' }}>
-                  Payment Success!
-                </h3>
+              {/* Main Amount Display */}
+              <div className="text-center space-y-2">
+                <p className="text-3xl font-bold" style={{ color: '#111827' }}>
+                  {formatAmount(paymentStatus.data.data.amount, paymentStatus.data.data.currency_code)}
+                </p>
               </div>
             </div>
-
-            {/* Main Amount Display */}
-            <div className="text-center space-y-2">
-              <p className="text-3xl font-bold" style={{ color: '#111827' }}>
-                {formatAmount(paymentStatus.data.data.amount, paymentStatus.data.data.currency_code)}
-              </p>
-            </div>
-            </>
-            )
-        }
-            </DialogTitle>
-        </DialogHeader>
+          </>
+        )}
         {paymentStatus.isPending && (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-2">Loading payment status...</span>
+          <div className="text-center py-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-2">Loading payment status...</span>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700">Processing Payment</h3>
           </div>
         )}
 
         {paymentStatus.error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700">
-              Failed to load payment status: {paymentStatus.error.message}
-            </p>
-            <Button 
-              onClick={() => paymentStatus.mutate({ transaction_code: transactionCode!, currency })}
-              variant="outline" 
-              size="sm" 
-              className="mt-2"
-            >
-              Retry
-            </Button>
+          <div className="text-center py-8">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+              <p className="text-red-700">
+                Failed to load payment status: {paymentStatus.error.message}
+              </p>
+              <Button 
+                onClick={() => paymentStatus.mutate({ transaction_code: transactionCode!, currency })}
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+              >
+                Retry
+              </Button>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700">Payment Status Error</h3>
           </div>
         )}
 
-        {paymentStatus.data && (
+        {paymentStatus.data && paymentStatus.data.data.status !== 'COMPLETE' && (
+          <div className="text-center py-8">
+            <div className="flex justify-center mb-4">
+              {getStatusIcon(paymentStatus.data.data.status)}
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700">
+              Payment {paymentStatus.data.data.status}
+            </h3>
+            <p className="text-gray-600 mt-2">
+              Your payment is currently {paymentStatus.data.data.status.toLowerCase()}. Please wait for confirmation.
+            </p>
+          </div>
+        )}
+
+        {paymentStatus.data && paymentStatus.data.data.status === 'COMPLETE' && (
           <div className="space-y-6" style={{ color: '#374151', backgroundColor: '#ffffff' }}>
             {/* Transaction Details */}
             <div className="space-y-4">
@@ -188,48 +230,7 @@ export function PaymentStatusModal({
                   <span className="text-sm font-semibold" style={{ color: '#111827' }}>
                     {paymentStatus.data.data.type}
                   </span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Chain</span>
-                  <span className="text-sm font-semibold" style={{ color: '#111827' }}>
-                    {paymentStatus.data.data.chain}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Asset</span>
-                  <span className="text-sm font-semibold" style={{ color: '#111827' }}>
-                    {paymentStatus.data.data.asset}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Transaction Hash</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold font-mono" style={{ color: '#111827' }}>
-                      {paymentStatus.data.data.transaction_hash.slice(0, 8)}...{paymentStatus.data.data.transaction_hash.slice(-6)}
-                    </span>
-                    <button
-                      onClick={() => handleCopy(paymentStatus.data.data.transaction_hash, 'Transaction hash')}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                      title="Copy transaction hash"
-                    >
-                      <Copy className="w-3 h-3" style={{ color: '#6b7280' }} />
-                    </button>
-                    <a
-                      href={`https://basescan.org/tx/${paymentStatus.data.data.transaction_hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                      title="View on BaseScan"
-                    >
-                      <ExternalLink className="w-3 h-3" style={{ color: '#6b7280' }} />
-                    </a>
-                  </div>
-                </div>
-                
-               
+                </div>                  
               </div>
               
               {/* Dashed line separator */}

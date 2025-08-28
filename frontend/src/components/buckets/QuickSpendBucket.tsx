@@ -187,9 +187,14 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       console.log('Bucket spend transaction hash:', result.txHash);
 
       // Show status modal for mobile payments
+      console.log('Payment result:', result);
       if (result.transactionCode) {
+        console.log('Setting transaction code:', result.transactionCode);
         setLastTransactionCode(result.transactionCode);
         setIsStatusModalOpen(true);
+        console.log('Modal should now be open');
+      } else {
+        console.log('No transaction code in result');
       }
 
       // Reset form
@@ -511,18 +516,6 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
               variant="primary"
             >
               {bucketPayment.isProcessing ? 'Processing...' : recipientMode === 'cash' ? `Send ${currentCountry.currency}` : 'Send USDC'}
-            </Button>
-            
-            {/* Test button for status modal - remove in production */}
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setLastTransactionCode("6fab7d00-facc-4067-83d9-1a824f5be901");
-                setIsStatusModalOpen(true);
-              }}
-            >
-              Test Status Modal
             </Button>
           </div>
         </form>

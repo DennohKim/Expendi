@@ -143,6 +143,9 @@ export function useBucketPayment() {
           selectedCountry,
         });
 
+        console.log('Mobile payment result:', paymentResult);
+        console.log('Transaction code from payment result:', paymentResult.transaction_code);
+
         // Generate receipt if transaction_code is available
         // if (paymentResult.transaction_code) {
         //   try {
@@ -160,7 +163,7 @@ export function useBucketPayment() {
         return { 
           txHash, 
           paymentResult,
-          transactionCode: paymentResult.transaction_code as string
+          transactionCode: paymentResult.data.transaction_code as string
         };
       } else {
         // Regular wallet transfer
