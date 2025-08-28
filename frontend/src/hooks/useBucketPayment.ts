@@ -32,6 +32,7 @@ interface BucketPaymentRequest {
 interface BucketPaymentResponse {
   txHash: string;
   paymentResult?: Record<string, unknown>;
+  transactionCode?: string;
 }
 
 export function useBucketPayment() {
@@ -156,7 +157,11 @@ export function useBucketPayment() {
 
         toast.success(`Successfully initiated mobile payment of ${amount} USDC to ${phoneNumber}!`);
         
-        return { txHash, paymentResult };
+        return { 
+          txHash, 
+          paymentResult,
+          transactionCode: paymentResult.transaction_code as string
+        };
       } else {
         // Regular wallet transfer
         finalRecipient = recipient as `0x${string}`;

@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useDebouncedValidation } from "@/hooks/useDebouncedValidation";
 import { useBucketPayment } from "@/hooks/useBucketPayment";
+import { PaymentStatusModal } from "@/components/modals/PaymentStatusModal";
 
 interface TokenBalance {
   id: string;
@@ -77,6 +78,8 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [mobileNetwork, setMobileNetwork] = useState('');
   const [selectedCountry, setSelectedCountry] = useState<'KES' | 'UGX' | 'GHS' | 'CDF' | 'ETB'>('KES');
   const [selectedBucketName, setSelectedBucketName] = useState('');
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [lastTransactionCode, setLastTransactionCode] = useState<string | null>(null);
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
 
@@ -182,6 +185,12 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
       });
 
       console.log('Bucket spend transaction hash:', result.txHash);
+
+      // Show status modal for mobile payments
+      if (result.transactionCode) {
+        setLastTransactionCode(result.transactionCode);
+        setIsStatusModalOpen(true);
+      }
 
       // Reset form
       setAmount('');
@@ -503,9 +512,29 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
             >
               {bucketPayment.isProcessing ? 'Processing...' : recipientMode === 'cash' ? `Send ${currentCountry.currency}` : 'Send USDC'}
             </Button>
+            
+            {/* Test button for status modal - remove in production */}
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setLastTransactionCode("6fab7d00-facc-4067-83d9-1a824f5be901");
+                setIsStatusModalOpen(true);
+              }}
+            >
+              Test Status Modal
+            </Button>
           </div>
         </form>
       </CardContent>
+      
+      {/* Payment Status Modal */}
+      <PaymentStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        transactionCode={lastTransactionCode}
+        currency={selectedCountry}
+      />
     </Card>
   );
 }
