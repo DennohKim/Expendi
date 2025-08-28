@@ -269,12 +269,8 @@ export const startServer = async (port: number = 3001) => {
     await services.prisma.$connect();
     console.log('Database connected successfully');
 
-    // Start cron jobs (unless disabled)
-    if (process.env.DISABLE_CRON !== 'true') {
-      services.cronService.start();
-    } else {
-      console.log('⚠️ Cron jobs disabled by DISABLE_CRON environment variable');
-    }
+    // Cron jobs disabled - using manual sync only to reduce subgraph requests
+    console.log('⚠️ Cron jobs disabled - using manual sync only to reduce subgraph requests');
 
     // Setup graceful shutdown
     setupGracefulShutdown({ prisma: services.prisma, cronService: services.cronService });

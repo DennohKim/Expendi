@@ -11,7 +11,7 @@
     "codegen-expendi-base": "graph codegen subgraph-expendi-base.yaml",
     "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a expendiv-3",
     "deploy-mainnet": "graph deploy expendiv-1-base-mainnet --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a --node https://api.studio.thegraph.com/deploy/ --config subgraph-mainnet.yaml",
-    "deploy-expendi-base": "graph deploy expendi-base --deploy-key 79d292a222f07c6f27cd3a0e297fcbe9 --node https://api.studio.thegraph.com/deploy/ subgraph-expendi-base.yaml",
+    "deploy-expendi-base": "graph deploy expendi-v-1 --deploy-key 79d292a222f07c6f27cd3a0e297fcbe9 --node https://api.studio.thegraph.com/deploy/ subgraph-expendi-base.yaml",
     "deploy-studio": "graph deploy expendiv-3 --deploy-key 7d0b88e1f084bb6e64d222aa4fab4a1a --node https://api.studio.thegraph.com/deploy/",
     "create-local": "graph create --node http://localhost:8020/",
     "remove-local": "graph remove --node http://localhost:8020/",
