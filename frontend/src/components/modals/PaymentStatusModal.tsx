@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -40,15 +40,92 @@ export function PaymentStatusModal({
   currency 
 }: PaymentStatusModalProps) {
   const paymentStatus = usePaymentStatus();
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const maxPollingAttempts = 20; // 20 attempts = 2 minutes of polling
+  const pollingAttemptsRef = useRef(0);
+  const isPollingRef = useRef(false);
+  const currentStatusRef = useRef<string | null>(null);
 
+  // Clear polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update current status ref when data changes (without causing re-renders)
+  useEffect(() => {
+    if (paymentStatus.data?.data?.status) {
+      currentStatusRef.current = paymentStatus.data.data.status;
+    }
+  }, [paymentStatus.data]);
+
+  // Memoized polling function to prevent recreation
+  const startPolling = useCallback(() => {
+    if (!transactionCode || isPollingRef.current) return;
+
+    isPollingRef.current = true;
+    pollingAttemptsRef.current = 0;
+
+    const poll = () => {
+      pollingAttemptsRef.current++;
+      console.log(`Polling attempt ${pollingAttemptsRef.current}/${maxPollingAttempts} for transaction: ${transactionCode}`);
+      
+      // Stop polling if max attempts reached
+      if (pollingAttemptsRef.current >= maxPollingAttempts) {
+        console.log('Max polling attempts reached, stopping polling');
+        isPollingRef.current = false;
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        return;
+      }
+
+      // Check if transaction is complete
+      if (currentStatusRef.current === 'COMPLETE' || currentStatusRef.current === 'FAILED') {
+        console.log('Transaction status is final, stopping polling:', currentStatusRef.current);
+        isPollingRef.current = false;
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+        return;
+      }
+
+      // Continue polling
+      paymentStatus.mutate({ transaction_code: transactionCode, currency });
+    };
+
+    // Start polling after initial check
+    pollingIntervalRef.current = setInterval(poll, 2000);
+  }, [transactionCode, currency, paymentStatus.mutate, maxPollingAttempts]);
+
+  // Handle modal open/close and initial status check
   useEffect(() => {
     if (isOpen && transactionCode) {
       console.log('PaymentStatusModal useEffect triggered:', { isOpen, transactionCode, currency });
       console.log('Triggering payment status mutation with:', { transaction_code: transactionCode, currency });
+      
+      // Initial status check
       paymentStatus.mutate({ transaction_code: transactionCode, currency });
+      
+      // Start polling after initial check
+      setTimeout(startPolling, 6000);
+    } else {
+      // Cleanup polling when modal closes
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      isPollingRef.current = false;
     }
-  }, [isOpen, transactionCode, currency, paymentStatus.mutate]);
+  }, [isOpen, transactionCode, currency, paymentStatus.mutate, startPolling]);
 
+  // Separate effect for logging (doesn't affect polling)
   useEffect(() => {
     console.log('Payment Status Mutation State:', {
       isPending: paymentStatus.isPending,
@@ -71,7 +148,9 @@ export function PaymentStatusModal({
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
-    }).format(parseFloat(amount));
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Math.round(parseFloat(amount)));
   };
 
   // Early return if modal is not open
@@ -135,7 +214,10 @@ export function PaymentStatusModal({
                 Failed to load payment status: {paymentStatus.error.message}
               </p>
               <Button 
-                onClick={() => paymentStatus.mutate({ transaction_code: transactionCode!, currency })}
+                onClick={() => {
+                  pollingAttemptsRef.current = 0;
+                  paymentStatus.mutate({ transaction_code: transactionCode!, currency });
+                }}
                 variant="outline" 
                 size="sm" 
                 className="mt-2"
@@ -158,6 +240,24 @@ export function PaymentStatusModal({
             <p className="text-gray-600 mt-2">
               Your payment is currently {paymentStatus.data.data.status.toLowerCase()}. Please wait for confirmation.
             </p>
+            {pollingAttemptsRef.current >= maxPollingAttempts && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-700 text-sm">
+                  Status checking has timed out. You can manually retry or check your payment status later.
+                </p>
+                <Button 
+                  onClick={() => {
+                    pollingAttemptsRef.current = 0;
+                    paymentStatus.mutate({ transaction_code: transactionCode!, currency });
+                  }}
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                >
+                  Retry Status Check
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
