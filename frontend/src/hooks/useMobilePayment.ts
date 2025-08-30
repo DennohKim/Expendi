@@ -5,6 +5,7 @@ interface MobilePaymentRequest {
   transaction_hash: string;
   amount: string;
   shortcode: string;
+  fee?: string;
   account_number?: string; // Required for PAYBILL type in KES
   type: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
   mobile_network: string;
