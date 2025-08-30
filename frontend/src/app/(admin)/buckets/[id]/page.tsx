@@ -82,6 +82,10 @@ export default function BucketDetailsPage() {
   const [targetBucketId, setTargetBucketId] = React.useState('');
   const [isTransferring, setIsTransferring] = React.useState(false);
   
+  // Fund state
+  const [fundAmount, setFundAmount] = React.useState('');
+  const [isFunding, setIsFunding] = React.useState(false);
+  
   // Update bucket modal state
   const [isUpdateModalOpen, setIsUpdateModalOpen] = React.useState(false);
   
@@ -130,6 +134,20 @@ export default function BucketDetailsPage() {
     if (!data?.user?.buckets) return [];
     return data.user.buckets.filter((b: Bucket) => b.id !== bucketId && b.active);
   }, [data, bucketId]);
+
+  // Calculate unallocated balance from UNALLOCATED bucket
+  const unallocatedBalance = React.useMemo(() => {
+    if (!data?.user?.buckets) return '0';
+    const unallocatedBucket = data.user.buckets.find((b: Bucket) => b.name === 'UNALLOCATED');
+    if (!unallocatedBucket) return '0';
+    
+    const totalBalance = unallocatedBucket.tokenBalances.reduce((total: bigint, tokenBalance: TokenBalance) => {
+      const balance = BigInt(tokenBalance.balance);
+      return total + balance;
+    }, BigInt(0));
+    
+    return formatUnits(totalBalance, 6);
+  }, [data]);
 
   const calculations = React.useMemo(() => {
     if (!bucket) return null;
@@ -285,6 +303,90 @@ export default function BucketDetailsPage() {
       setIsTransferring(false);
     }
   }, [transferAmount, targetBucketId, bucket, calculations, walletData, smartAccountClient, otherBuckets, track, refetchBuckets]);
+
+  const handleFundBucket = React.useCallback(async () => {
+    if (!fundAmount || !bucket) {
+      return;
+    }
+
+    if (!walletData?.user?.walletsCreated[0].wallet) {
+      toast.error('Budget wallet not found');
+      return;
+    }
+
+    if (!smartAccountClient?.account) {
+      toast.error('Smart account not available');
+      return;
+    }
+
+    try {
+      setIsFunding(true);
+      toast.info('Initiating funding...');
+
+      // Get network config for USDC address
+      const networkConfig = getNetworkConfig();
+      const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
+
+      // Convert amount to proper units (USDC has 6 decimals)
+      const amountInUsdc = parseUnits(fundAmount, 6);
+      const availableUnallocated = parseFloat(unallocatedBalance);
+      
+      if (parseFloat(fundAmount) > availableUnallocated) {
+        toast.error('Insufficient unallocated balance for funding');
+        return;
+      }
+
+      // Track funding start
+      track('bucket_funding_started', {
+        bucket_name: bucket.name,
+        amount: parseFloat(fundAmount),
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      });
+
+      // Use smart account client for gas sponsorship
+      const txHash = await smartAccountClient.writeContract({
+        address: walletData.user.walletsCreated[0].wallet as `0x${string}`,
+        abi: (await import('@/lib/contracts/budget-wallet')).BUDGET_WALLET_ABI,
+        functionName: 'fundBucket',
+        args: [bucket.name, amountInUsdc, usdcAddress],
+        account: smartAccountClient.account,
+        chain: smartAccountClient.chain
+      });
+
+      // Track successful funding
+      track('bucket_funding_completed', {
+        bucket_name: bucket.name,
+        amount: parseFloat(fundAmount),
+        transaction_hash: txHash,
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      });
+
+      toast.success(`Successfully funded ${bucket.name} with ${fundAmount} USDC`);
+      console.log('Funding completed with transaction hash:', txHash);
+
+      // Reset form
+      setFundAmount('');
+      
+      // Refetch data to update balances
+      setTimeout(() => {
+        refetchBuckets();
+      }, 1000);
+      
+    } catch (error) {
+      // Track failed funding
+      track('bucket_funding_failed', {
+        bucket_name: bucket.name,
+        amount: parseFloat(fundAmount),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        wallet_address: walletData.user.walletsCreated[0].wallet
+      });
+
+      console.error('Funding failed:', error);
+      toast.error('Funding failed. Please try again.');
+    } finally {
+      setIsFunding(false);
+    }
+  }, [fundAmount, bucket, unallocatedBalance, walletData, smartAccountClient, track, refetchBuckets]);
 
   if (loading) {
     return (
@@ -476,9 +578,12 @@ export default function BucketDetailsPage() {
             </CardHeader>
             <CardContent className="p-0">
               <Tabs defaultValue="spend" className="w-full">
-                <TabsList className="grid w-fit grid-cols-2 mx-4 mb-2">
+                <TabsList className="grid w-fit grid-cols-3 mx-4 mb-2">
                   <TabsTrigger value="spend" className="flex items-center gap-2">
                     Spend
+                  </TabsTrigger>
+                  <TabsTrigger value="fund" className="flex items-center gap-2">
+                    Fund
                   </TabsTrigger>
                   <TabsTrigger value="transfer" className="flex items-center gap-2">
                     Transfer
@@ -488,6 +593,35 @@ export default function BucketDetailsPage() {
                 <TabsContent value="spend" className="px-4 pb-4">
                   <div className="space-y-4">
                     <QuickSpendBucket bucket={[bucket]} />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="fund" className="px-4 pb-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fund-amount">Amount (USDC)</Label>
+                      <Input
+                        id="fund-amount"
+                        type="number"
+                        placeholder="0.00"
+                        value={fundAmount}
+                        onChange={(e) => setFundAmount(e.target.value)}
+                        step="0.01"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Unallocated balance: {unallocatedBalance} USDC
+                      </p>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleFundBucket}
+                      className="w-full"
+                      variant="primary"
+                      disabled={!fundAmount || parseFloat(fundAmount) <= 0 || isFunding}
+                    >
+                      <Wallet className="w-4 h-4 mr-2" />
+                      {isFunding ? 'Funding...' : 'Fund Bucket'}
+                    </Button>
                   </div>
                 </TabsContent>
                 
