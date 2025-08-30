@@ -548,6 +548,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
         onClose={() => setIsStatusModalOpen(false)}
         transactionCode={lastTransactionCode}
         currency={selectedCountry}
+        bucketName={selectedBucketName}
       />
     </Card>
   );
