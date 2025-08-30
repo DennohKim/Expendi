@@ -153,6 +153,31 @@ export function PaymentStatusModal({
     }).format(Math.round(parseFloat(amount)));
   };
 
+  // Calculate base amount and fee from total amount
+  const calculateAmountBreakdown = (totalAmount: string) => {
+    const total = parseFloat(totalAmount);
+    
+    // Only apply fee for amounts above 990
+    if (total <= 990) {
+      return {
+        baseAmount: total.toString(),
+        fee: "0",
+        total: total.toString(),
+        hasFee: false
+      };
+    } else {
+      const fee = 10;
+      const baseAmount = Math.max(0, total - fee);
+      
+      return {
+        baseAmount: baseAmount.toString(),
+        fee: fee.toString(),
+        total: total.toString(),
+        hasFee: true
+      };
+    }
+  };
+
   // Early return if modal is not open
   if (!isOpen) {
     return null;
@@ -190,9 +215,21 @@ export function PaymentStatusModal({
               
               {/* Main Amount Display */}
               <div className="text-center space-y-2">
-                <p className="text-3xl font-bold" style={{ color: '#111827' }}>
-                  {formatAmount(paymentStatus.data.data.amount, paymentStatus.data.data.currency_code)}
-                </p>
+                {(() => {
+                  const { baseAmount, fee, hasFee } = calculateAmountBreakdown(paymentStatus.data.data.amount);
+                  return (
+                    <>
+                      <p className="text-3xl font-bold" style={{ color: '#111827' }}>
+                        {formatAmount(baseAmount, paymentStatus.data.data.currency_code)}
+                      </p>
+                      {hasFee && (
+                        <p className="text-sm text-gray-600">
+                          + {formatAmount(fee, paymentStatus.data.data.currency_code)} fee
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </>
@@ -309,18 +346,39 @@ export function PaymentStatusModal({
               
               {/* Final Summary */}
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Amount</span>
-                  <span className="text-sm font-semibold" style={{ color: '#111827' }}>
-                    {formatAmount(paymentStatus.data.data.amount, paymentStatus.data.data.currency_code)}
-                  </span>
-                </div>
+                {(() => {
+                  const { baseAmount, fee, total, hasFee } = calculateAmountBreakdown(paymentStatus.data.data.amount);
+                  return (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm" style={{ color: '#6b7280' }}>Amount</span>
+                        <span className="text-sm font-semibold" style={{ color: '#111827' }}>
+                          {formatAmount(baseAmount, paymentStatus.data.data.currency_code)}
+                        </span>
+                      </div>
+                      {hasFee && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm" style={{ color: '#6b7280' }}>Fee</span>
+                          <span className="text-sm font-semibold" style={{ color: '#111827' }}>
+                            {formatAmount(fee, paymentStatus.data.data.currency_code)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center border-t pt-2">
+                        <span className="text-sm font-medium" style={{ color: '#6b7280' }}>Total Spent</span>
+                        <span className="text-sm font-semibold" style={{ color: '#111827' }}>
+                          {formatAmount(total, paymentStatus.data.data.currency_code)}
+                        </span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
         )}
 
-                <div className="flex justify-center pt-6">
+        <div className="flex justify-center pt-6">
           <Button 
             variant="outline" 
             onClick={onClose}

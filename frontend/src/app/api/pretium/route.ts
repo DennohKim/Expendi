@@ -8,6 +8,7 @@ interface PayRequest extends Record<string, unknown> {
   transaction_hash: string;
   amount: string;
   shortcode: string;
+  fee?: string;
   account_number?: string; // Required for PAYBILL in KES
   type: 'MOBILE' | 'PAYBILL' | 'BUY_GOODS';
   mobile_network?: string;
@@ -49,8 +50,14 @@ export async function POST(request: NextRequest) {
     // This should be a direct pay request according to Pretium API docs
     const requestData: Omit<PayRequest, 'selectedCountry'> = {
       ...payData,
+      fee: body.fee || '10',
       chain: body.chain || 'BASE', // Default chain as per updated docs
     };
+    
+    // If amount is above 990 and no fee is explicitly provided, ensure fee is set to 10
+    if (parseFloat(body.amount) > 990 && !body.fee) {
+      requestData.fee = '10';
+    }
     
     console.log('Request data being sent to Pretium:', JSON.stringify(requestData, null, 2));
     

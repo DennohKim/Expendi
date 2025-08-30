@@ -261,7 +261,16 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const remainingBudget = Math.max(0, parseFloat(monthlyLimitFormatted) - parseFloat(currentSpentFormatted));
 
   // For crypto payments, amount is in USDC. For cash payments, amount is in local currency
-  const usdcEquivalent = recipientMode === 'cash' && amount && exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : null;
+  // Include fee in USDC equivalent when amount > 990
+  const usdcEquivalent = recipientMode === 'cash' && amount && exchangeRate ? (() => {
+    const baseUsdc = parseFloat(amount) / exchangeRate;
+    // Add fee in USDC if local amount > 990
+    if (parseFloat(amount) > 990) {
+      const feeInUsdc = 10 / exchangeRate;
+      return (baseUsdc + feeInUsdc).toFixed(2);
+    }
+    return baseUsdc.toFixed(2);
+  })() : null;
   const maxUsdc = Math.min(parseFloat(availableBalance), remainingBudget);
   const maxLocalNumber = exchangeRate ? maxUsdc * exchangeRate : undefined;
   const maxLocalLabel = typeof maxLocalNumber === 'number' && isFinite(maxLocalNumber)
@@ -412,6 +421,18 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-blue-700">USDC equivalent:</span>
                         <span className="text-blue-900 font-medium">{usdcEquivalent} USDC</span>
+                      </div>
+                    )}
+                    {amount && parseFloat(amount) > 990 && (
+                      <div className="flex justify-between items-center text-sm mt-1">
+                        <span className="text-blue-700">Fee:</span>
+                        <span className="text-blue-900 font-medium">10 {currentCountry.currency}</span>
+                      </div>
+                    )}
+                    {amount && parseFloat(amount) > 990 && (
+                      <div className="flex justify-between items-center text-sm mt-1 border-t pt-1">
+                        <span className="text-blue-700 font-semibold">Total amount:</span>
+                        <span className="text-blue-900 font-semibold">{(parseFloat(amount) + 10).toFixed(2)} {currentCountry.currency}</span>
                       </div>
                     )}
                   </div>

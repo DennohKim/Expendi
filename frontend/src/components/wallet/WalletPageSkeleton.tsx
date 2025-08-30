@@ -137,14 +137,7 @@ const WalletPageSkeleton = () => {
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                      Wallet Status
-                    </p>
-                    <div className="text-xl font-semibold text-gray-900 dark:text-white">
-                      Active
-                    </div>
-                  </div>
+                 
                 </div>
               </CardContent>
             </Card>
