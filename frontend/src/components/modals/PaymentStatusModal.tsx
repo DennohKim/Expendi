@@ -18,6 +18,7 @@ interface PaymentStatusModalProps {
   onClose: () => void;
   transactionCode: string | null;
   currency?: string;
+  bucketName?: string; // Add bucket name prop
 }
 
 const getStatusIcon = (status: string) => {
@@ -37,7 +38,8 @@ export function PaymentStatusModal({
   isOpen, 
   onClose, 
   transactionCode, 
-  currency 
+  currency,
+  bucketName // Add bucket name parameter
 }: PaymentStatusModalProps) {
   const paymentStatus = usePaymentStatus();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -307,6 +309,14 @@ export function PaymentStatusModal({
               
               {/* Transaction Details Grid */}
               <div className="space-y-3">
+                {bucketName ? (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm" style={{ color: '#6b7280' }}>Bucket</span>
+                    <span className="text-sm font-semibold" style={{ color: '#111827' }}>
+                      {bucketName}
+                    </span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between items-center">
                   <span className="text-sm" style={{ color: '#6b7280' }}>Receipt Number</span>
                   <span className="text-sm font-semibold" style={{ color: '#111827' }}>

@@ -60,7 +60,7 @@ export function useBucketPayment() {
         exchangeRate
       } = request;
 
-      const correctAmount = exchangeRate && (parseFloat(amount) + (10 / exchangeRate)).toFixed(2)
+      const correctAmount = exchangeRate && parseFloat(amount) > 990 ? (parseFloat(amount) + (10 / exchangeRate)).toFixed(2) : amount;
 
       // Validation
       if (!bucketName) {
@@ -201,7 +201,7 @@ export function useBucketPayment() {
         //   }
         // }
 
-        toast.success(`Successfully initiated mobile payment of ${parseFloat(usdcAmountToSpend).toFixed(2)} USDC (including fee) to ${phoneNumber}!`);
+        toast.success(`Successfully initiated mobile payment of ${parseFloat(usdcAmountToSpend).toFixed(2)} USDC to ${phoneNumber}!`);
         
         return { 
           txHash, 

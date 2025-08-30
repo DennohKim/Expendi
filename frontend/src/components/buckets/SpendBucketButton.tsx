@@ -494,6 +494,7 @@ export function SpendBucketButton({
         onClose={() => setIsStatusModalOpen(false)}
         transactionCode={lastTransactionCode}
         currency={selectedCountry}
+        bucketName={bucketName}
       />
     </Dialog>
   );
