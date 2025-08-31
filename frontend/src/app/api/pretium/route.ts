@@ -44,7 +44,7 @@ async function makeRequest(endpoint: string, data: Record<string, unknown>, curr
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { selectedCountry, ...payData } = body;
+    const { selectedCountry } = body;
     
     // Enhanced logging for production debugging
     console.log('Pretium API request body:', JSON.stringify(body, null, 2));
