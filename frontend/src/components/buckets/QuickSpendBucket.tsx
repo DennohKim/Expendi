@@ -82,6 +82,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [lastTransactionCode, setLastTransactionCode] = useState<string | null>(null);
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
+  console.log('Exchange rate:', exchangeRate);
 
   
   // Use TanStack Query for phone number validation

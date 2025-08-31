@@ -129,6 +129,9 @@ export function useBucketPayment() {
           localAmount = (parseFloat(localAmount) + 10).toString();
         }
         
+        // Round local amount to nearest whole number with no decimals
+        localAmount = Math.round(parseFloat(localAmount)).toString();
+        
         // Calculate the USDC amount that should be spent (including fee if applicable)
         let usdcAmountToSpend = amount;
         if (shouldApplyFee && exchangeRate) {
