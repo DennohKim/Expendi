@@ -159,25 +159,16 @@ export function PaymentStatusModal({
   const calculateAmountBreakdown = (totalAmount: string) => {
     const total = parseFloat(totalAmount);
     
-    // Only apply fee for amounts above 990
-    if (total <= 990) {
-      return {
-        baseAmount: total.toString(),
-        fee: "0",
-        total: total.toString(),
-        hasFee: false
-      };
-    } else {
-      const fee = 10;
-      const baseAmount = Math.max(0, total - fee);
-      
-      return {
-        baseAmount: baseAmount.toString(),
-        fee: fee.toString(),
-        total: total.toString(),
-        hasFee: true
-      };
-    }
+    // Always apply fee for mobile payments
+    const fee = 10;
+    const baseAmount = Math.max(0, total - fee);
+    
+    return {
+      baseAmount: baseAmount.toString(),
+      fee: fee.toString(),
+      total: total.toString(),
+      hasFee: true
+    };
   };
 
   // Early return if modal is not open

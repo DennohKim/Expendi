@@ -31,6 +31,7 @@ import {
   Filter
 } from "lucide-react";
 import { useAllTransactions, type AllTransactionsData } from "@/hooks/subgraph-queries/getAllTransactions";
+import { useMobileTransactions, type PretiumTransaction } from "@/hooks/useMobileTransactions";
 
 const formatAmount = (amount: string, decimals: string, symbol: string) => {
   // Debug logging - remove this after fixing the issue
@@ -406,15 +407,146 @@ function TransfersTable({ data, loading, currentPage, onPageChange }: Transactio
   );
 }
 
+function MobileTransactionsTable({ 
+  data, 
+  loading, 
+  currentPage, 
+  onPageChange 
+}: { 
+  data: PretiumTransaction[] | undefined; 
+  loading: boolean; 
+  currentPage: number; 
+  onPageChange: (page: number) => void; 
+}) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <span className="ml-2">Loading mobile transactions...</span>
+      </div>
+    );
+  }
+
+  if (!data?.length) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No mobile transactions found
+      </div>
+    );
+  }
+
+  const itemsPerPage = 10;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = data.slice(startIndex, endIndex);
+
+  const formatMobileAmount = (amount: string, currencyCode: string) => {
+    const numericAmount = parseFloat(amount);
+    return `${numericAmount.toLocaleString()} ${currencyCode}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString() + " " + new Date(dateString).toLocaleTimeString();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETE':
+        return "text-green-600 bg-green-50 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
+      case 'PENDING':
+        return "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800";
+      case 'FAILED':
+        return "text-red-600 bg-red-50 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
+      default:
+        return "text-gray-600 bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800";
+    }
+  };
+
+
+  return (
+    <div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Status</TableHead>
+            <TableHead>Amount</TableHead>
+            <TableHead>USD Value</TableHead>
+            <TableHead>Recipient</TableHead>
+            <TableHead>Receipt</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Transaction</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paginatedTransactions.map((transaction) => (
+            <TableRow key={transaction.id}>
+              <TableCell>
+                <Badge className={getStatusColor(transaction.status)}>
+                  {transaction.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="font-medium">
+                {formatMobileAmount(transaction.amount, transaction.currencyCode)}
+              </TableCell>
+              <TableCell className="text-green-600">
+                ${parseFloat(transaction.amountInUsd).toFixed(2)}
+              </TableCell>
+              <TableCell>
+                <div className="max-w-32 truncate" title={transaction.publicName}>
+                  {transaction.publicName}
+                </div>
+                {transaction.shortcode && (
+                  <div className="text-xs text-gray-500">{transaction.shortcode}</div>
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="font-mono text-sm">{transaction.receiptNumber}</div>
+              </TableCell>
+              <TableCell>{formatDate(transaction.pretiumCreatedAt)}</TableCell>
+              <TableCell>
+                {transaction.transactionHash ? (
+                  <a
+                    href={`https://basescan.org/tx/${transaction.transactionHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                  >
+                    {formatAddress(transaction.transactionHash)}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : (
+                  <span className="text-gray-400">N/A</span>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <PaginationControls
+        currentPage={currentPage}
+        totalItems={data.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={onPageChange}
+      />
+    </div>
+  );
+}
+
 export default function Transactions() {
   const { smartAccountAddress } = useSmartAccount();
   const [first] = useState(1000); // Fetch more data for pagination
   const [depositPage, setDepositPage] = useState(1);
   const [withdrawalPage, setWithdrawalPage] = useState(1);
   const [transferPage, setTransferPage] = useState(1);
+  const [mobilePage, setMobilePage] = useState(1);
   const [selectedBucket, setSelectedBucket] = useState<string>("all");
   
   const { data, loading, error } = useAllTransactions(smartAccountAddress, first);
+  const { data: mobileTransactions, isLoading: mobileLoading, error: mobileError } = useMobileTransactions({
+    limit: 100,
+    sortBy: 'pretiumCreatedAt',
+    sortOrder: 'desc'
+  });
   
   // Get unique bucket names from all transaction types
   const availableBuckets = useMemo(() => {
@@ -476,14 +608,15 @@ export default function Transactions() {
   
 
   const transactionCounts = useMemo(() => {
-    if (!filteredData) return { deposits: 0, withdrawals: 0, transfers: 0 };
+    if (!filteredData) return { deposits: 0, withdrawals: 0, transfers: 0, mobile: 0 };
     
     return {
       deposits: filteredData.deposits?.length || 0,
       withdrawals: filteredData.withdrawals?.length || 0,
       transfers: filteredData.bucketTransfers?.length || 0,
+      mobile: mobileTransactions?.data?.length || 0,
     };
-  }, [filteredData]);
+  }, [filteredData, mobileTransactions]);
 
   if (!smartAccountAddress) {
     return (
@@ -553,7 +686,7 @@ export default function Transactions() {
 
       {/* Tabs */}
       <Tabs defaultValue="deposits" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2 space-y-2 mb-4 md:mb-0 md:space-y-0 md:grid-cols-4">
           <TabsTrigger value="deposits">
             Deposits ({transactionCounts.deposits})
           </TabsTrigger>
@@ -562,6 +695,9 @@ export default function Transactions() {
           </TabsTrigger>
           <TabsTrigger value="transfers">
             Transfers ({transactionCounts.transfers})
+          </TabsTrigger>
+          <TabsTrigger value="mobile">
+            Mobile ({transactionCounts.mobile})
           </TabsTrigger>
         </TabsList>
 
@@ -592,6 +728,15 @@ export default function Transactions() {
             currentPage={transferPage}
             onPageChange={setTransferPage}
             transactionType="transfers"
+          />
+        </TabsContent>
+
+        <TabsContent value="mobile" className="mt-6">
+          <MobileTransactionsTable 
+            data={mobileTransactions?.data} 
+            loading={mobileLoading} 
+            currentPage={mobilePage}
+            onPageChange={setMobilePage}
           />
         </TabsContent>
       </Tabs>

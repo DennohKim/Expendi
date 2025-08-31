@@ -116,6 +116,37 @@ model BucketAnalytics {
   @@map("bucket_analytics")
 }
 
+model PretiumTransaction {
+  id                String                @id @default(uuid())
+  pretiumId         Int                   @map("pretium_id")
+  transactionCode   String                @unique @map("transaction_code")
+  status            PretiumStatus
+  amount            String
+  amountInUsd       String                @map("amount_in_usd")
+  type              PretiumTransactionType @map("type")
+  shortcode         String?
+  accountNumber     String?               @map("account_number")
+  publicName        String                @map("public_name")
+  receiptNumber     String                @map("receipt_number")
+  category          PretiumCategory
+  chain             String
+  asset             String
+  transactionHash   String?               @map("transaction_hash")
+  message           String
+  currencyCode      String                @map("currency_code")
+  isReleased        Boolean               @map("is_released")
+  pretiumCreatedAt  DateTime              @map("pretium_created_at")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([category])
+  @@index([chain])
+  @@index([pretiumCreatedAt])
+  @@index([transactionCode])
+  @@map("pretium_transactions")
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -131,4 +162,20 @@ enum PeriodType {
   WEEKLY
   MONTHLY
   YEARLY
+}
+
+enum PretiumStatus {
+  COMPLETE
+  PENDING
+  FAILED
+}
+
+enum PretiumTransactionType {
+  MOBILE
+  BANK
+}
+
+enum PretiumCategory {
+  DISBURSEMENT
+  COLLECTION
 }

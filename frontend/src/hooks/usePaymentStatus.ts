@@ -50,9 +50,56 @@ async function fetchPaymentStatus(request: PaymentStatusRequest): Promise<Paymen
   return result;
 }
 
+async function saveTransactionToBackend(paymentData: PaymentStatusResponse): Promise<void> {
+  try {
+    console.log('🔄 Attempting to save transaction to backend:', {
+      transactionCode: paymentData.data.transaction_code,
+      status: paymentData.data.status,
+      amount: paymentData.data.amount
+    });
+    
+    const response = await fetch('/api/pretium/save-transaction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(paymentData),
+    });
+    
+    console.log('📡 Backend response status:', response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error('❌ Failed to save transaction to backend:', {
+        status: response.status,
+        error: errorData
+      });
+      // Don't throw error - this shouldn't break the main payment flow
+    } else {
+      const result = await response.json();
+      console.log('✅ Transaction successfully saved to backend:', result);
+    }
+  } catch (error) {
+    console.error('💥 Error saving transaction to backend:', error);
+    // Don't throw error - this shouldn't break the main payment flow
+  }
+}
+
 export function usePaymentStatus() {
   return useMutation({
     mutationFn: fetchPaymentStatus,
+    onSuccess: (data) => {
+      console.log('🎯 usePaymentStatus onSuccess triggered:', {
+        status: data.data.status,
+        transactionCode: data.data.transaction_code
+      });
+      
+      // If payment is successful, save to backend
+      if (data.data.status === 'COMPLETE') {
+        console.log('✅ Payment completed successfully, saving to backend...');
+        saveTransactionToBackend(data);
+      } else {
+        console.log('⏳ Payment not yet complete, status:', data.data.status);
+      }
+    },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch payment status';
       toast.error(errorMessage);
@@ -97,6 +144,12 @@ export function usePaymentStatusWithPolling(transactionCode: string | null, curr
         intervalRef.current = null;
       }
       attemptsRef.current = 0;
+      
+      // If payment is successful, save to backend
+      if (status === 'COMPLETE') {
+        console.log('Payment completed successfully, saving to backend...');
+        saveTransactionToBackend(query.data);
+      }
     } else if (attemptsRef.current >= maxAttempts) {
       // Max attempts reached
       console.warn(`Max polling attempts reached for transaction ${transactionCode}`);
@@ -109,7 +162,7 @@ export function usePaymentStatusWithPolling(transactionCode: string | null, curr
         intervalRef.current = null;
       }
     };
-  }, [query.data, transactionCode, query.refetch]);
+  }, [query.data, transactionCode, query]);
 
   // Reset attempts when transaction code changes
   useEffect(() => {

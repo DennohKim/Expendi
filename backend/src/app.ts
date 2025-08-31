@@ -15,6 +15,7 @@ import { createCronService, CronService } from './lib/cron';
 // Import routes
 import createAnalyticsRouter from './routes/functional-analytics';
 import createMultiChainAnalyticsRouter from './routes/functional-multi-chain-analytics';
+import createPretiumTransactionRouter from './routes/pretium-transactions';
 import healthRoutes from './routes/health';
 
 // Initialize services
@@ -81,6 +82,7 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
   app.use('/', healthRoutes);
   app.use('/api/analytics', createAnalyticsRouter(services.prisma));
   app.use('/api/v2/analytics', createMultiChainAnalyticsRouter(services.prisma));
+  app.use('/api/pretium', createPretiumTransactionRouter(services.prisma));
 
   // Sync endpoints (enabled in development or when explicitly enabled)
   if (process.env.NODE_ENV === 'development' || process.env.ENABLE_SYNC_ENDPOINTS === 'true') {
@@ -281,6 +283,7 @@ export const startServer = async (port: number = 3001) => {
       console.log(`📊 Health check available at http://localhost:${port}/health`);
       console.log(`📈 Analytics API available at http://localhost:${port}/api/analytics`);
       console.log(`🌐 Multi-chain API available at http://localhost:${port}/api/v2/analytics`);
+      console.log(`💳 Pretium Transactions API available at http://localhost:${port}/api/pretium`);
       
       if (process.env.NODE_ENV === 'development' || process.env.ENABLE_SYNC_ENDPOINTS === 'true') {
         console.log('🔄 Sync endpoints available');
