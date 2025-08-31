@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 
 const PRETIUM_BASE_URI = process.env.PRETIUM_BASE_URI || 'https://api.xwift.africa';
@@ -32,6 +33,8 @@ async function makeRequest(endpoint: string, data: Record<string, unknown>, curr
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Pretium API error response:', errorText);
     throw new Error(`Pretium API error: ${response.status} ${response.statusText}`);
   }
 
@@ -46,28 +49,72 @@ export async function POST(request: NextRequest) {
     // Enhanced logging for production debugging
     console.log('Pretium API request body:', JSON.stringify(body, null, 2));
     console.log('Selected country:', selectedCountry);
+    console.log('API Key loaded:', PRETIUM_API_KEY ? 'Yes' : 'No');
     
-    // This should be a direct pay request according to Pretium API docs
-    const requestData: Omit<PayRequest, 'selectedCountry'> = {
-      ...payData,
-      fee: body.fee || '10',
-      chain: body.chain || 'BASE', // Default chain as per updated docs
+    // Build request data based on country requirements - only send fields that Pretium expects
+    const requestData: Partial<PayRequest> = {
+      transaction_hash: body.transaction_hash,
+      amount: body.amount,
+      fee: body.fee || '0', // No fee by default
+      chain: body.chain || 'BASE',
+      callback_url: body.callback_url || 'http://localhost:3000/api/pretium/callback',
     };
-    
-    // If amount is above 990 and no fee is explicitly provided, ensure fee is set to 10
-    if (parseFloat(body.amount) > 990 && !body.fee) {
-      requestData.fee = '10';
+
+    // Add country-specific required fields based on Pretium API docs
+    switch (selectedCountry) {
+      case 'KES':
+        requestData.shortcode = body.shortcode;
+        requestData.type = body.type || 'MOBILE';
+        requestData.mobile_network = body.mobile_network;
+        // Only add account_number if it exists and type is PAYBILL
+        if (body.account_number && body.type === 'PAYBILL') {
+          requestData.account_number = body.account_number;
+        }
+        break;
+      case 'NGN':
+        requestData.account_number = body.account_number;
+        requestData.account_name = body.account_name;
+        requestData.bank_name = body.bank_name;
+        requestData.bank_code = body.bank_code;
+        break;
+      case 'GHS':
+      case 'UGX':
+      case 'MWK':
+      case 'ETB':
+        requestData.shortcode = body.shortcode;
+        requestData.mobile_network = body.mobile_network;
+        break;
+      case 'CDF':
+        // DR Congo - no additional required fields
+        break;
+      default:
+        // For unknown countries, include common fields if they exist
+        if (body.shortcode) requestData.shortcode = body.shortcode;
+        if (body.mobile_network) requestData.mobile_network = body.mobile_network;
+        if (body.account_number) requestData.account_number = body.account_number;
     }
     
+    // Remove any undefined values to avoid sending them to the API
+    Object.keys(requestData).forEach(key => {
+      if (requestData[key] === undefined) {
+        delete requestData[key];
+      }
+    });
+    
+    // Validate required fields before sending
+    if (!requestData.transaction_hash) {
+      throw new Error('transaction_hash is required');
+    }
+    if (!requestData.amount) {
+      throw new Error('amount is required');
+    }
+    
+    // Amount precision is now handled in the frontend to match USDC spent exactly
+    
     console.log('Request data being sent to Pretium:', JSON.stringify(requestData, null, 2));
-    
-    // Use selectedCountry to determine currency code for endpoint (for non-Kenya countries)
-    const currency = selectedCountry && selectedCountry !== 'KES' ? selectedCountry : undefined;
-    
-    console.log('Currency for endpoint:', currency);
     console.log('Pretium base URI:', PRETIUM_BASE_URI);
     
-    const result = await makeRequest('pay', requestData, currency);
+    const result = await makeRequest('pay', requestData, undefined);
     
     console.log('Pretium API response:', JSON.stringify(result, null, 2));
     console.log('Transaction code in response:', result.transaction_code);
