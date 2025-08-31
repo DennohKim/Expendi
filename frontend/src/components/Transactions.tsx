@@ -542,7 +542,7 @@ export default function Transactions() {
   const [selectedBucket, setSelectedBucket] = useState<string>("all");
   
   const { data, loading, error } = useAllTransactions(smartAccountAddress, first);
-  const { data: mobileTransactions, isLoading: mobileLoading, error: mobileError } = useMobileTransactions({
+  const { data: mobileTransactions, isLoading: mobileLoading } = useMobileTransactions({
     limit: 100,
     sortBy: 'pretiumCreatedAt',
     sortOrder: 'desc'
