@@ -60,7 +60,7 @@ export function useBucketPayment() {
         exchangeRate
       } = request;
 
-      const correctAmount = exchangeRate && parseFloat(amount) > 990 ? (parseFloat(amount) + (10 / exchangeRate)).toFixed(2) : amount;
+      const correctAmount = exchangeRate ? (parseFloat(amount) + (10 / exchangeRate)).toFixed(2) : amount;
 
       // Validation
       if (!bucketName) {
@@ -121,20 +121,15 @@ export function useBucketPayment() {
         // Convert USDC amount to local currency using exchange rate
         let localAmount = exchangeRate ? (parseFloat(amount) * exchangeRate).toString() : amount;
         
-        // Calculate if fee should be applied (when local amount > 990)
-        const shouldApplyFee = parseFloat(localAmount) > 990;
-        
-        // Add fee of 10 to the local amount if it's above 990
-        if (shouldApplyFee) {
-          localAmount = (parseFloat(localAmount) + 10).toString();
-        }
+        // Always apply fee of 10 to the local amount
+        localAmount = (parseFloat(localAmount) + 10).toString();
         
         // Round local amount to nearest whole number with no decimals
         localAmount = Math.round(parseFloat(localAmount)).toString();
         
-        // Calculate the USDC amount that should be spent (including fee if applicable)
+        // Calculate the USDC amount that should be spent (always including fee)
         let usdcAmountToSpend = amount;
-        if (shouldApplyFee && exchangeRate) {
+        if (exchangeRate) {
           // Convert the fee (10 local currency) back to USDC and add it to the original amount
           const feeInUsdc = (10 / exchangeRate).toString();
           usdcAmountToSpend = (parseFloat(amount) + parseFloat(feeInUsdc)).toString();
@@ -157,7 +152,7 @@ export function useBucketPayment() {
           transaction_hash: txHash,
           amount: localAmount,
           shortcode: phoneNumber,
-          fee: "10",
+          fee: "10", 
           ...(accountNumber && { account_number: accountNumber }),
           type: paymentType,
           mobile_network: mobileNetwork || '',
