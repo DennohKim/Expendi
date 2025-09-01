@@ -47,7 +47,7 @@ interface UseMobileTransactionsParams {
 
 async function fetchMobileTransactions(params: UseMobileTransactionsParams = {}): Promise<MobileTransactionsResponse> {
   // const backendUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
-  const backendUrl = 'http://localhost:3001';
+  const backendUrl = 'https://expendi-production-ab42.up.railway.app';
   
   const searchParams = new URLSearchParams();
   

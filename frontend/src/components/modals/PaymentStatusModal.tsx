@@ -159,15 +159,63 @@ export function PaymentStatusModal({
   const calculateAmountBreakdown = (totalAmount: string) => {
     const total = parseFloat(totalAmount);
     
-    // Always apply fee for mobile payments
-    const fee = 10;
-    const baseAmount = Math.max(0, total - fee);
+    // For mobile payments, we need to estimate the base amount from the total
+    // Since we know the fee structure, we can work backwards
+    let estimatedBaseAmount = total;
+    let fee = 0;
+    
+    // Try to find the fee tier that matches this total
+    if (total > 0) {
+      // This is a simplified approach - in practice, you might want to store the original breakdown
+      // For now, we'll estimate based on common fee tiers
+      if (total <= 100) {
+        fee = 1;
+      } else if (total <= 500) {
+        fee = 8;
+      } else if (total <= 1000) {
+        fee = 12;
+      } else if (total <= 1500) {
+        fee = 20;
+      } else if (total <= 2500) {
+        fee = 22;
+      } else if (total <= 3500) {
+        fee = 25;
+      } else if (total <= 5000) {
+        fee = 27;
+      } else if (total <= 7500) {
+        fee = 30;
+      } else if (total <= 10000) {
+        fee = 35;
+      } else if (total <= 15000) {
+        fee = 37;
+      } else if (total <= 20000) {
+        fee = 40;
+      } else if (total <= 25000) {
+        fee = 43;
+      } else if (total <= 30000) {
+        fee = 45;
+      } else if (total <= 35000) {
+        fee = 50;
+      } else if (total <= 40000) {
+        fee = 60;
+      } else if (total <= 45000) {
+        fee = 70;
+      } else if (total <= 50000) {
+        fee = 80;
+      } else if (total <= 70000) {
+        fee = 100;
+      } else {
+        fee = 150;
+      }
+      
+      estimatedBaseAmount = Math.max(0, total - fee);
+    }
     
     return {
-      baseAmount: baseAmount.toString(),
+      baseAmount: estimatedBaseAmount.toString(),
       fee: fee.toString(),
       total: total.toString(),
-      hasFee: true
+      hasFee: fee > 0
     };
   };
 
