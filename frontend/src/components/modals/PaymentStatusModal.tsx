@@ -12,7 +12,6 @@ import { CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
 import Lottie from "lottie-react";
 import successAnimation from "../../../public/Success.json";
-import { calculateAmountWithFee } from "@/utils/feeCalculation";
 
 interface PaymentStatusModalProps {
   isOpen: boolean;

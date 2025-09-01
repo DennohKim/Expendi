@@ -1,4 +1,4 @@
-import { calculateB2CFee, calculateAmountWithFee, calculateUSDCAmountWithFee } from './feeCalculation';
+import { calculateB2CFee, calculateUSDCAmountWithFee } from './feeCalculation';
 
 // Demo function to show how fee calculation works
 export function demonstrateFeeCalculation() {
@@ -51,7 +51,7 @@ export function demonstrateFeeCalculation() {
 // Run demo if this file is executed directly
 if (typeof window !== 'undefined') {
   // Browser environment
-  (window as any).demonstrateFeeCalculation = demonstrateFeeCalculation;
+  (window as typeof window & { demonstrateFeeCalculation: typeof demonstrateFeeCalculation }).demonstrateFeeCalculation = demonstrateFeeCalculation;
 } else {
   // Node.js environment
   demonstrateFeeCalculation();
