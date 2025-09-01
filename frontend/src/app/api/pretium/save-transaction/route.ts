@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get backend URL from environment variable
-    const backendUrl = 'http://localhost:3001';
+    const backendUrl = 'https://expendi-production-ab42.up.railway.app';
     
     // Forward the entire Pretium response to our backend
     const response = await fetch(`${backendUrl}/api/pretium/transactions`, {
