@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { formatUnits, isAddress } from 'viem';
 import { useSpendFromBucket } from './useSpendFromBucket';
 import { useMobilePayment } from './useMobilePayment';
+import { calculateUSDCAmountWithFee } from '@/utils/feeCalculation';
 // import { useReceiptGeneration } from './useReceiptGeneration';
 
 interface BucketPaymentRequest {
@@ -60,8 +61,6 @@ export function useBucketPayment() {
         exchangeRate
       } = request;
 
-      const correctAmount = exchangeRate ? (parseFloat(amount) + (10 / exchangeRate)).toFixed(2) : amount;
-
       // Validation
       if (!bucketName) {
         throw new Error('Please select a bucket');
@@ -108,7 +107,7 @@ export function useBucketPayment() {
 
 
       // Show initial loading message
-      toast.info(`Spending ${correctAmount} USDC from ${bucketName}...`);
+      toast.info(`Spending ${amount} USDC from ${bucketName}...`);
 
       let finalRecipient: `0x${string}`;
       let txHash: string;
@@ -119,21 +118,16 @@ export function useBucketPayment() {
         finalRecipient = settlementAddress as `0x${string}`;
         
         // Convert USDC amount to local currency using exchange rate
-        let localAmount = exchangeRate ? (parseFloat(amount) * exchangeRate).toString() : amount;
+        const localAmount = exchangeRate ? (parseFloat(amount) * exchangeRate) : parseFloat(amount);
         
-        // Always apply fee of 10 to the local amount
-        localAmount = (parseFloat(localAmount) + 10).toString();
+        // Calculate fee based on B2C tiers
+        const feeCalculation = calculateUSDCAmountWithFee(localAmount, exchangeRate || 1);
         
         // Round local amount to nearest whole number with no decimals
-        localAmount = Math.round(parseFloat(localAmount)).toString();
+        const totalLocalAmount = Math.round(feeCalculation.totalLocal).toString();
         
-        // Calculate the USDC amount that should be spent (always including fee)
-        let usdcAmountToSpend = amount;
-        if (exchangeRate) {
-          // Convert the fee (10 local currency) back to USDC and add it to the original amount
-          const feeInUsdc = (10 / exchangeRate).toString();
-          usdcAmountToSpend = (parseFloat(amount) + parseFloat(feeInUsdc)).toString();
-        }
+        // Use the calculated USDC amount that includes the fee
+        const usdcAmountToSpend = feeCalculation.totalUSDC.toString();
         
         // Execute blockchain transaction to settlement address
         const spendResult = await spendFromBucket.mutateAsync({
@@ -150,9 +144,9 @@ export function useBucketPayment() {
         // Initiate mobile payment
         const paymentResult = await mobilePayment.mutateAsync({
           transaction_hash: txHash,
-          amount: localAmount,
+          amount: totalLocalAmount,
           shortcode: phoneNumber,
-          fee: "10", 
+          fee: feeCalculation.feeLocal.toString(), 
           ...(accountNumber && { account_number: accountNumber }),
           type: paymentType,
           mobile_network: mobileNetwork || '',
@@ -199,7 +193,7 @@ export function useBucketPayment() {
         //   }
         // }
 
-        toast.success(`Successfully initiated mobile payment of ${parseFloat(usdcAmountToSpend).toFixed(2)} USDC to ${phoneNumber}!`);
+        toast.success(`Successfully initiated mobile payment of ${parseFloat(amount).toFixed(2)} USDC to ${phoneNumber}!`);
         
         return { 
           txHash, 

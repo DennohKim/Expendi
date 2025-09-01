@@ -24,6 +24,7 @@ import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useDebouncedValidation } from "@/hooks/useDebouncedValidation";
 import { useBucketPayment } from "@/hooks/useBucketPayment";
 import { PaymentStatusModal } from "@/components/modals/PaymentStatusModal";
+import { calculateAmountWithFee } from "@/utils/feeCalculation";
 
 interface TokenBalance {
   id: string;
@@ -264,9 +265,9 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   // For crypto payments, amount is in USDC. For cash payments, amount is in local currency
   // Always include fee in USDC equivalent for mobile payments
   const usdcEquivalent = recipientMode === 'cash' && amount && exchangeRate ? (() => {
+    const feeCalculation = calculateAmountWithFee(parseFloat(amount));
     const baseUsdc = parseFloat(amount) / exchangeRate;
-    // Always add fee in USDC for mobile payments
-    const feeInUsdc = 10 / exchangeRate;
+    const feeInUsdc = feeCalculation.fee / exchangeRate;
     return (baseUsdc + feeInUsdc).toFixed(2);
   })() : null;
   const maxUsdc = Math.min(parseFloat(availableBalance), remainingBudget);
@@ -424,13 +425,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                     {amount && (
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-blue-700">Fee:</span>
-                        <span className="text-blue-900 font-medium">10 {currentCountry.currency}</span>
+                        <span className="text-blue-900 font-medium">{calculateAmountWithFee(parseFloat(amount)).fee} {currentCountry.currency}</span>
                       </div>
                     )}
                     {amount && (
                       <div className="flex justify-between items-center text-sm mt-1 border-t pt-1">
                         <span className="text-blue-700 font-semibold">Total amount:</span>
-                        <span className="text-blue-900 font-semibold">{(parseFloat(amount) + 10).toFixed(2)} {currentCountry.currency}</span>
+                        <span className="text-blue-900 font-semibold">{calculateAmountWithFee(parseFloat(amount)).total.toFixed(2)} {currentCountry.currency}</span>
                       </div>
                     )}
                   </div>
