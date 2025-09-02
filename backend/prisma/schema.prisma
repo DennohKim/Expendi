@@ -120,7 +120,7 @@ model PretiumTransaction {
   id                String                @id @default(uuid())
   pretiumId         Int                   @map("pretium_id")
   transactionCode   String                @unique @map("transaction_code")
-  userAddress       String                @map("user_address")
+  userAddress       String                @default("") @map("user_address")
   status            PretiumStatus
   amount            String
   amountInUsd       String                @map("amount_in_usd")
