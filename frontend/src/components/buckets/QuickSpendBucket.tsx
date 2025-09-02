@@ -169,10 +169,8 @@ export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucke
 
     // Use the bucket payment mutation
     try {
-    console.log('Amount:', amount);
       // For crypto payments, amount is already in USDC. For cash payments, convert from local currency
       const amountUsdc = recipientMode === 'crypto' ? amount : (exchangeRate ? (parseFloat(amount) / exchangeRate) : amount);
-      console.log('Amount USDC:', amountUsdc);
 
       const result = await bucketPayment.mutateAsync({
         smartAccountClient,
@@ -193,15 +191,10 @@ export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucke
         usdcEquivalent,
       });
 
-      console.log('Bucket spend transaction hash:', result.txHash);
-
       // Show status modal for mobile payments
-      console.log('Payment result:', result);
       if (result.transactionCode) {
-        console.log('Setting transaction code:', result.transactionCode);
         setLastTransactionCode(result.transactionCode);
         setIsStatusModalOpen(true);
-        console.log('Modal should now be open');
       } else {
         console.log('No transaction code in result');
       }
