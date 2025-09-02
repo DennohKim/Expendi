@@ -112,15 +112,15 @@ export function useBucketPayment() {
       let finalRecipient: `0x${string}`;
       let txHash: string;
 
-      if (phoneNumber) {
-        // Mobile payment flow - send to settlement address first
+      if (phoneNumber || accountNumber) {
+        // Mobile money, Paybill, or Buy Goods payment flow - send to settlement address first
         const settlementAddress = '0x8005ee53E57aB11E11eAA4EFe07Ee3835Dc02F98';
         finalRecipient = settlementAddress as `0x${string}`;
         
         // Convert USDC amount to local currency using exchange rate
         const localAmount = exchangeRate ? (parseFloat(amount) * exchangeRate) : parseFloat(amount);
         
-        // Calculate fee based on B2C tiers
+        // Calculate fee based on B2C tiers for ALL payment types (MOBILE, PAYBILL, BUY_GOODS)
         const feeCalculation = calculateUSDCAmountWithFee(localAmount, exchangeRate || 1);
         
         // Round local amount to nearest whole number with no decimals
@@ -141,11 +141,11 @@ export function useBucketPayment() {
         
         txHash = spendResult.txHash;
 
-        // Initiate mobile payment
+        // Initiate payment (mobile money, paybill, or buy goods)
         const paymentResult = await mobilePayment.mutateAsync({
           transaction_hash: txHash,
           amount: totalLocalAmount,
-          shortcode: phoneNumber,
+          shortcode: phoneNumber || accountNumber || '',
           fee: feeCalculation.feeLocal.toString(), 
           ...(accountNumber && { account_number: accountNumber }),
           type: paymentType,
@@ -193,7 +193,12 @@ export function useBucketPayment() {
         //   }
         // }
 
-        toast.success(`Successfully initiated mobile payment of ${parseFloat(amount).toFixed(2)} USDC to ${phoneNumber}!`);
+        const recipientDisplay = phoneNumber || accountNumber || 'recipient';
+        const paymentTypeDisplay = paymentType === 'MOBILE' ? 'mobile payment' : 
+                                  paymentType === 'PAYBILL' ? 'paybill payment' : 
+                                  paymentType === 'BUY_GOODS' ? 'buy goods payment' : 'payment';
+        
+        toast.success(`Successfully initiated ${paymentTypeDisplay} of ${parseFloat(amount).toFixed(2)} USDC to ${recipientDisplay}!`);
         
         return { 
           txHash, 
