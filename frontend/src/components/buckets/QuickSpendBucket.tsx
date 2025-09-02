@@ -67,7 +67,12 @@ const MOBILE_NETWORKS = {
   ETB: ['Telebirr', 'Cbe Birr'],
 } as const;
 
-export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
+interface QuickSpendBucketProps {
+  bucket: UserBucket[];
+  showWrapper?: boolean;
+}
+
+export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucketProps) {
 
   const { address } = useAccount();
   const [amount, setAmount] = useState('');
@@ -164,10 +169,8 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
 
     // Use the bucket payment mutation
     try {
-    console.log('Amount:', amount);
       // For crypto payments, amount is already in USDC. For cash payments, convert from local currency
       const amountUsdc = recipientMode === 'crypto' ? amount : (exchangeRate ? (parseFloat(amount) / exchangeRate) : amount);
-      console.log('Amount USDC:', amountUsdc);
 
       const result = await bucketPayment.mutateAsync({
         smartAccountClient,
@@ -185,17 +188,13 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
         currentSpent,
         monthlyLimit,
         exchangeRate,
+        usdcEquivalent,
       });
 
-      console.log('Bucket spend transaction hash:', result.txHash);
-
       // Show status modal for mobile payments
-      console.log('Payment result:', result);
       if (result.transactionCode) {
-        console.log('Setting transaction code:', result.transactionCode);
         setLastTransactionCode(result.transactionCode);
         setIsStatusModalOpen(true);
-        console.log('Modal should now be open');
       } else {
         console.log('No transaction code in result');
       }
@@ -280,20 +279,15 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const currentCountry = COUNTRIES[selectedCountry];
   const availableNetworks = MOBILE_NETWORKS[selectedCountry];
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quick Spend from Bucket</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSpendFromBucket} className="space-y-4">
+  const formContent = (
+    <form onSubmit={handleSpendFromBucket} className="space-y-4">
           <div>
             <Label htmlFor="bucket-select" className="pb-2">Select Bucket</Label>
             <Select value={selectedBucketName} onValueChange={setSelectedBucketName}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Choose a bucket to spend from" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" sideOffset={4} className="z-[100003]">
                 {bucketOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -342,7 +336,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Choose a country" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" sideOffset={4} className="z-[100003]">
                       {Object.entries(COUNTRIES).map(([code, country]) => (
                         <SelectItem key={code} value={code}>
                           {country.name} ({country.currency})
@@ -361,7 +355,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                       <SelectTrigger>
                         <SelectValue placeholder="Select payment type" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" sideOffset={4} className="z-[100003]">
                         <SelectItem value="MOBILE">Mobile Number</SelectItem>
                         <SelectItem value="PAYBILL">Paybill</SelectItem>
                         <SelectItem value="BUY_GOODS">Buy Goods</SelectItem>
@@ -378,7 +372,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                       <SelectTrigger>
                         <SelectValue placeholder="Select network" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" sideOffset={4} className="z-[100003]">
                         {availableNetworks.map((network) => (
                           <SelectItem key={network} value={network}>
                             {network}
@@ -540,7 +534,22 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
             </Button>
           </div>
         </form>
-      </CardContent>
+  );
+
+  return (
+    <>
+      {showWrapper ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Spend from Bucket</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {formContent}
+          </CardContent>
+        </Card>
+      ) : (
+        formContent
+      )}
       
       {/* Payment Status Modal */}
       <PaymentStatusModal
@@ -551,6 +560,6 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
         bucketName={selectedBucketName}
         userAddress={queryAddress}
       />
-    </Card>
+    </>
   );
 }

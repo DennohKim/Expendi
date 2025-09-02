@@ -28,6 +28,7 @@ interface BucketPaymentRequest {
   currentSpent: string;
   monthlyLimit: string;
   exchangeRate?: number | null;
+  usdcEquivalent?: number | null;
 }
 
 interface BucketPaymentResponse {
@@ -58,8 +59,11 @@ export function useBucketPayment() {
         availableBalance,
         currentSpent,
         monthlyLimit,
-        exchangeRate
+        exchangeRate,
+        usdcEquivalent
       } = request;
+
+      console.log('USDC Equivalent:', usdcEquivalent);
 
       // Validation
       if (!bucketName) {
@@ -107,7 +111,7 @@ export function useBucketPayment() {
 
 
       // Show initial loading message
-      toast.info(`Spending ${parseFloat(amount).toFixed(2)} USDC from ${bucketName}...`);
+      toast.info(`Spending ${usdcEquivalent ? usdcEquivalent.toFixed(2) : parseFloat(amount).toFixed(2)} USDC from ${bucketName}...`);
 
       let finalRecipient: `0x${string}`;
       let txHash: string;
@@ -198,7 +202,8 @@ export function useBucketPayment() {
                                   paymentType === 'PAYBILL' ? 'paybill payment' : 
                                   paymentType === 'BUY_GOODS' ? 'buy goods payment' : 'payment';
         
-        toast.success(`Successfully initiated ${paymentTypeDisplay} of ${parseFloat(amount).toFixed(2)} USDC to ${recipientDisplay}!`);
+        const displayAmount = usdcEquivalent ? `${usdcEquivalent.toFixed(2)} USDC` : `${parseFloat(amount).toFixed(2)} USDC`;
+        toast.success(`Successfully initiated ${paymentTypeDisplay} of ${displayAmount} to ${recipientDisplay}!`);
         
         return { 
           txHash, 
