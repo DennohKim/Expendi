@@ -173,6 +173,8 @@ enum PretiumStatus {
 enum PretiumTransactionType {
   MOBILE
   BANK
+  PAYBILL
+  BUY_GOODS
 }
 
 enum PretiumCategory {
