@@ -107,7 +107,7 @@ export function useBucketPayment() {
 
 
       // Show initial loading message
-      toast.info(`Spending ${amount} USDC from ${bucketName}...`);
+      toast.info(`Spending ${parseFloat(amount).toFixed(2)} USDC from ${bucketName}...`);
 
       let finalRecipient: `0x${string}`;
       let txHash: string;
@@ -220,7 +220,7 @@ export function useBucketPayment() {
         
         txHash = spendResult.txHash;
         
-        toast.success(`Successfully spent ${amount} USDC from ${bucketName}!`);
+        toast.success(`Successfully spent ${parseFloat(amount).toFixed(2)} USDC from ${bucketName}!`);
         
         return { txHash };
       }

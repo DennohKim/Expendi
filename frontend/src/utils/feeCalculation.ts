@@ -61,6 +61,7 @@ export function calculateUSDCAmountWithFee(localAmount: number, exchangeRate: nu
   const baseUSDC = localAmount / exchangeRate;
   const feeUSDC = fee / exchangeRate;
   
+  
   return {
     baseAmountLocal: localAmount,
     feeLocal: fee,
