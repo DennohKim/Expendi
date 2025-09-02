@@ -11,7 +11,7 @@ const pretiumTransactionSchema = z.object({
     status: z.enum(['COMPLETE', 'PENDING', 'FAILED']),
     amount: z.string(),
     amount_in_usd: z.string(),
-    type: z.enum(['MOBILE', 'BANK']),
+    type: z.enum(['MOBILE', 'BANK', 'PAYBILL', 'BUY_GOODS']),
     shortcode: z.string().nullable(),
     account_number: z.string().nullable(),
     public_name: z.string(),
