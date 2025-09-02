@@ -83,7 +83,6 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
   const [lastTransactionCode, setLastTransactionCode] = useState<string | null>(null);
   // Use TanStack Query for exchange rate
   const { data: exchangeRate, isLoading: isLoadingRate, error: exchangeRateError } = useExchangeRate(selectedCountry);
-  console.log('Exchange rate:', exchangeRate);
 
   
   // Use TanStack Query for phone number validation
@@ -165,15 +164,17 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
 
     // Use the bucket payment mutation
     try {
+    console.log('Amount:', amount);
       // For crypto payments, amount is already in USDC. For cash payments, convert from local currency
-      const amountUsdc = recipientMode === 'crypto' ? amount : (exchangeRate ? (parseFloat(amount) / exchangeRate).toFixed(2) : amount);
+      const amountUsdc = recipientMode === 'crypto' ? amount : (exchangeRate ? (parseFloat(amount) / exchangeRate) : amount);
+      console.log('Amount USDC:', amountUsdc);
 
       const result = await bucketPayment.mutateAsync({
         smartAccountClient,
         walletAddress: walletData.user.walletsCreated[0].wallet as `0x${string}`,
         userAddress: queryAddress as `0x${string}`,
         bucketName: selectedBucketName,
-        amount: amountUsdc,
+        amount: amountUsdc.toString(),
         recipient,
         phoneNumber,
         accountNumber,
@@ -268,7 +269,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
     const feeCalculation = calculateAmountWithFee(parseFloat(amount));
     const baseUsdc = parseFloat(amount) / exchangeRate;
     const feeInUsdc = feeCalculation.fee / exchangeRate;
-    return (baseUsdc + feeInUsdc).toFixed(2);
+    return (baseUsdc + feeInUsdc);
   })() : null;
   const maxUsdc = Math.min(parseFloat(availableBalance), remainingBudget);
   const maxLocalNumber = exchangeRate ? maxUsdc * exchangeRate : undefined;
@@ -419,7 +420,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
                     {usdcEquivalent && (
                       <div className="flex justify-between items-center text-sm mt-1">
                         <span className="text-blue-700">USDC equivalent:</span>
-                        <span className="text-blue-900 font-medium">{usdcEquivalent} USDC</span>
+                        <span className="text-blue-900 font-medium">{usdcEquivalent.toFixed(2)} USDC</span>
                       </div>
                     )}
                     {amount && (
@@ -515,7 +516,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
               </div>
               {recipientMode === 'cash' && usdcEquivalent && (
                 <div className="text-sm text-muted-foreground mt-1">
-                  Equivalent: {usdcEquivalent} USDC
+                  Equivalent: {usdcEquivalent.toFixed(2)} USDC
                 </div>
               )}
             </div>

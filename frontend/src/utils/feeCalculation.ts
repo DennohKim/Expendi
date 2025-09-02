@@ -55,11 +55,17 @@ export function calculateAmountWithFee(baseAmount: number) {
  * @returns Object containing USDC amounts and local fee
  */
 export function calculateUSDCAmountWithFee(localAmount: number, exchangeRate: number) {
+  console.log('Local amount:', localAmount);
   const fee = calculateB2CFee(localAmount);
+  console.log('Fee:', fee);
   const totalLocal = localAmount + fee;
+  console.log('Total local:', totalLocal);
   const totalUSDC = totalLocal / exchangeRate;
+  console.log('Total USDC:', totalUSDC);
   const baseUSDC = localAmount / exchangeRate;
+  console.log('Base USDC:', baseUSDC);
   const feeUSDC = fee / exchangeRate;
+  console.log('Fee USDC:', feeUSDC);
   
   return {
     baseAmountLocal: localAmount,
