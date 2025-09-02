@@ -161,56 +161,81 @@ export function PaymentStatusModal({
   const calculateAmountBreakdown = (totalAmount: string) => {
     const total = parseFloat(totalAmount);
     
-    // For mobile payments, we need to estimate the base amount from the total
-    // Since we know the fee structure, we can work backwards
+    // Fee structure based on base amount ranges
+    const getFeeForAmount = (baseAmount: number): number => {
+      if (baseAmount <= 100) return 1;
+      if (baseAmount <= 500) return 8;
+      if (baseAmount <= 1000) return 12;
+      if (baseAmount <= 1500) return 20;
+      if (baseAmount <= 2500) return 22;
+      if (baseAmount <= 3500) return 25;
+      if (baseAmount <= 5000) return 27;
+      if (baseAmount <= 7500) return 30;
+      if (baseAmount <= 10000) return 35;
+      if (baseAmount <= 15000) return 37;
+      if (baseAmount <= 20000) return 40;
+      if (baseAmount <= 25000) return 43;
+      if (baseAmount <= 30000) return 45;
+      if (baseAmount <= 35000) return 50;
+      if (baseAmount <= 40000) return 60;
+      if (baseAmount <= 45000) return 70;
+      if (baseAmount <= 50000) return 80;
+      if (baseAmount <= 70000) return 100;
+      return 150;
+    };
+    
+    // Reverse calculate base amount from total
     let estimatedBaseAmount = total;
     let fee = 0;
     
-    // Try to find the fee tier that matches this total
     if (total > 0) {
-      // This is a simplified approach - in practice, you might want to store the original breakdown
-      // For now, we'll estimate based on common fee tiers
-      if (total <= 100) {
-        fee = 1;
-      } else if (total <= 500) {
-        fee = 8;
-      } else if (total <= 1000) {
-        fee = 12;
-      } else if (total <= 1500) {
-        fee = 20;
-      } else if (total <= 2500) {
-        fee = 22;
-      } else if (total <= 3500) {
-        fee = 25;
-      } else if (total <= 5000) {
-        fee = 27;
-      } else if (total <= 7500) {
-        fee = 30;
-      } else if (total <= 10000) {
-        fee = 35;
-      } else if (total <= 15000) {
-        fee = 37;
-      } else if (total <= 20000) {
-        fee = 40;
-      } else if (total <= 25000) {
-        fee = 43;
-      } else if (total <= 30000) {
-        fee = 45;
-      } else if (total <= 35000) {
-        fee = 50;
-      } else if (total <= 40000) {
-        fee = 60;
-      } else if (total <= 45000) {
-        fee = 70;
-      } else if (total <= 50000) {
-        fee = 80;
-      } else if (total <= 70000) {
-        fee = 100;
-      } else {
-        fee = 150;
+      // Use binary search to find the correct base amount
+      let low = 0;
+      let high = total;
+      let bestMatch = { baseAmount: 0, fee: 0, total: 0 };
+      
+      while (high - low > 0.01) {
+        const mid = Math.floor((low + high) / 2);
+        const midFee = getFeeForAmount(mid);
+        const midTotal = mid + midFee;
+        
+        if (midTotal === total) {
+          // Exact match found
+          estimatedBaseAmount = mid;
+          fee = midFee;
+          break;
+        } else if (midTotal < total) {
+          // Store this as potential best match and search higher
+          bestMatch = { baseAmount: mid, fee: midFee, total: midTotal };
+          low = mid + 1;
+        } else {
+          // midTotal > total, search lower
+          high = mid - 1;
+        }
       }
       
-      estimatedBaseAmount = Math.max(0, total - fee);
+      // If we didn't find exact match, check if we have a good approximation
+      if (fee === 0 && bestMatch.total > 0) {
+        // Check the final candidates around our best match
+        const candidates = [bestMatch.baseAmount, bestMatch.baseAmount + 1];
+        
+        for (const candidate of candidates) {
+          const candidateFee = getFeeForAmount(candidate);
+          const candidateTotal = candidate + candidateFee;
+          
+          if (candidateTotal === total) {
+            estimatedBaseAmount = candidate;
+            fee = candidateFee;
+            break;
+          }
+        }
+        
+        // If still no exact match, use the best approximation
+        if (fee === 0) {
+          estimatedBaseAmount = bestMatch.baseAmount;
+          fee = bestMatch.fee;
+        }
+      }
     }
     
     return {
