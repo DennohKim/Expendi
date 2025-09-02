@@ -1,6 +1,6 @@
 # Fee Calculation System
 
-This directory contains the fee calculation logic for B2C mobile money payments based on the official fee tiers.
+feat: add This directory contains the fee calculation logic for B2C payments (Mobile Money, Paybill, and Buy Goods) based on the official fee tiers.
 
 ## Files
 

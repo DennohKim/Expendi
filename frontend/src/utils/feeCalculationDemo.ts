@@ -2,7 +2,7 @@ import { calculateB2CFee, calculateUSDCAmountWithFee } from './feeCalculation';
 
 // Demo function to show how fee calculation works
 export function demonstrateFeeCalculation() {
-  console.log('=== B2C Mobile Money Fee Calculation Demo ===\n');
+  console.log('=== B2C Payment Fee Calculation Demo (Mobile Money, Paybill, Buy Goods) ===\n');
   
   // Example 1: Small amount
   const smallAmount = 500;
