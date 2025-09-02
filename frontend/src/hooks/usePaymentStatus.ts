@@ -50,18 +50,24 @@ async function fetchPaymentStatus(request: PaymentStatusRequest): Promise<Paymen
   return result;
 }
 
-async function saveTransactionToBackend(paymentData: PaymentStatusResponse): Promise<void> {
+async function saveTransactionToBackend(paymentData: PaymentStatusResponse, userAddress?: string): Promise<void> {
   try {
     console.log('🔄 Attempting to save transaction to backend:', {
       transactionCode: paymentData.data.transaction_code,
       status: paymentData.data.status,
-      amount: paymentData.data.amount
+      amount: paymentData.data.amount,
+      userAddress
     });
+    
+    const requestBody = {
+      ...paymentData,
+      user_address: userAddress
+    };
     
     const response = await fetch('/api/pretium/save-transaction', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(paymentData),
+      body: JSON.stringify(requestBody),
     });
     
     console.log('📡 Backend response status:', response.status);
@@ -83,7 +89,7 @@ async function saveTransactionToBackend(paymentData: PaymentStatusResponse): Pro
   }
 }
 
-export function usePaymentStatus() {
+export function usePaymentStatus(userAddress?: string) {
   return useMutation({
     mutationFn: fetchPaymentStatus,
     onSuccess: (data) => {
@@ -95,7 +101,7 @@ export function usePaymentStatus() {
       // If payment is successful, save to backend
       if (data.data.status === 'COMPLETE') {
         console.log('✅ Payment completed successfully, saving to backend...');
-        saveTransactionToBackend(data);
+        saveTransactionToBackend(data, userAddress);
       } else {
         console.log('⏳ Payment not yet complete, status:', data.data.status);
       }
@@ -107,7 +113,7 @@ export function usePaymentStatus() {
   });
 }
 
-export function usePaymentStatusWithPolling(transactionCode: string | null, currency?: string) {
+export function usePaymentStatusWithPolling(transactionCode: string | null, currency?: string, userAddress?: string) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const attemptsRef = useRef(0);
   const maxAttempts = 20; // Maximum 20 attempts (10 minutes at 30s intervals)
@@ -148,7 +154,7 @@ export function usePaymentStatusWithPolling(transactionCode: string | null, curr
       // If payment is successful, save to backend
       if (status === 'COMPLETE') {
         console.log('Payment completed successfully, saving to backend...');
-        saveTransactionToBackend(query.data);
+        saveTransactionToBackend(query.data, userAddress);
       }
     } else if (attemptsRef.current >= maxAttempts) {
       // Max attempts reached

@@ -19,6 +19,7 @@ interface PaymentStatusModalProps {
   transactionCode: string | null;
   currency?: string;
   bucketName?: string; // Add bucket name prop
+  userAddress?: string; // Add user address prop
 }
 
 const getStatusIcon = (status: string) => {
@@ -39,9 +40,10 @@ export function PaymentStatusModal({
   onClose, 
   transactionCode, 
   currency,
-  bucketName // Add bucket name parameter
+  bucketName, // Add bucket name parameter
+  userAddress // Add user address parameter
 }: PaymentStatusModalProps) {
-  const paymentStatus = usePaymentStatus();
+  const paymentStatus = usePaymentStatus(userAddress);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const maxPollingAttempts = 20; // 20 attempts = 2 minutes of polling
   const pollingAttemptsRef = useRef(0);

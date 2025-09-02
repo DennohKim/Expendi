@@ -492,6 +492,7 @@ export function SpendBucketButton({
         transactionCode={lastTransactionCode}
         currency={selectedCountry}
         bucketName={bucketName}
+        userAddress={queryAddress}
       />
     </Dialog>
   );
