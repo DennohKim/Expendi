@@ -28,6 +28,7 @@ interface BucketPaymentRequest {
   currentSpent: string;
   monthlyLimit: string;
   exchangeRate?: number | null;
+  usdcEquivalent?: number | null;
 }
 
 interface BucketPaymentResponse {
