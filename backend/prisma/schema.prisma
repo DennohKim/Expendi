@@ -120,20 +120,21 @@ model PretiumTransaction {
   id                String                @id @default(uuid())
   pretiumId         Int                   @map("pretium_id")
   transactionCode   String                @unique @map("transaction_code")
+  userAddress       String                @map("user_address")
   status            PretiumStatus
   amount            String
   amountInUsd       String                @map("amount_in_usd")
   type              PretiumTransactionType @map("type")
   shortcode         String?
   accountNumber     String?               @map("account_number")
-  publicName        String                @map("public_name")
-  receiptNumber     String                @map("receipt_number")
+  publicName        String?               @map("public_name")
+  receiptNumber     String?               @map("receipt_number")
   category          PretiumCategory
-  chain             String
-  asset             String
+  chain             String?
+  asset             String?
   transactionHash   String?               @map("transaction_hash")
-  message           String
-  currencyCode      String                @map("currency_code")
+  message           String?
+  currencyCode      String?               @map("currency_code")
   isReleased        Boolean               @map("is_released")
   pretiumCreatedAt  DateTime              @map("pretium_created_at")
   createdAt         DateTime              @default(now()) @map("created_at")
@@ -142,6 +143,7 @@ model PretiumTransaction {
   @@index([status])
   @@index([category])
   @@index([chain])
+  @@index([userAddress])
   @@index([pretiumCreatedAt])
   @@index([transactionCode])
   @@map("pretium_transactions")

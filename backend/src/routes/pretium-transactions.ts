@@ -14,17 +14,18 @@ const pretiumTransactionSchema = z.object({
     type: z.enum(['MOBILE', 'BANK', 'PAYBILL', 'BUY_GOODS']),
     shortcode: z.string().nullable(),
     account_number: z.string().nullable(),
-    public_name: z.string(),
-    receipt_number: z.string(),
+    public_name: z.string().nullable(),
+    receipt_number: z.string().nullable(),
     category: z.enum(['DISBURSEMENT', 'COLLECTION']),
-    chain: z.string(),
-    asset: z.string(),
+    chain: z.string().nullable(),
+    asset: z.string().nullable(),
     transaction_hash: z.string().nullable(),
-    message: z.string(),
-    currency_code: z.string(),
+    message: z.string().nullable(),
+    currency_code: z.string().nullable(),
     is_released: z.boolean(),
     created_at: z.string()
-  })
+  }),
+  user_address: z.string()
 });
 
 const createPretiumTransactionRouter = (prisma: PrismaClient): express.Router => {
@@ -33,47 +34,49 @@ const createPretiumTransactionRouter = (prisma: PrismaClient): express.Router =>
   router.post('/transactions', async (req, res) => {
     try {
       const validatedData = pretiumTransactionSchema.parse(req.body);
-      const { data: txData } = validatedData;
+      const { data: txData, user_address } = validatedData;
 
       const transaction = await prisma.pretiumTransaction.upsert({
         where: {
           transactionCode: txData.transaction_code
         },
         update: {
+          userAddress: user_address,
           status: txData.status as PretiumStatus,
           amount: txData.amount,
           amountInUsd: txData.amount_in_usd,
           type: txData.type as PretiumTransactionType,
-          shortcode: txData.shortcode,
-          accountNumber: txData.account_number,
-          publicName: txData.public_name,
-          receiptNumber: txData.receipt_number,
+          ...(txData.shortcode !== null && { shortcode: txData.shortcode }),
+          ...(txData.account_number !== null && { accountNumber: txData.account_number }),
+          ...(txData.public_name !== null && { publicName: txData.public_name }),
+          ...(txData.receipt_number !== null && { receiptNumber: txData.receipt_number }),
           category: txData.category as PretiumCategory,
-          chain: txData.chain,
-          asset: txData.asset,
-          transactionHash: txData.transaction_hash,
-          message: txData.message,
-          currencyCode: txData.currency_code,
+          ...(txData.chain !== null && { chain: txData.chain }),
+          ...(txData.asset !== null && { asset: txData.asset }),
+          ...(txData.transaction_hash !== null && { transactionHash: txData.transaction_hash }),
+          ...(txData.message !== null && { message: txData.message }),
+          ...(txData.currency_code !== null && { currencyCode: txData.currency_code }),
           isReleased: txData.is_released,
           pretiumCreatedAt: new Date(txData.created_at)
         },
         create: {
           pretiumId: txData.id,
           transactionCode: txData.transaction_code,
+          userAddress: user_address,
           status: txData.status as PretiumStatus,
           amount: txData.amount,
           amountInUsd: txData.amount_in_usd,
           type: txData.type as PretiumTransactionType,
-          shortcode: txData.shortcode,
-          accountNumber: txData.account_number,
-          publicName: txData.public_name,
-          receiptNumber: txData.receipt_number,
+          ...(txData.shortcode && { shortcode: txData.shortcode }),
+          ...(txData.account_number && { accountNumber: txData.account_number }),
+          ...(txData.public_name && { publicName: txData.public_name }),
+          ...(txData.receipt_number && { receiptNumber: txData.receipt_number }),
           category: txData.category as PretiumCategory,
-          chain: txData.chain,
-          asset: txData.asset,
-          transactionHash: txData.transaction_hash,
-          message: txData.message,
-          currencyCode: txData.currency_code,
+          ...(txData.chain && { chain: txData.chain }),
+          ...(txData.asset && { asset: txData.asset }),
+          ...(txData.transaction_hash && { transactionHash: txData.transaction_hash }),
+          ...(txData.message && { message: txData.message }),
+          ...(txData.currency_code && { currencyCode: txData.currency_code }),
           isReleased: txData.is_released,
           pretiumCreatedAt: new Date(txData.created_at)
         }
@@ -107,6 +110,7 @@ const createPretiumTransactionRouter = (prisma: PrismaClient): express.Router =>
         status,
         category,
         chain,
+        userAddress,
         limit = '50',
         offset = '0',
         sortBy = 'createdAt',
@@ -125,6 +129,10 @@ const createPretiumTransactionRouter = (prisma: PrismaClient): express.Router =>
       
       if (chain) {
         where.chain = chain;
+      }
+      
+      if (userAddress) {
+        where.userAddress = userAddress;
       }
 
       const orderBy: any = {};

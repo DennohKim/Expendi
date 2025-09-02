@@ -548,6 +548,7 @@ export function QuickSpendBucket({ bucket }: { bucket: UserBucket[] }) {
         transactionCode={lastTransactionCode}
         currency={selectedCountry}
         bucketName={selectedBucketName}
+        userAddress={queryAddress}
       />
     </Card>
   );
