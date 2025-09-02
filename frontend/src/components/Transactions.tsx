@@ -543,10 +543,13 @@ export default function Transactions() {
   
   const { data, loading, error } = useAllTransactions(smartAccountAddress, first);
   const { data: mobileTransactions, isLoading: mobileLoading } = useMobileTransactions({
+    userAddress: smartAccountAddress,
     limit: 100,
     sortBy: 'pretiumCreatedAt',
     sortOrder: 'desc'
   });
+
+  console.log('Mobile transactions:', mobileTransactions);
   
   // Get unique bucket names from all transaction types
   const availableBuckets = useMemo(() => {
