@@ -4,6 +4,7 @@ interface PretiumTransaction {
   id: string;
   pretiumId: number;
   transactionCode: string;
+  userAddress: string;
   status: 'COMPLETE' | 'PENDING' | 'FAILED';
   amount: string;
   amountInUsd: string;
@@ -35,7 +36,8 @@ interface MobileTransactionsResponse {
   };
 }
 
-interface UseMobileTransactionsParams {
+export interface UseMobileTransactionsParams {
+  userAddress?: string;
   status?: 'COMPLETE' | 'PENDING' | 'FAILED';
   category?: 'DISBURSEMENT' | 'COLLECTION';
   chain?: string;
@@ -46,11 +48,12 @@ interface UseMobileTransactionsParams {
 }
 
 async function fetchMobileTransactions(params: UseMobileTransactionsParams = {}): Promise<MobileTransactionsResponse> {
-  // const backendUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3001';
+  // const backendUrl = 'http://localhost:3001';
   const backendUrl = 'https://expendi-production-ab42.up.railway.app';
   
   const searchParams = new URLSearchParams();
   
+  if (params.userAddress) searchParams.append('userAddress', params.userAddress);
   if (params.status) searchParams.append('status', params.status);
   if (params.category) searchParams.append('category', params.category);
   if (params.chain) searchParams.append('chain', params.chain);

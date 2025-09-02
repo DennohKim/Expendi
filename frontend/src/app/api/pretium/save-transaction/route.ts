@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // Get backend URL from environment variable
     const backendUrl = 'https://expendi-production-ab42.up.railway.app';
-    
+    // const backendUrl = 'http://localhost:3001';
     // Forward the entire Pretium response to our backend
     const response = await fetch(`${backendUrl}/api/pretium/transactions`, {
       method: 'POST',
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await response.json();
-    
+
+    console.log('Transaction saved successfully', result);
     return NextResponse.json({
       success: true,
       message: 'Transaction saved successfully',
