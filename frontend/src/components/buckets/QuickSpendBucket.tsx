@@ -190,6 +190,7 @@ export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucke
         currentSpent,
         monthlyLimit,
         exchangeRate,
+        usdcEquivalent,
       });
 
       console.log('Bucket spend transaction hash:', result.txHash);
