@@ -123,7 +123,7 @@ export const BucketCard = React.memo(function BucketCard({ bucket }: BucketCardP
         <div className="pt-2 border-t">
           <div className="flex justify-between items-center">
             <span className="text-sm text-muted-foreground">Available Balance</span>
-            <p className="font-medium">{calculations.availableBalance} USDC</p>
+            <p className="font-medium">{(parseFloat(calculations.availableBalance)).toFixed(2)} USDC</p>
 
           </div>
         </div>
