@@ -301,7 +301,7 @@ export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucke
             <div className="grid grid-cols-2 gap-4 p-3 bg-muted rounded-lg">
               <div>
                 <p className="text-sm text-muted-foreground">Available Balance</p>
-                <p className="font-medium">{availableBalance} USDC</p>
+                <p className="font-medium">{(parseFloat(availableBalance)).toFixed(2)} USDC</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Monthly Limit</p>
