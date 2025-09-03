@@ -228,7 +228,7 @@ function DepositsTable({ data, loading, currentPage, onPageChange }: Transaction
             <TableCell>{formatTimestamp(deposit.timestamp)}</TableCell>
             <TableCell>
               <a
-                href={`https://sepolia.basescan.org/tx/${deposit.transactionHash}`}
+                href={`https://basescan.org/tx/${deposit.transactionHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
