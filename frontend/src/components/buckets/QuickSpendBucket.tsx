@@ -70,9 +70,16 @@ const MOBILE_NETWORKS = {
 interface QuickSpendBucketProps {
   bucket: UserBucket[];
   showWrapper?: boolean;
+  onPaymentStatus?: (transactionCode: string, country: string) => void;
+  showPaymentStatusModal?: boolean;
 }
 
-export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucketProps) {
+export function QuickSpendBucket({ 
+  bucket, 
+  showWrapper = true, 
+  onPaymentStatus,
+  showPaymentStatusModal = true 
+}: QuickSpendBucketProps) {
 
   const { address } = useAccount();
   const [amount, setAmount] = useState('');
@@ -193,8 +200,14 @@ export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucke
 
       // Show status modal for mobile payments
       if (result.transactionCode) {
-        setLastTransactionCode(result.transactionCode);
-        setIsStatusModalOpen(true);
+        if (onPaymentStatus) {
+          // Use callback to notify parent component
+          onPaymentStatus(result.transactionCode, selectedCountry);
+        } else {
+          // Fallback to internal modal management
+          setLastTransactionCode(result.transactionCode);
+          setIsStatusModalOpen(true);
+        }
       } else {
         console.log('No transaction code in result');
       }
@@ -551,15 +564,17 @@ export function QuickSpendBucket({ bucket, showWrapper = true }: QuickSpendBucke
         formContent
       )}
       
-      {/* Payment Status Modal */}
-      <PaymentStatusModal
-        isOpen={isStatusModalOpen}
-        onClose={() => setIsStatusModalOpen(false)}
-        transactionCode={lastTransactionCode}
-        currency={selectedCountry}
-        bucketName={selectedBucketName}
-        userAddress={queryAddress}
-      />
+      {/* Payment Status Modal - only show if not handled by parent */}
+      {showPaymentStatusModal && (
+        <PaymentStatusModal
+          isOpen={isStatusModalOpen}
+          onClose={() => setIsStatusModalOpen(false)}
+          transactionCode={lastTransactionCode}
+          currency={selectedCountry}
+          bucketName={selectedBucketName}
+          userAddress={queryAddress}
+        />
+      )}
     </>
   );
 }
