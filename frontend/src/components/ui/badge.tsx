@@ -25,6 +25,8 @@ const badgeVariants = cva(
           "border-transparent bg-green-500 text-white [a&]:hover:bg-green-500/90 focus-visible:ring-green-500/20 dark:focus-visible:ring-green-500/40 dark:bg-green-500/60",
         danger:
           "border-transparent bg-red-500 text-white [a&]:hover:bg-red-500/90 focus-visible:ring-red-500/20 dark:focus-visible:ring-red-500/40 dark:bg-red-500/60",
+        primary: 
+          "border-transparent bg-[#ff7e5f] text-white [a&]:hover:bg-[#ff7e5f]/90 focus-visible:ring-[#ff7e5f]/20 dark:focus-visible:ring-[#ff7e5f]/40 dark:bg-[#ff7e5f]/60",
       },
     },
     defaultVariants: {
