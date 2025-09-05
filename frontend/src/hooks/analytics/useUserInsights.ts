@@ -34,18 +34,26 @@ interface UserInsights {
   walletAddress: string;
 }
 
-const fetchUserInsights = async (userAddress: string): Promise<UserInsights> => {
+const fetchUserInsights = async (userAddress: string): Promise<UserInsights | null> => {
   const baseUrl = "https://expendi-production-ab42.up.railway.app";
   // const baseUrl = "http://localhost:3001";
   const response = await fetch(`${baseUrl}/api/V2/analytics/chains/base/users/${userAddress}/insights`);
   
+  const data = await response.json();
+  
   if (!response.ok) {
+    // Check if this is a "User not found" error for new users
+    if (data.error && data.error.includes('not found')) {
+      return null; // Return null for new users instead of throwing an error
+    }
     throw new Error(`Failed to fetch user insights: ${response.statusText}`);
   }
   
-  const data = await response.json();
-  
   if (!data.success) {
+    // Check if this is a "User not found" error for new users
+    if (data.error && data.error.includes('not found')) {
+      return null; // Return null for new users instead of throwing an error
+    }
     throw new Error(data.error || 'Failed to fetch user insights');
   }
   
@@ -59,7 +67,13 @@ export function useUserInsights(userAddress: string | undefined) {
     enabled: !!userAddress,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    retry: 3,
+    retry: (failureCount, error) => {
+      // Don't retry for "User not found" errors (new users)
+      if (error.message && error.message.includes('not found')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
