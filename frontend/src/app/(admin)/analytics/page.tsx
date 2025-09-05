@@ -54,17 +54,19 @@ export default function AnalyticsPage() {
   } = useBucketUsage(queryAddressToLower);
 
   const bucketUsage = React.useMemo(() => {
-    const buckets = bucketUsageData?.buckets || [];
+    if (!bucketUsageData) return [];
+    const buckets = bucketUsageData.buckets || [];
     // Sort buckets by total spent from highest to lowest
     return [...buckets].sort((a, b) => {
       const aSpent = parseFloat(a.totalSpent) || 0;
       const bSpent = parseFloat(b.totalSpent) || 0;
       return bSpent - aSpent; // Descending order (highest first)
     });
-  }, [bucketUsageData?.buckets]);
+  }, [bucketUsageData]);
   
   const loading = insightsLoading || bucketUsageLoading;
   const error = insightsError || bucketUsageError;
+  const isNewUser = !loading && !error && (!insights && !bucketUsageData);
 
   const refetchAll = async () => {
     if (!queryAddressToLower) return;
@@ -119,6 +121,42 @@ export default function AnalyticsPage() {
     );
   }
 
+  if (isNewUser) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight">Analytics Dashboard</h1>
+          <Button 
+            onClick={refetchAll}
+            disabled={loading || syncing}
+            variant="primary"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading || syncing ? 'animate-spin' : ''}`} />
+            <span>{syncing ? 'Syncing...' : 'Refresh'}</span>
+          </Button>
+        </div>
+        
+        <div className="flex flex-col items-center justify-center h-96 space-y-4">
+          <Activity className="h-16 w-16 text-muted-foreground" />
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-semibold">Welcome to Analytics!</h2>
+            <p className="text-muted-foreground max-w-md">
+              Start creating buckets and making transactions to see your spending insights and analytics here.
+            </p>
+          </div>
+          <Button 
+            onClick={refetchAll}
+            disabled={syncing}
+            variant="primary"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+            <span>{syncing ? 'Sync Data' : 'Check for Data'}</span>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const formatCurrency = (value: string, showSymbol: boolean = true) => {
     const num = parseFloat(value);
     if (isNaN(num)) return showSymbol ? '$ 0.00' : '0.00';
@@ -156,7 +194,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Overview Cards */}
-      {insights && (
+      {insights ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -206,6 +244,51 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
         </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Spending</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">$ 0.00</div>
+              <p className="text-xs text-muted-foreground">No transactions yet</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Buckets</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Create your first bucket</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Most Active Bucket</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm font-bold">No data</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Abandoned Buckets</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">No buckets yet</p>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       <Tabs defaultValue="usage" className="space-y-4">
@@ -226,30 +309,39 @@ export default function AnalyticsPage() {
               <CardDescription>Transaction count and activity levels for each bucket</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {bucketUsage.map((bucket) => (
-                  <div key={bucket.bucketId} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-1">
-                      <p className="font-medium">{bucket.bucketName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {bucket.transactionCount} transactions
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Last activity: {bucket.lastActivity ? new Date(bucket.lastActivity).toLocaleDateString() : 'Never'}
-                      </p>
+              {bucketUsage.length > 0 ? (
+                <div className="space-y-4">
+                  {bucketUsage.map((bucket) => (
+                    <div key={bucket.bucketId} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <p className="font-medium">{bucket.bucketName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {bucket.transactionCount} transactions
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Last activity: {bucket.lastActivity ? new Date(bucket.lastActivity).toLocaleDateString() : 'Never'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{formatCurrency(bucket.totalSpent)}</p>
+                        <p className="text-sm text-muted-foreground">spent</p>
+                        {bucket.isOverBudget && (
+                          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                            Over Budget
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(bucket.totalSpent)}</p>
-                      <p className="text-sm text-muted-foreground">spent</p>
-                      {bucket.isOverBudget && (
-                        <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
-                          Over Budget
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    No bucket data available. Create some buckets and start spending to see usage statistics.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
