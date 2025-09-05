@@ -481,13 +481,13 @@ export default function BucketDetailsPage() {
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
-                    {calculations.availableBalance}
+                    {parseFloat(calculations.availableBalance).toFixed(2)}
                   </div>
                   <div className="text-sm text-muted-foreground">Available Balance</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {formatTokenAmount(calculations.remainingBudget)}
+                    {(calculations.remainingBudget)}
                   </div>
                   <div className="text-sm text-muted-foreground">Remaining Budget</div>
                 </div>
@@ -542,7 +542,7 @@ export default function BucketDetailsPage() {
                               'recipient' in transaction ? 'text-red-600' : 'text-green-600'
                             }`}>
                               {'recipient' in transaction ? '-' : '+'}
-                             $ {formatUnits(BigInt(transaction.amount), 6)}
+                             $ {parseFloat(formatUnits(BigInt(transaction.amount), 6)).toFixed(2)}
                             </div>
                           </div>
                         </div>

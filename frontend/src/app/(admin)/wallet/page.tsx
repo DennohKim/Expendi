@@ -388,8 +388,8 @@ const WalletPage = () => {
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Smart Account Address
                 </span>
-                <Badge variant="secondary" className="text-xs">
-                  Smart Account
+                <Badge variant="primary" className="text-sm">
+                  USDC on Base
                 </Badge>
               </div>
               <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
