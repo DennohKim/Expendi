@@ -487,7 +487,7 @@ export default function BucketDetailsPage() {
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {(calculations.remainingBudget)}
+                    {(calculations.remainingBudget).toFixed(2)}
                   </div>
                   <div className="text-sm text-muted-foreground">Remaining Budget</div>
                 </div>
