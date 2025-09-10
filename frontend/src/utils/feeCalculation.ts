@@ -28,7 +28,14 @@ export const B2C_FEE_TIERS = [
  */
 export function calculateB2CFee(amount: number): number {
   const tier = B2C_FEE_TIERS.find(tier => amount >= tier.min && amount <= tier.max);
-  return tier ? tier.fee : 150; // Default to highest fee if amount exceeds all tiers
+  const baseFee = tier ? tier.fee : 150; // Default to highest fee if amount exceeds all tiers
+  
+  // Apply 30% discount to all tiers except the lowest tier (0-100 KES with 1 KES fee)
+  if (tier && !(tier.min === 0 && tier.max === 100 && tier.fee === 1)) {
+    return Math.round(baseFee * 0.70); // 30% discount
+  }
+  
+  return baseFee; // No discount for the lowest tier
 }
 
 /**

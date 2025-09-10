@@ -161,27 +161,27 @@ export function PaymentStatusModal({
   const calculateAmountBreakdown = (totalAmount: string) => {
     const total = parseFloat(totalAmount);
     
-    // Fee structure based on base amount ranges
+    // Fee structure based on base amount ranges with 30% discount (except lowest tier)
     const getFeeForAmount = (baseAmount: number): number => {
-      if (baseAmount <= 100) return 1;
-      if (baseAmount <= 500) return 8;
-      if (baseAmount <= 1000) return 12;
-      if (baseAmount <= 1500) return 20;
-      if (baseAmount <= 2500) return 22;
-      if (baseAmount <= 3500) return 25;
-      if (baseAmount <= 5000) return 27;
-      if (baseAmount <= 7500) return 30;
-      if (baseAmount <= 10000) return 35;
-      if (baseAmount <= 15000) return 37;
-      if (baseAmount <= 20000) return 40;
-      if (baseAmount <= 25000) return 43;
-      if (baseAmount <= 30000) return 45;
-      if (baseAmount <= 35000) return 50;
-      if (baseAmount <= 40000) return 60;
-      if (baseAmount <= 45000) return 70;
-      if (baseAmount <= 50000) return 80;
-      if (baseAmount <= 70000) return 100;
-      return 150;
+      if (baseAmount <= 100) return 1; // No discount for lowest tier
+      if (baseAmount <= 500) return Math.round(8 * 0.70); // 6
+      if (baseAmount <= 1000) return Math.round(12 * 0.70); // 8
+      if (baseAmount <= 1500) return Math.round(20 * 0.70); // 14
+      if (baseAmount <= 2500) return Math.round(22 * 0.70); // 15
+      if (baseAmount <= 3500) return Math.round(25 * 0.70); // 18
+      if (baseAmount <= 5000) return Math.round(27 * 0.70); // 19
+      if (baseAmount <= 7500) return Math.round(30 * 0.70); // 21
+      if (baseAmount <= 10000) return Math.round(35 * 0.70); // 25
+      if (baseAmount <= 15000) return Math.round(37 * 0.70); // 26
+      if (baseAmount <= 20000) return Math.round(40 * 0.70); // 28
+      if (baseAmount <= 25000) return Math.round(43 * 0.70); // 30
+      if (baseAmount <= 30000) return Math.round(45 * 0.70); // 32
+      if (baseAmount <= 35000) return Math.round(50 * 0.70); // 35
+      if (baseAmount <= 40000) return Math.round(60 * 0.70); // 42
+      if (baseAmount <= 45000) return Math.round(70 * 0.70); // 49
+      if (baseAmount <= 50000) return Math.round(80 * 0.70); // 56
+      if (baseAmount <= 70000) return Math.round(100 * 0.70); // 70
+      return Math.round(150 * 0.70); // 105
     };
     
     // Reverse calculate base amount from total
