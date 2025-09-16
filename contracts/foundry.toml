@@ -12,9 +12,13 @@ optimizer_runs = 200
 [rpc_endpoints]
 base_sepolia = "https://sepolia.base.org"
 base_mainnet = "https://mainnet.base.org"
+scroll_mainnet = "https://rpc.scroll.io"
+celo_mainnet = "https://forno.celo.org"
 
 [etherscan]
 base_sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api", chain = 84532 }
 base_mainnet = { key = "${ETHERSCAN_API_KEY}", url = "https://api.basescan.org/api", chain = 8453 }
+scroll_mainnet = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api", chain = 534352 }
+celo_mainnet = { key = "${CELOSCAN_API_KEY}", url = "https://api.celoscan.io/api", chain = 42220 }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

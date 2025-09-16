@@ -1,0 +1,116 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SimpleBudgetWallet
+    network: celo
+    source:
+      address: "0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF"
+      abi: SimpleBudgetWallet
+      startBlock: 46121014
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Bucket
+        - Transaction
+        - Deposit
+        - Withdrawal
+        - Delegate
+      abis:
+        - name: SimpleBudgetWallet
+          file: ./abis/SimpleBudgetWallet.json
+      eventHandlers:
+        - event: BucketCreated(indexed address,string,uint256)
+          handler: handleBucketCreated
+        - event: BucketUpdated(indexed address,string,uint256,bool)
+          handler: handleBucketUpdated
+        - event: BucketFunded(indexed address,string,uint256,address)
+          handler: handleBucketFunded
+        - event: SpentFromBucket(indexed address,string,uint256,address,address)
+          handler: handleSpentFromBucket
+        - event: BucketTransfer(indexed address,string,string,uint256,address)
+          handler: handleBucketTransfer
+        - event: FundsDeposited(indexed address,uint256,address)
+          handler: handleFundsDeposited
+        - event: MonthlyLimitReset(indexed address,string)
+          handler: handleMonthlyLimitReset
+        - event: DelegateAdded(indexed address,indexed address,string)
+          handler: handleDelegateAdded
+        - event: DelegateRemoved(indexed address,indexed address,string)
+          handler: handleDelegateRemoved
+        - event: UnallocatedWithdraw(indexed address,address,uint256,address)
+          handler: handleUnallocatedWithdraw
+        - event: EmergencyWithdraw(indexed address,address,uint256)
+          handler: handleEmergencyWithdraw
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: SimpleBudgetWalletFactory
+    network: celo
+    source:
+      address: "0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e"
+      abi: SimpleBudgetWalletFactory
+      startBlock: 46121014
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - WalletCreated
+      abis:
+        - name: SimpleBudgetWalletFactory
+          file: ./abis/SimpleBudgetWalletFactory.json
+      eventHandlers:
+        - event: WalletCreated(indexed address,indexed address,uint256)
+          handler: handleWalletCreated
+        - event: WalletRegistered(indexed address,indexed address)
+          handler: handleWalletRegistered
+      file: ./src/factory-mapping.ts
+templates:
+  - kind: ethereum/contract
+    name: SimpleBudgetWallet
+    network: celo
+    source:
+      abi: SimpleBudgetWallet
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - User
+        - Bucket
+        - Transaction
+        - Deposit
+        - Withdrawal
+        - Delegate
+      abis:
+        - name: SimpleBudgetWallet
+          file: ./abis/SimpleBudgetWallet.json
+      eventHandlers:
+        - event: BucketCreated(indexed address,string,uint256)
+          handler: handleBucketCreated
+        - event: BucketUpdated(indexed address,string,uint256,bool)
+          handler: handleBucketUpdated
+        - event: BucketFunded(indexed address,string,uint256,address)
+          handler: handleBucketFunded
+        - event: SpentFromBucket(indexed address,string,uint256,address,address)
+          handler: handleSpentFromBucket
+        - event: BucketTransfer(indexed address,string,string,uint256,address)
+          handler: handleBucketTransfer
+        - event: FundsDeposited(indexed address,uint256,address)
+          handler: handleFundsDeposited
+        - event: MonthlyLimitReset(indexed address,string)
+          handler: handleMonthlyLimitReset
+        - event: DelegateAdded(indexed address,indexed address,string)
+          handler: handleDelegateAdded
+        - event: DelegateRemoved(indexed address,indexed address,string)
+          handler: handleDelegateRemoved
+        - event: UnallocatedWithdraw(indexed address,address,uint256,address)
+          handler: handleUnallocatedWithdraw
+        - event: EmergencyWithdraw(indexed address,address,uint256)
+          handler: handleEmergencyWithdraw
+      file: ./src/mapping.ts
