@@ -300,7 +300,7 @@ export async function createBudgetWallet(
 // Legacy subgraph check function (keeping for reference/fallback)
 export async function checkExistingBudgetWalletSubgraph(userAddress: string): Promise<string | null> {
   try {
-    const subgraphUrl = getNetworkConfig().SUBGRAPH_URL;
+    const subgraphUrl = getNetworkConfig(8453).SUBGRAPH_URL;
     if (!subgraphUrl) {
       console.warn('Subgraph URL not configured');
       return null;

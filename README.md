@@ -65,15 +65,172 @@ The Expendi system consists of two main smart contracts that work together to pr
 - **Statistics**: Track total wallets created and factory metrics
 - **Pagination**: Retrieve wallet lists with offset/limit support
 
-## 🚀 Deployed Contracts (Base Sepolia)
+## 📊 The Graph Subgraphs
 
-### Factory Contract
+Multi-chain subgraph deployment for real-time contract event indexing and querying.
+
+### **Scroll Mainnet Subgraph**
+- **Subgraph Name**: `expendi-scroll`
+- **GraphQL Endpoint**: https://api.studio.thegraph.com/query/118246/expendi-scroll/v0.1.0
+- **Studio Dashboard**: https://thegraph.com/studio/subgraph/expendi-scroll
+- **Version**: v0.1.0
+- **Status**: ✅ Active
+
+### **Celo Mainnet Subgraph**
+- **Subgraph Name**: `expendi-celo`
+- **GraphQL Endpoint**: https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0
+- **Studio Dashboard**: https://thegraph.com/studio/subgraph/expendi-celo
+- **Version**: v0.1.0
+- **Status**: ✅ Active
+
+### **Indexed Events**
+All subgraphs index the following contract events:
+
+**SimpleBudgetWallet Events:**
+- `BucketCreated` - New spending bucket creation
+- `BucketUpdated` - Budget limit and status updates
+- `BucketFunded` - Funding transfers to buckets
+- `SpentFromBucket` - Spending transactions from buckets
+- `BucketTransfer` - Fund transfers between buckets
+- `FundsDeposited` - ETH and token deposits
+- `MonthlyLimitReset` - Monthly budget resets
+- `DelegateAdded/Removed` - Spending permission management
+- `UnallocatedWithdraw` - Unallocated fund withdrawals
+- `EmergencyWithdraw` - Emergency fund recovery
+
+**SimpleBudgetWalletFactory Events:**
+- `WalletCreated` - New wallet instance deployments
+- `WalletRegistered` - Wallet registration events
+
+### **Example GraphQL Queries**
+
+```graphql
+# Get all wallets created by a specific factory
+{
+  walletCreateds(where: {factory: "0x..."}) {
+    id
+    user
+    wallet
+    creationFee
+    timestamp
+  }
+}
+
+# Get all buckets for a user
+{
+  buckets(where: {user: "0x..."}) {
+    id
+    name
+    monthlyLimit
+    currentBalance
+    monthlySpent
+    active
+  }
+}
+
+# Get recent spending transactions
+{
+  transactions(orderBy: timestamp, orderDirection: desc, first: 10) {
+    id
+    user
+    bucketName
+    amount
+    recipient
+    token
+    timestamp
+  }
+}
+```
+
+### **Frontend Integration**
+
+**Environment Variables:**
+```bash
+# Scroll Mainnet
+NEXT_PUBLIC_SCROLL_SUBGRAPH_URL=https://api.studio.thegraph.com/query/118246/expendi-scroll/v0.1.0
+
+# Celo Mainnet
+NEXT_PUBLIC_CELO_SUBGRAPH_URL=https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0
+```
+
+**TypeScript Example:**
+```typescript
+import { request, gql } from 'graphql-request'
+
+const SUBGRAPH_URLS = {
+  scroll: 'https://api.studio.thegraph.com/query/118246/expendi-scroll/v0.1.0',
+  celo: 'https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0'
+}
+
+// Get user's wallets across all chains
+const GET_USER_WALLETS = gql`
+  query GetUserWallets($user: String!) {
+    walletCreateds(where: { user: $user }) {
+      id
+      wallet
+      user
+      timestamp
+    }
+  }
+`
+
+// Usage
+const fetchUserWallets = async (userAddress: string, chain: 'scroll' | 'celo') => {
+  return await request(SUBGRAPH_URLS[chain], GET_USER_WALLETS, {
+    user: userAddress.toLowerCase()
+  })
+}
+```
+
+## 🚀 Deployed Contracts
+
+### Scroll Mainnet (Chain ID: 534352)
+
+#### Factory Contract
+- **Address**: [`0x06cb6b1b6dd6b16df66f50a597ef7902c80f937f`](https://scrollscan.com/address/0x06cb6b1b6dd6b16df66f50a597ef7902c80f937f)
+- **Status**: ✅ Verified on Scroll Mainnet
+- **Creation Fee**: 0 ETH
+- **Network**: Scroll Mainnet
+- **Verification ID**: `sl8hwdhbgfq432nn2w95r5riu8twwxqmdyxecv48kdccykdgqf`
+
+#### Budget Wallet Template
+- **Address**: [`0x30c72e2b14ee982fe3587e366c9093845e84aa1f`](https://scrollscan.com/address/0x30c72e2b14ee982fe3587e366c9093845e84aa1f)
+- **Status**: ✅ Verified on Scroll Mainnet
+- **Template Contract**: Used by factory for wallet creation
+- **Network**: Scroll Mainnet
+- **Verification ID**: `ezi3gdjgrmhfwuhpxh6hnbhyl2nfepqjdzkdpssnpgim3fd12f`
+
+#### Subgraph
+- **GraphQL Endpoint**: https://api.studio.thegraph.com/query/118246/expendi-scroll/v0.1.0
+- **Status**: ✅ Active & Indexing
+
+### Celo Mainnet (Chain ID: 42220)
+
+#### Factory Contract
+- **Address**: [`0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e`](https://celoscan.io/address/0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e)
+- **Status**: 🚀 Deployed on Celo Mainnet
+- **Creation Fee**: 0 ETH
+- **Network**: Celo Mainnet
+
+#### Budget Wallet Template
+- **Address**: [`0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF`](https://celoscan.io/address/0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF)
+- **Status**: 🚀 Deployed on Celo Mainnet
+- **Template Contract**: Used by factory for wallet creation
+- **Network**: Celo Mainnet
+
+#### Subgraph
+- **GraphQL Endpoint**: https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0
+- **Status**: ✅ Active & Indexing
+
+### Base Sepolia (Chain ID: 84532)
+
+#### Factory Contract
 - **Address**: [`0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a`](https://sepolia.basescan.org/address/0xeD21D5C3f8E7Cad297BB528C2d5Bda5d69BA305a)
 - **Status**: ✅ Verified
 - **Creation Fee**: 0 ETH
 - **Block Number**: 28209133
 
-### Budget Wallet Template
+#### Budget Wallet Template
 - **Address**: [`0xA2f565Db75B32Dac366666621633b2259bF332D6`](https://sepolia.basescan.org/address/0xA2f565Db75B32Dac366666621633b2259bF332D6)  
 - **Status**: ✅ Verified
 - **Template Contract**: Used by factory for wallet creation
@@ -280,6 +437,20 @@ forge test --match-test testSpendFromBucket -vvv
 
 ## 🌐 Network Information
 
+### Scroll Mainnet
+- **Chain ID**: 534352
+- **RPC URL**: https://rpc.scroll.io
+- **Block Explorer**: https://scrollscan.com
+- **Bridge**: https://scroll.io/bridge
+
+### Celo Mainnet
+- **Chain ID**: 42220
+- **RPC URL**: https://forno.celo.org
+- **Block Explorer**: https://celoscan.io
+- **Bridge**: https://bridge.celo.org
+- **Native Token**: CELO
+- **Stablecoin**: cUSD (0x765DE816845861e75A25fCA122bb6898B8B1282a)
+
 ### Base Sepolia Testnet
 - **Chain ID**: 84532
 - **RPC URL**: https://sepolia.base.org
@@ -287,7 +458,8 @@ forge test --match-test testSpendFromBucket -vvv
 - **Faucet**: https://bridge.base.org/deposit
 
 ### Contract Verification
-All contracts are verified on Base Sepolia's block explorer for transparency and easy interaction.
+- Scroll contracts: ✅ Successfully verified using Etherscan v2 multichain API
+- Base Sepolia contracts: ✅ Verified and ready for interaction
 
 ## 📈 Future Enhancements
 
