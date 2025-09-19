@@ -45,7 +45,7 @@ export default function OnboardingPage() {
     try {
       setStep('waiting-smart-account');
       
-      // Create budget wallet using Base mainnet
+      // Create budget wallet using Scroll mainnet
       // Try with smart account first, fallback to regular wallet if sponsorship fails
       let result;
       try {
@@ -157,7 +157,7 @@ export default function OnboardingPage() {
             Welcome to Expendi
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            To get started, you need to create a budget account on Base mainnet.
+            To get started, you need to create a budget account on Scroll mainnet.
           </p>
         </div>
 

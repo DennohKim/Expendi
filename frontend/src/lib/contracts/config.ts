@@ -56,8 +56,8 @@ export const NETWORK_CONFIGS = {
   }
 } as const;
 
-// Default chain (Base Mainnet)
-export const DEFAULT_CHAIN_ID = CHAIN_IDS.BASE_MAINNET;
+// Default chain (Scroll Mainnet)
+export const DEFAULT_CHAIN_ID = CHAIN_IDS.SCROLL_MAINNET;
 
 // Legacy export for backward compatibility
 export const CHAIN_ID = DEFAULT_CHAIN_ID;

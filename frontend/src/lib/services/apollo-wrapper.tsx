@@ -19,7 +19,7 @@ if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
   loadErrorMessages()
 }
 
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/118246/expendi-base/version/latest"
+const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/118246/expendi-scroll/v0.1.0"
 
 export function ApolloWrapper({
   children,

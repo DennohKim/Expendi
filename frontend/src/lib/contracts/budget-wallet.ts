@@ -1,6 +1,6 @@
 // Budget Wallet contract interaction utilities
 import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import { scroll } from 'viem/chains';
 import BudgetWalletABI from './SimpleBudgetWallet.json';
 import type { Abi } from 'viem';
 import type { SmartAccountClient } from 'permissionless';
@@ -11,12 +11,12 @@ export const BUDGET_WALLET_ABI = BudgetWalletABI.abi as Abi;
 // ETH address constant (used in the contract)
 export const ETH_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 
-// USDC token address on Base mainnet
-export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const;
+// USDC token address on Scroll mainnet
+export const USDC_ADDRESS = '0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4' as const;
 
-// Create clients for Base mainnet
+// Create clients for Scroll mainnet
 export const budgetWalletPublicClient = createPublicClient({
-  chain: base,
+  chain: scroll,
   transport: http()
 });
 
