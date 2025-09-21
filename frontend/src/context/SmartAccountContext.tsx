@@ -7,7 +7,6 @@ import { SmartAccountClient, createSmartAccountClient } from "permissionless";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { entryPoint06Address } from "viem/account-abstraction";
 import { toSimpleSmartAccount } from "permissionless/accounts";
-import { getNetworkConfig } from "@/lib/contracts/config";
 
 /** Interface returned by custom `useSmartAccount` hook */
 interface SmartAccountInterface {
