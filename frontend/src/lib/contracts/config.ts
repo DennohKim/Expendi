@@ -40,7 +40,7 @@ export const NETWORK_CONFIGS = {
     FACTORY_ADDRESS: '0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e',
     BUDGET_WALLET_ADDRESS: '0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF',
     SUBGRAPH_URL: 'https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0',
-    USDC_ADDRESS: '0x765DE816845861e75A25fCA122bb6898B8B1282a', // cUSD
+    USDC_ADDRESS: '0xcebA9300f2b948710d2653dD7B07f33A8B32118C', // USDC
     NATIVE_TOKEN: 'CELO'
   },
   [CHAIN_IDS.BASE_SEPOLIA]: {
@@ -56,8 +56,8 @@ export const NETWORK_CONFIGS = {
   }
 } as const;
 
-// Default chain (Base Mainnet)
-export const DEFAULT_CHAIN_ID = CHAIN_IDS.BASE_MAINNET;
+// Default chain (Celo Mainnet)
+export const DEFAULT_CHAIN_ID = CHAIN_IDS.CELO_MAINNET;
 
 // Legacy export for backward compatibility
 export const CHAIN_ID = DEFAULT_CHAIN_ID;

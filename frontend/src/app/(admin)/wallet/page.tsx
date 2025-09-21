@@ -40,7 +40,7 @@ const WalletPage = () => {
   const { data, loading, error, refetch } = useUserBudgetWallet(queryAddress);
   console.log("Wallet data", data?.user?.walletsCreated[0].wallet)
 
-  // Get network configuration (Base mainnet only)
+  // Get network configuration (Celo mainnet)
   const networkConfig = getNetworkConfig();
   const usdcAddress = networkConfig.USDC_ADDRESS as `0x${string}`;
 
@@ -389,7 +389,7 @@ const WalletPage = () => {
                   Smart Account Address
                 </span>
                 <Badge variant="primary" className="text-sm">
-                  USDC on Base
+                  USDC on {networkConfig.NETWORK_NAME}
                 </Badge>
               </div>
               <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">

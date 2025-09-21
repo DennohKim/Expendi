@@ -80,7 +80,7 @@ const AllocateFunds = ({
       amount: parseFloat(onrampAmount),
       fee: 10,
       mobile_network: mobileNetwork,
-      chain: 'BASE' as const,
+      chain: 'CELO' as const,
       asset: 'USDC' as const,
       address: userAddress,
       currency_code: 'KES' as const
@@ -109,7 +109,7 @@ const AllocateFunds = ({
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="allocate">Allocate</TabsTrigger>
               <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
-              <TabsTrigger value="onramp">Onramp</TabsTrigger>
+              <TabsTrigger value="onramp">Fund Wallet</TabsTrigger>
 
             </TabsList>
             

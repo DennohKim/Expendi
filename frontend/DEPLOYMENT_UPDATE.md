@@ -1,7 +1,7 @@
 # Frontend Contract Updates
 
 ## Summary
-Frontend has been updated with the latest contract addresses and ABIs from the Base Sepolia deployment.
+Frontend has been updated with the latest contract addresses and ABIs from the Celo Mainnet deployment.
 
 ## Updated Files
 
@@ -16,24 +16,24 @@ Frontend has been updated with the latest contract addresses and ABIs from the B
 - ✅ `.env.local` - Updated with correct contract addresses and subgraph URL
 - ✅ `.env.example` - Updated template with new configuration
 
-## Contract Addresses (Base Sepolia)
+## Contract Addresses (Celo Mainnet)
 
 | Contract | Address | 
 |----------|---------|
-| SimpleBudgetWalletFactory | `0x4525f41f2c49EB476E9e0f0fCac96Cc6eec16ea7` |
-| SimpleBudgetWallet Template | `0x9b76D8eAdF1CA6e1cDc2ECb2Ac2df13Bf5CF068C` |
+| SimpleBudgetWalletFactory | `0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e` |
+| SimpleBudgetWallet Template | `0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF` |
 
 ## Environment Variables
 
 ```env
 # Smart Contract Addresses  
-NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS=0x4525f41f2c49EB476E9e0f0fCac96Cc6eec16ea7
-NEXT_PUBLIC_BUDGET_WALLET_ADDRESS=0x9b76D8eAdF1CA6e1cDc2ECb2Ac2df13Bf5CF068C
-NEXT_PUBLIC_CHAIN_ID=84532
-NEXT_PUBLIC_NETWORK_NAME=Base Sepolia
+NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS=0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e
+NEXT_PUBLIC_BUDGET_WALLET_ADDRESS=0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF
+NEXT_PUBLIC_CHAIN_ID=42220
+NEXT_PUBLIC_NETWORK_NAME=Celo Mainnet
 
 # Subgraph Configuration
-NEXT_PUBLIC_SUBGRAPH_URL=https://api.studio.thegraph.com/query/75392/expendiv-2/v1.0.0
+NEXT_PUBLIC_SUBGRAPH_URL=https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0
 ```
 
 ## New Features

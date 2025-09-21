@@ -93,7 +93,7 @@ export function useHasBudgetWallet() {
     setError(null);
 
     try {
-      // Always check on Base mainnet
+      // Check on current network
       console.log('🔍 Checking wallet for address:', walletAddress);
       const hasWallet = await checkUserHasWallet(walletAddress);
       

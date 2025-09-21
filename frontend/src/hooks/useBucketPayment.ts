@@ -155,7 +155,7 @@ export function useBucketPayment() {
           type: paymentType,
           mobile_network: mobileNetwork || '',
           callback_url: "http://localhost:3000/api/pretium/callback",
-          chain: "BASE",
+          chain: "CELO",
           selectedCountry,
         });
 

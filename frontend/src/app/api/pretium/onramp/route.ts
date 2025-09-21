@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     
     const requestData: OnrampRequest = {
       ...onrampData,
-      chain: body.chain || 'BASE',
+      chain: body.chain || 'CELO',
       asset: body.asset || 'USDC',
     };
     

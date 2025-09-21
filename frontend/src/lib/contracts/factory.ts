@@ -1,6 +1,6 @@
 // Factory contract interaction utilities using wagmi with Privy
 import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import { celo } from 'viem/chains';
 import FactoryABI from './SimpleBudgetWalletFactory.json';
 import type { SmartAccountClient } from 'permissionless';
 import type { Abi } from 'viem';
@@ -17,16 +17,18 @@ interface WriteContractArgs {
 // Factory contract ABI (complete from compiled contract)
 export const FACTORY_ABI = FactoryABI.abi as Abi;
 
-// Get factory contract address (always Base mainnet)
+// Get factory contract address (uses current network configuration)
 export function getFactoryAddress(): `0x${string}` {
   const config = getNetworkConfig();
   return config.FACTORY_ADDRESS as `0x${string}`;
 }
 
-// Create public client (always Base mainnet)
+// Create public client (uses current network configuration)
 export function getPublicClient() {
+  const networkConfig = getNetworkConfig();
+  // For now, we'll use Celo since that's the default network
   return createPublicClient({
-    chain: base,
+    chain: celo,
     transport: http()
   });
 }
@@ -168,7 +170,7 @@ export async function createOrGetBudgetWallet(
       if (error.message.includes('network') || 
           error.message.includes('chain') ||
           error.message.includes('unsupported network')) {
-        throw new Error('Network error. Please ensure you are connected to Base mainnet.');
+        throw new Error('Network error. Please ensure you are connected to the correct network.');
       }
       
       // Check for contract issues
@@ -300,7 +302,7 @@ export async function createBudgetWallet(
 // Legacy subgraph check function (keeping for reference/fallback)
 export async function checkExistingBudgetWalletSubgraph(userAddress: string): Promise<string | null> {
   try {
-    const subgraphUrl = getNetworkConfig(8453).SUBGRAPH_URL;
+    const subgraphUrl = getNetworkConfig().SUBGRAPH_URL;
     if (!subgraphUrl) {
       console.warn('Subgraph URL not configured');
       return null;

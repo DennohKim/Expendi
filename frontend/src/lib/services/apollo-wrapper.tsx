@@ -12,6 +12,7 @@ import {
 
 import { loadErrorMessages, loadDevMessages } from '@apollo/client/dev'
 import { setVerbosity } from 'ts-invariant'
+import { getNetworkConfig } from '@/lib/contracts/config'
 
 if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
   setVerbosity('debug')
@@ -19,7 +20,7 @@ if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
   loadErrorMessages()
 }
 
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/118246/expendi-base/version/latest"
+const SUBGRAPH_URL = getNetworkConfig().SUBGRAPH_URL
 
 export function ApolloWrapper({
   children,
