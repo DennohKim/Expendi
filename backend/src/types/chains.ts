@@ -71,11 +71,11 @@ export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
     name: 'Celo Mainnet',
     shortName: 'celo',
     isMainnet: true,
-    subgraphUrl: process.env.SUBGRAPH_URL_CELO_MAINNET || '',
+    subgraphUrl: process.env.SUBGRAPH_URL_CELO_MAINNET || 'https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0',
     contracts: {
-      simpleBudgetWallet: process.env.CELO_BUDGET_WALLET_ADDRESS || '',
-      factory: process.env.CELO_FACTORY_ADDRESS || '',
-      startBlock: parseInt(process.env.CELO_START_BLOCK || '0')
+      simpleBudgetWallet: '0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF',
+      factory: '0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e',
+      startBlock: 46121014
     },
     rpcUrl: 'https://forno.celo.org',
     blockExplorer: 'https://explorer.celo.org',
@@ -109,11 +109,11 @@ export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
     name: 'Scroll Mainnet',
     shortName: 'scroll',
     isMainnet: true,
-    subgraphUrl: process.env.SUBGRAPH_URL_SCROLL_MAINNET || '',
+    subgraphUrl: process.env.SUBGRAPH_URL_SCROLL_MAINNET || 'https://api.studio.thegraph.com/query/118246/expendi-scroll/v0.1.0',
     contracts: {
-      simpleBudgetWallet: process.env.SCROLL_BUDGET_WALLET_ADDRESS || '',
-      factory: process.env.SCROLL_FACTORY_ADDRESS || '',
-      startBlock: parseInt(process.env.SCROLL_START_BLOCK || '0')
+      simpleBudgetWallet: '0x30c72e2b14ee982fe3587e366c9093845e84aa1f',
+      factory: '0x06cb6b1b6dd6b16df66f50a597ef7902c80f937f',
+      startBlock: 21087530
     },
     rpcUrl: 'https://rpc.scroll.io',
     blockExplorer: 'https://scrollscan.com',
