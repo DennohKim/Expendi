@@ -66,8 +66,6 @@ export const SmartAccountProvider = ({
       setSmartAccountReady(false); // Ensure it's false during initialization
       
       try {
-        // Get network configuration
-        const networkConfig = getNetworkConfig();
         
         // Get an EIP1193 provider and viem WalletClient for the EOA
         const eip1193provider = await eoa.getEthereumProvider();

@@ -25,7 +25,6 @@ export function getFactoryAddress(): `0x${string}` {
 
 // Create public client (uses current network configuration)
 export function getPublicClient() {
-  const networkConfig = getNetworkConfig();
   // For now, we'll use Celo since that's the default network
   return createPublicClient({
     chain: celo,
