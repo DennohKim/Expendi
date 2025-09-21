@@ -398,25 +398,25 @@ SUBGRAPH_URL_BASE_SEPOLIA="https://api.studio.thegraph.com/query/[query-id]/expe
 SUBGRAPH_URL_BASE_MAINNET="https://api.studio.thegraph.com/query/[query-id]/expendiv-1-base-mainnet/version/latest"
 
 # Celo Network Subgraphs
-SUBGRAPH_URL_CELO_MAINNET="https://api.studio.thegraph.com/query/[query-id]/expendiv-1-celo-mainnet/version/latest"
+SUBGRAPH_URL_CELO_MAINNET="https://api.studio.thegraph.com/query/118246/expendi-celo/v0.1.0"
 SUBGRAPH_URL_CELO_ALFAJORES="https://api.studio.thegraph.com/query/[query-id]/expendiv-1-celo-alfajores/version/latest"
 
 # Scroll Network Subgraphs
-SUBGRAPH_URL_SCROLL_MAINNET="https://api.studio.thegraph.com/query/[query-id]/expendiv-1-scroll-mainnet/version/latest"
+SUBGRAPH_URL_SCROLL_MAINNET="https://api.studio.thegraph.com/query/118246/expendi-scroll/v0.1.0"
 SUBGRAPH_URL_SCROLL_SEPOLIA="https://api.studio.thegraph.com/query/[query-id]/expendiv-1-scroll-sepolia/version/latest"
 
-# Celo Contract Addresses (update when deployed)
-CELO_BUDGET_WALLET_ADDRESS=""
-CELO_FACTORY_ADDRESS=""
-CELO_START_BLOCK="0"
+# Celo Contract Addresses
+CELO_BUDGET_WALLET_ADDRESS="0xCdFfB2611428DC4A3EE628abC26EcFB65Dcc0FFF"
+CELO_FACTORY_ADDRESS="0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e"
+CELO_START_BLOCK="46121014"
 CELO_ALFAJORES_BUDGET_WALLET_ADDRESS=""
 CELO_ALFAJORES_FACTORY_ADDRESS=""
 CELO_ALFAJORES_START_BLOCK="0"
 
-# Scroll Contract Addresses (update when deployed)
-SCROLL_BUDGET_WALLET_ADDRESS=""
-SCROLL_FACTORY_ADDRESS=""
-SCROLL_START_BLOCK="0"
+# Scroll Contract Addresses
+SCROLL_BUDGET_WALLET_ADDRESS="0x30c72e2b14ee982fe3587e366c9093845e84aa1f"
+SCROLL_FACTORY_ADDRESS="0x06cb6b1b6dd6b16df66f50a597ef7902c80f937f"
+SCROLL_START_BLOCK="21087530"
 SCROLL_SEPOLIA_BUDGET_WALLET_ADDRESS=""
 SCROLL_SEPOLIA_FACTORY_ADDRESS=""
 SCROLL_SEPOLIA_START_BLOCK="0"
