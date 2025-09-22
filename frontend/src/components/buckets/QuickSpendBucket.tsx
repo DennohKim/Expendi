@@ -474,7 +474,7 @@ export function QuickSpendBucket({
                     )}
                   </div>
                   {validationResult && (
-                    <div className="p-2 bg-green-50 border border-green-200 rounded text-sm">
+                    <div className="p-2 bg-green-50 border border-green-200 dark:text-black rounded text-sm">
                      {(validationResult as { data?: { public_name?: string } })?.data?.public_name || 'Valid recipient'}
                     </div>
                   )}
