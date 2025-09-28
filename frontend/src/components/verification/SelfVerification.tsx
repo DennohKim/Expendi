@@ -13,6 +13,27 @@ import { SelfQRcodeWrapper, SelfAppBuilder, countries } from '@selfxyz/qrcode';
 // Use the actual SelfApp type from the SDK
 type SelfApp = ReturnType<typeof SelfAppBuilder.prototype.build>;
 
+/**
+ * Self Protocol Integration for Expendi Budget Wallet
+ * 
+ * BUSINESS JUSTIFICATION:
+ * This geographic verification is implemented because Expendi uses Pretium
+ * as a core financial service provider. Pretium currently operates and
+ * provides services only in the following 6 African countries:
+ * - Kenya (KEN)
+ * - Ghana (GHA) 
+ * - Congo (COG)
+ * - Uganda (UGA)
+ * - Tanzania (TZA)
+ * - Zambia (ZMB)
+ * 
+ * By restricting access to only these countries, we ensure:
+ * 1. Regulatory compliance with Pretium's operational scope
+ * 2. Service availability for all verified users
+ * 3. Risk management aligned with Pretium's coverage
+ * 4. Seamless integration with Pretium's financial services
+ */
+
 interface SelfVerificationResult {
   nationality?: string;
   issuing_state?: string;
@@ -148,7 +169,7 @@ const SelfVerification: React.FC<SelfVerificationProps> = ({
       toast.success(`Identity verified! Welcome from ${countryName}`);
     } else {
       onVerificationComplete(false, nationality);
-      toast.error('Access denied: Your country is not supported. Only users from Kenya, Ghana, Congo, Uganda, Tanzania, and Zambia are allowed.');
+      toast.error('Access denied: Expendi is currently only available in countries where Pretium operates (Kenya, Ghana, Congo, Uganda, Tanzania, and Zambia).');
     }
   };
 
@@ -213,7 +234,7 @@ const SelfVerification: React.FC<SelfVerificationProps> = ({
             To access your budget wallet, you need to verify your identity using Self protocol.
           </p>
           <p className="text-sm text-orange-600 dark:text-orange-400">
-            Only users from the following countries are allowed:
+            Expendi is currently available in the following countries where Pretium operates:
           </p>
           <div className="flex flex-wrap gap-2 mt-2">
             {allowedCountries.map((country) => (
@@ -269,7 +290,8 @@ const SelfVerification: React.FC<SelfVerificationProps> = ({
         <div className="text-xs text-orange-600 dark:text-orange-400 space-y-1">
           <p>• Your identity is verified using zero-knowledge proofs</p>
           <p>• No personal data is stored on our servers</p>
-          <p>• Verification is required for compliance with financial regulations</p>
+          <p>• Verification ensures access to Pretium&apos;s financial services</p>
+          <p>• Required for regulatory compliance in supported countries</p>
         </div>
       </CardContent>
     </Card>

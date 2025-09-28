@@ -36,7 +36,7 @@ const WalletPage = () => {
   const { smartAccountClient } = useSmartAccount();
   
   // Self verification state
-  const { isVerified, isVerifying, userNationality, completeVerification, failVerification } = useSelfVerification();
+  const { isVerified, userNationality, completeVerification, failVerification } = useSelfVerification();
   
   // Use smart account address if available, fallback to EOA
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
