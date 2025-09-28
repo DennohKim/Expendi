@@ -18,6 +18,8 @@ import { useSmartAccount } from '@/context/SmartAccountContext';
 import AllocateFunds from '@/components/wallet/AllocateFunds';
 import WalletPageSkeleton from '@/components/wallet/WalletPageSkeleton';
 import { formatAddress } from '@/lib/utils';
+import SelfVerification from '@/components/verification/SelfVerification';
+import { useSelfVerification } from '@/hooks/useSelfVerification';
 
 interface Bucket {
   name: string;
@@ -32,6 +34,9 @@ const WalletPage = () => {
   const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const { smartAccountClient } = useSmartAccount();
+  
+  // Self verification state
+  const { isVerified, isVerifying, userNationality, completeVerification, failVerification } = useSelfVerification();
   
   // Use smart account address if available, fallback to EOA
   const queryAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : eoaAddress;
@@ -304,6 +309,34 @@ const WalletPage = () => {
     );
   }
 
+  // Show verification required if user is not verified
+  if (!isVerified) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Budget Account
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Identity verification required to access your budget wallet
+            </p>
+          </div>
+          <SelfVerification 
+            onVerificationComplete={(verified, nationality) => {
+              if (verified) {
+                completeVerification(nationality || 'verified');
+              } else {
+                failVerification();
+              }
+            }}
+            isVerified={isVerified}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (!data || !userData || !userData.walletsCreated?.[0]?.wallet) {
     return (
       <div className="container mx-auto p-6">
@@ -312,6 +345,11 @@ const WalletPage = () => {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Budget Account
             </h1>
+            {userNationality && (
+              <p className="text-sm text-green-600 dark:text-green-400 mb-2">
+                ✓ Verified user from {userNationality}
+              </p>
+            )}
           </div>
           <Card>
             <CardContent className="pt-6">
@@ -352,12 +390,21 @@ const WalletPage = () => {
       <div className="col-span-12 h-auto mb-4 w-full xl:col-span-8 xl:h-[calc(100vh-120px)] xl:mb-0 overflow-y-auto pr-2">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Budget Account
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Manage your budget account and view balance information
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Budget Account
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage your budget account and view balance information
+              </p>
+            </div>
+            {isVerified && userNationality && (
+              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                ✓ Verified from {userNationality}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Wallet Information Card */}
