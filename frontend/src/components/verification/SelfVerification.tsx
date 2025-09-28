@@ -9,6 +9,27 @@ import { useAccount } from 'wagmi';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { SelfQRcodeWrapper, SelfAppBuilder, countries } from '@selfxyz/qrcode';
 
+// Type definitions for Self verification
+// Use the actual SelfApp type from the SDK
+type SelfApp = ReturnType<typeof SelfAppBuilder.prototype.build>;
+
+interface SelfVerificationResult {
+  nationality?: string;
+  issuing_state?: string;
+  name?: string;
+  date_of_birth?: string;
+  gender?: string;
+  passport_number?: string;
+  expiry_date?: string;
+}
+
+interface SelfVerificationError {
+  error_code?: string;
+  reason?: string;
+  status?: string;
+  proof?: unknown;
+}
+
 interface SelfVerificationProps {
   onVerificationComplete: (isVerified: boolean, nationality?: string) => void;
   isVerified: boolean;
@@ -20,7 +41,7 @@ const SelfVerification: React.FC<SelfVerificationProps> = ({
 }) => {
   const { address: eoaAddress } = useAccount();
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
-  const [selfApp, setSelfApp] = useState<any | null>(null);
+  const [selfApp, setSelfApp] = useState<SelfApp | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   // Use smart account address if available, fallback to EOA
@@ -110,7 +131,7 @@ const SelfVerification: React.FC<SelfVerificationProps> = ({
     initializeSelfApp();
   }, [verificationAddress]);
 
-  const handleSuccessfulVerification = (result: any) => {
+  const handleSuccessfulVerification = (result: SelfVerificationResult) => {
     console.log('Self verification successful:', result);
     
     // Extract nationality from the verification result
@@ -131,7 +152,7 @@ const SelfVerification: React.FC<SelfVerificationProps> = ({
     }
   };
 
-  const handleVerificationError = (error: any) => {
+  const handleVerificationError = (error: SelfVerificationError) => {
     console.error('Self verification failed:', error);
     console.error('Error details:', {
       error_code: error?.error_code,
