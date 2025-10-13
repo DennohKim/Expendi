@@ -25,6 +25,7 @@ import { useDebouncedValidation } from "@/hooks/useDebouncedValidation";
 import { useBucketPayment } from "@/hooks/useBucketPayment";
 import { PaymentStatusModal } from "@/components/modals/PaymentStatusModal";
 import { calculateAmountWithFee } from "@/utils/feeCalculation";
+import { useTransactionEmail } from "@/hooks/useTransactionEmail";
 
 interface TokenBalance {
   id: string;
@@ -82,6 +83,7 @@ export function QuickSpendBucket({
 }: QuickSpendBucketProps) {
 
   const { address } = useAccount();
+  const { sendTransactionEmail } = useTransactionEmail();
   const [amount, setAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -209,7 +211,19 @@ export function QuickSpendBucket({
           setIsStatusModalOpen(true);
         }
       } else {
-        console.log('No transaction code in result');
+        console.log('No transaction code in result - direct wallet transfer');
+        
+        // Send email notification for direct wallet transfers (no mobile payment involved)
+        sendTransactionEmail({
+          transactionType: 'transfer',
+          amount: parseFloat(amount).toFixed(2),
+          currency: 'USDC',
+          transactionHash: result.txHash,
+          status: 'success',
+          timestamp: new Date().toISOString(),
+        }).catch(error => {
+          console.error('Failed to send transfer email:', error);
+        });
       }
 
       // Reset form
