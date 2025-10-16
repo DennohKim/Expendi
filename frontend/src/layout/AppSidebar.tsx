@@ -40,8 +40,8 @@ const navItems: NavItem[] = [
   },
   {
     icon: <TrendingUp />,
-    name: "Investments",
-    path: "/investments",
+    name: "Earn",
+    path: "/earn",
   },
   {
     icon: <Wallet2Icon />,

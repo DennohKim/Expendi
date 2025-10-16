@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useExchangeRate } from "@/hooks/useExchangeRate";
 import { useDebouncedValidation } from "@/hooks/useDebouncedValidation";
 import { useBucketPayment } from "@/hooks/useBucketPayment";
+import { useRecipientResolution } from "@/hooks/useBaseENS";
 import { PaymentStatusModal } from "@/components/modals/PaymentStatusModal";
 import { calculateAmountWithFee } from "@/utils/feeCalculation";
 import { useTransactionEmail } from "@/hooks/useTransactionEmail";
@@ -113,6 +114,9 @@ export function QuickSpendBucket({
 
   // Use TanStack Query for bucket payments
   const bucketPayment = useBucketPayment();
+  
+  // Base ENS resolution for crypto recipients
+  const recipientResolution = useRecipientResolution(recipientMode === 'crypto' ? recipient : '');
 
   const { smartAccountClient, smartAccountAddress, smartAccountReady } = useSmartAccount();
 
@@ -181,13 +185,39 @@ export function QuickSpendBucket({
       // For crypto payments, amount is already in USDC. For cash payments, convert from local currency
       const amountUsdc = recipientMode === 'crypto' ? amount : (exchangeRate ? (parseFloat(amount) / exchangeRate) : amount);
 
+      let finalRecipient = recipient;
+
+      // For crypto payments, resolve Base ENS names to addresses
+      if (recipientMode === 'crypto' && recipient) {
+        if (!recipientResolution.isValid) {
+          toast.error('Please enter a valid wallet address or Base ENS name');
+          return;
+        }
+
+        // If it's a Base ENS name, make sure it's resolved
+        if (recipientResolution.isBasename) {
+          if (recipientResolution.isResolving) {
+            toast.error('Please wait for Base ENS name resolution to complete');
+            return;
+          }
+
+          if (!recipientResolution.resolvedAddress) {
+            toast.error('Base ENS name could not be resolved. Please check the name and try again.');
+            return;
+          }
+
+          finalRecipient = recipientResolution.resolvedAddress;
+          console.log(`Resolved ${recipient} to ${finalRecipient}`);
+        }
+      }
+
       const result = await bucketPayment.mutateAsync({
         smartAccountClient,
         walletAddress: walletData.user.walletsCreated[0].wallet as `0x${string}`,
         userAddress: queryAddress as `0x${string}`,
         bucketName: selectedBucketName,
         amount: amountUsdc.toString(),
-        recipient,
+        recipient: finalRecipient,
         phoneNumber,
         accountNumber,
         paymentType,
@@ -345,14 +375,40 @@ export function QuickSpendBucket({
                 <TabsTrigger value="cash">Cash</TabsTrigger>
               </TabsList>
               <TabsContent value="crypto" className="space-y-2">
-                <Input
-                  id="recipient"
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                  placeholder="0x..."
-                />
+                <div className="space-y-2">
+                  <Input
+                    id="recipient"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    placeholder={recipientResolution.getPlaceholderText()}
+                    className={`${
+                      recipient && recipientResolution.validation 
+                        ? recipientResolution.isValid 
+                          ? 'border-green-500 focus:border-green-500' 
+                          : 'border-red-500 focus:border-red-500'
+                        : ''
+                    }`}
+                  />
+                  
+                  {/* Validation and resolution feedback */}
+                  {recipient && (
+                    <div className={`text-sm ${
+                      recipientResolution.isValid ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {recipientResolution.getHelperText(recipient)}
+                    </div>
+                  )}
+                  
+                  {/* Error display */}
+                  {recipientResolution.resolutionError && (
+                    <div className="text-sm text-red-600">
+                      Base ENS name could not be resolved. Please check the name and try again.
+                    </div>
+                  )}
+                </div>
+                
                 <div className="text-sm text-muted-foreground">
-                  Enter the wallet address to send USDC to
+                  Enter a wallet address or Base ENS name (e.g., alice.base.eth) to send USDC to
                 </div>
               </TabsContent>
               <TabsContent value="cash" className="space-y-3">
@@ -550,10 +606,11 @@ export function QuickSpendBucket({
                 bucketPayment.isProcessing || 
                 !amount || 
                 (!recipient && !phoneNumber) ||
+                (recipientMode === 'crypto' && recipient && !recipientResolution.canProceed) ||
                 (selectedCountry === 'KES' && paymentType === 'PAYBILL' && !accountNumber) ||
-                !mobileNetwork ||
-                !selectedBucketName || 
-                !exchangeRate
+                (recipientMode === 'cash' && !mobileNetwork) ||
+                (recipientMode === 'cash' && !exchangeRate) ||
+                !selectedBucketName
               } 
               variant="primary"
             >
