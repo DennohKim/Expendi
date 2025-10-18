@@ -11,11 +11,14 @@ import { createMultiChainSubgraphService } from './lib/multi-chain-subgraph';
 import { syncAllChains, syncChain, syncUserAcrossChains, fullSync } from './lib/sync';
 import { createAnalyticsService } from './lib/analytics';
 import { createCronService, CronService } from './lib/cron';
+import { createSubscriptionChargeJob } from './jobs/subscription-charges';
+import { createBullMQScheduler } from './lib/bullmq-scheduler';
 
 // Import routes
 import createAnalyticsRouter from './routes/functional-analytics';
 import createMultiChainAnalyticsRouter from './routes/functional-multi-chain-analytics';
 import createPretiumTransactionRouter from './routes/pretium-transactions';
+import createSubscriptionRouter from './routes/subscriptions';
 import healthRoutes from './routes/health';
 
 // Initialize services
@@ -24,12 +27,16 @@ const initializeServices = () => {
   const multiChainSubgraph = createMultiChainSubgraphService();
   const analyticsService = createAnalyticsService(prisma);
   const cronService = createCronService(prisma);
+  const subscriptionChargeJob = createSubscriptionChargeJob(prisma);
+  const bullMQScheduler = createBullMQScheduler(prisma);
 
   return {
     prisma,
     multiChainSubgraph,
     analyticsService,
     cronService,
+    subscriptionChargeJob,
+    bullMQScheduler,
     // Legacy single-chain service for backward compatibility
     legacySubgraph: createSubgraphService(
       process.env.SUBGRAPH_URL_BASE_MAINNET || 
@@ -83,6 +90,12 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
   app.use('/api/analytics', createAnalyticsRouter(services.prisma));
   app.use('/api/v2/analytics', createMultiChainAnalyticsRouter(services.prisma));
   app.use('/api/pretium', createPretiumTransactionRouter(services.prisma));
+  
+  // Subscription routes (only enabled if feature flag is set)
+  if (process.env.ENABLE_RECURRING_PAYMENTS === 'true') {
+    app.use('/api/subscriptions', createSubscriptionRouter(services.prisma));
+    console.log('🔔 Subscription API enabled');
+  }
 
   // Sync endpoints (enabled in development or when explicitly enabled)
   if (process.env.NODE_ENV === 'development' || process.env.ENABLE_SYNC_ENDPOINTS === 'true') {
@@ -184,6 +197,81 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
       }
     });
 
+    // Subscription charge job endpoints (if subscriptions are enabled)
+    if (process.env.ENABLE_RECURRING_PAYMENTS === 'true') {
+      app.get('/api/v2/subscriptions/job/status', (req, res) => {
+        try {
+          const status = services.subscriptionChargeJob.getStatus();
+          res.json({ success: true, data: status });
+        } catch (error) {
+          res.status(500).json({ 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Failed to get subscription job status' 
+          });
+        }
+      });
+
+      app.post('/api/v2/subscriptions/job/start', (req, res) => {
+        try {
+          services.subscriptionChargeJob.start();
+          res.json({ success: true, message: 'Subscription charge job started' });
+        } catch (error) {
+          res.status(500).json({ 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Failed to start subscription job' 
+          });
+        }
+      });
+
+      // BullMQ queue status endpoint
+      app.get('/api/v2/subscriptions/queue/status', async (req, res) => {
+        try {
+          const [stats, isHealthy] = await Promise.all([
+            services.bullMQScheduler.getQueueStats(),
+            services.bullMQScheduler.isHealthy()
+          ]);
+          
+          res.json({
+            success: true,
+            data: {
+              healthy: isHealthy,
+              stats,
+              timestamp: new Date().toISOString()
+            }
+          });
+        } catch (error) {
+          res.status(500).json({
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to get queue status'
+          });
+        }
+      });
+
+      app.post('/api/v2/subscriptions/job/stop', (req, res) => {
+        try {
+          services.subscriptionChargeJob.stop();
+          res.json({ success: true, message: 'Subscription charge job stopped' });
+        } catch (error) {
+          res.status(500).json({ 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Failed to stop subscription job' 
+          });
+        }
+      });
+
+      app.post('/api/v2/subscriptions/job/execute', async (req, res) => {
+        try {
+          await services.subscriptionChargeJob.executeChargeProcess();
+          res.json({ success: true, message: 'Subscription charge process executed' });
+        } catch (error) {
+          res.status(500).json({ 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Failed to execute subscription charges' 
+          });
+        }
+      });
+    }
+
     // Legacy single-chain sync endpoint for backward compatibility
     app.post('/api/sync/full', async (req, res) => {
       try {
@@ -245,12 +333,27 @@ export const createApp = (): { app: express.Application; services: ReturnType<ty
 };
 
 // Graceful shutdown handler  
-export const setupGracefulShutdown = (services: { prisma: PrismaClient; cronService: CronService }) => {
+export const setupGracefulShutdown = (services: { 
+  prisma: PrismaClient; 
+  cronService: CronService;
+  subscriptionChargeJob?: any;
+  bullMQScheduler?: any;
+}) => {
   const gracefulShutdown = async (signal: string) => {
     console.log(`Received ${signal}, shutting down gracefully...`);
     
     // Stop cron jobs first
     services.cronService.stop();
+    
+    // Stop subscription charge job if enabled
+    if (services.subscriptionChargeJob && process.env.ENABLE_RECURRING_PAYMENTS === 'true') {
+      services.subscriptionChargeJob.stop();
+    }
+    
+    // Cleanup BullMQ scheduler
+    if (services.bullMQScheduler) {
+      await services.bullMQScheduler.cleanup();
+    }
     
     // Disconnect database
     await services.prisma.$disconnect();
@@ -274,8 +377,17 @@ export const startServer = async (port: number = 3001) => {
     // Cron jobs disabled - using manual sync only to reduce subgraph requests
     console.log('⚠️ Cron jobs disabled - using manual sync only to reduce subgraph requests');
 
+    // Initialize BullMQ scheduler for custom billing dates
+    await services.bullMQScheduler.scheduleAllCustomSubscriptions();
+    console.log('📅 BullMQ scheduler initialized for custom subscriptions');
+
     // Setup graceful shutdown
-    setupGracefulShutdown({ prisma: services.prisma, cronService: services.cronService });
+    setupGracefulShutdown({ 
+      prisma: services.prisma, 
+      cronService: services.cronService,
+      subscriptionChargeJob: services.subscriptionChargeJob,
+      bullMQScheduler: services.bullMQScheduler
+    });
 
     // Start HTTP server
     const server = app.listen(port, () => {
@@ -285,9 +397,16 @@ export const startServer = async (port: number = 3001) => {
       console.log(`🌐 Multi-chain API available at http://localhost:${port}/api/v2/analytics`);
       console.log(`💳 Pretium Transactions API available at http://localhost:${port}/api/pretium`);
       
+      if (process.env.ENABLE_RECURRING_PAYMENTS === 'true') {
+        console.log(`🔔 Subscriptions API available at http://localhost:${port}/api/subscriptions`);
+      }
+      
       if (process.env.NODE_ENV === 'development' || process.env.ENABLE_SYNC_ENDPOINTS === 'true') {
         console.log('🔄 Sync endpoints available');
         console.log('💡 Use /api/v2/sync/* endpoints for multi-chain operations');
+        if (process.env.ENABLE_RECURRING_PAYMENTS === 'true') {
+          console.log('🔔 Use /api/v2/subscriptions/job/* endpoints for subscription management');
+        }
       }
     });
 

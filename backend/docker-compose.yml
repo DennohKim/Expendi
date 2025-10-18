@@ -8,8 +8,6 @@
 #
 # This file is kept for reference and can be removed if not needed.
 
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -19,7 +17,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -48,8 +46,21 @@ services:
       - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-100}
       - SYNC_INTERVAL=${SYNC_INTERVAL:-0 */5 * * * *}
       - ANALYTICS_INTERVAL=${ANALYTICS_INTERVAL:-0 0 * * *}
+      - ENABLE_RECURRING_PAYMENTS=${ENABLE_RECURRING_PAYMENTS:-true}
+      - SUBSCRIPTION_OWNER_ADDRESS=${SUBSCRIPTION_OWNER_ADDRESS:-}
+      - SUBSCRIPTION_OWNER_PRIVATE_KEY=${SUBSCRIPTION_OWNER_PRIVATE_KEY:-}
+      - BASE_MAINNET_RPC_URL=${BASE_MAINNET_RPC_URL:-}
+      - BASE_SEPOLIA_RPC_URL=${BASE_SEPOLIA_RPC_URL:-}
+      - RECURRING_PAYMENTS_TESTNET=${RECURRING_PAYMENTS_TESTNET:-true}
+      - SUBSCRIPTION_CHECK_CRON=${SUBSCRIPTION_CHECK_CRON:-0 */6 * * *}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
