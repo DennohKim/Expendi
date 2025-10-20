@@ -32,6 +32,9 @@ export class SubscriptionService {
       throw new Error('Subscription owner address not configured');
     }
 
+    // Ensure user exists, create if not, and get the correct composite userId
+    const finalUserId = await this.ensureUserExists(userId, data.payerAddress, data.testnet ? 84532 : 8453);
+
     // Calculate next charge date based on period or custom date
     let nextChargeDate: Date;
     let customBillingDate: Date | undefined;
@@ -54,7 +57,7 @@ export class SubscriptionService {
 
     const subscription = await this.prisma.subscription.create({
       data: {
-        userId,
+        userId: finalUserId,
         subscriptionId: data.subscriptionId,
         payerAddress: data.payerAddress,
         ownerAddress,
@@ -73,7 +76,7 @@ export class SubscriptionService {
     });
 
     // Create history record
-    await this.createHistoryRecord(subscription.id, SubscriptionAction.CREATED, userId, {
+    await this.createHistoryRecord(subscription.id, SubscriptionAction.CREATED, finalUserId, {
       reason: 'Subscription created',
       metadata: { subscriptionData: data },
     });
@@ -226,7 +229,9 @@ export class SubscriptionService {
     const pausedDuration = subscription.pausedAt
       ? Date.now() - subscription.pausedAt.getTime()
       : 0;
-    const newNextChargeDate = new Date(subscription.nextChargeDate.getTime() + pausedDuration);
+    const newNextChargeDate = subscription.nextChargeDate 
+      ? new Date(subscription.nextChargeDate.getTime() + pausedDuration)
+      : new Date(Date.now() + pausedDuration);
 
     const updated = await this.prisma.subscription.update({
       where: { id: subscriptionId },
@@ -314,7 +319,7 @@ export class SubscriptionService {
           endDate: new Date(),
         },
       });
-    } else {
+    } else if (subscription.nextChargeDate) {
       // Regular recurring subscription - calculate next charge date
       const nextChargeDate = addDays(subscription.nextChargeDate, subscription.periodInDays);
 
@@ -324,6 +329,18 @@ export class SubscriptionService {
           nextChargeDate,
           lastChargeDate: new Date(),
           lastCheckDate: new Date(),
+        },
+      });
+    } else {
+      // Edge case: no nextChargeDate, mark as expired
+      await this.prisma.subscription.update({
+        where: { id: subscriptionId },
+        data: {
+          status: SubscriptionStatus.EXPIRED,
+          isActive: false,
+          lastChargeDate: new Date(),
+          lastCheckDate: new Date(),
+          endDate: new Date(),
         },
       });
     }
@@ -348,6 +365,46 @@ export class SubscriptionService {
       reason: reason || `Status updated to ${status}`,
       metadata: { newStatus: status },
     });
+  }
+
+  private async ensureUserExists(userId: string, walletAddress: string, chainId: number): Promise<string> {
+    const chainName = chainId === 84532 ? 'base-sepolia' : 'base';
+    
+    // If userId doesn't follow the composite format, create proper composite ID
+    const compositeUserId = userId.includes(':') ? userId : `${chainName}:${walletAddress.toLowerCase()}`;
+    
+    // Check if user already exists (try both provided userId and composite format)
+    let existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser && userId !== compositeUserId) {
+      existingUser = await this.prisma.user.findUnique({
+        where: { id: compositeUserId },
+      });
+    }
+
+    if (!existingUser) {
+      // Create the user with the proper composite ID format
+      await this.prisma.user.create({
+        data: {
+          id: compositeUserId,
+          walletAddress: walletAddress.toLowerCase(),
+          chainName,
+          totalBalance: '0',
+          totalSpent: '0',
+          bucketsCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastSyncedAt: new Date(),
+        },
+      });
+      
+      return compositeUserId;
+    }
+
+    // Return the existing user's ID
+    return existingUser.id;
   }
 
   private async createHistoryRecord(

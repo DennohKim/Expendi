@@ -275,8 +275,8 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
         <Card className="text-center py-12">
           <div className="max-w-md mx-auto">
             <div className="mb-4">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <PlusIcon className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              <div className="w-16 h-16 bg-button-primary/10 dark:bg-button-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <PlusIcon className="w-8 h-8 text-button-primary dark:text-button-primary" />
               </div>
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">

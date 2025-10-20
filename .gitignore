@@ -38,6 +38,13 @@ contracts/broadcast/*/31337/
 contracts/broadcast/**/dry-run/
 contracts/docs/
 
+# Contracts specific (Foundry)
+bucket-subscription-contracts/cache/
+bucket-subscription-contracts/out/
+bucket-subscription-contracts/broadcast/*/31337/
+bucket-subscription-contracts/broadcast/**/dry-run/
+bucket-subscription-contracts/docs/
+
 # Frontend specific (Next.js)
 frontend/.next/
 frontend/out/

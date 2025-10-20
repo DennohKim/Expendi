@@ -201,9 +201,15 @@ model Subscription {
   user                  User     @relation(fields: [userId], references: [id])
   
   // Base Subscription Data
-  subscriptionId        String   @unique @map("subscription_id") // From Base SDK
+  subscriptionId        String   @unique @map("subscription_id") // From Base SDK or Custom Contract
   payerAddress          String   @map("payer_address") // User's wallet address
   ownerAddress          String   @map("owner_address") // Expendi's wallet address
+  recipientAddress      String?  @map("recipient_address") // Service provider address
+  
+  // Custom Subscription Contract Fields
+  contractAddress       String?  @map("contract_address") // Custom subscription contract address
+  permissionHash        String?  @map("permission_hash") // Hash of granted permission
+  permissionExpiry      DateTime? @map("permission_expiry") // When permission expires
   
   // Subscription Details
   name                  String   // e.g., "Netflix Premium"
@@ -217,8 +223,11 @@ model Subscription {
   // Status & Lifecycle
   status                SubscriptionStatus @default(ACTIVE)
   isActive              Boolean   @default(true) @map("is_active")
-  nextChargeDate        DateTime  @map("next_charge_date")
+  isPaused              Boolean   @default(false) @map("is_paused") // Added for custom contract compatibility
+  nextChargeDate        DateTime? @map("next_charge_date") // Made nullable for custom dates
+  nextChargeTimestamp   DateTime? @map("next_charge_timestamp") // Unix timestamp for precision scheduling
   lastChargeDate        DateTime? @map("last_charge_date")
+  lastChargeTimestamp   DateTime? @map("last_charge_timestamp") // Unix timestamp of last charge
   lastCheckDate         DateTime? @map("last_check_date")
   
   // Metadata
@@ -241,7 +250,10 @@ model Subscription {
   @@index([userId, status])
   @@index([subscriptionId])
   @@index([nextChargeDate, isActive])
+  @@index([nextChargeTimestamp, isActive])
   @@index([payerAddress])
+  @@index([contractAddress])
+  @@index([permissionExpiry])
   @@map("subscriptions")
 }
 

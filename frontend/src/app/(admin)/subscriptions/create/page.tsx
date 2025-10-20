@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Calendar, CreditCard, Target, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
-import { CreateSubscriptionForm } from '@/components/subscriptions/CreateSubscriptionForm';
+import { CreateSubscriptionForm } from '@/components/subscriptions/CreateSubscriptionForm-simple';
 
 export default function CreateSubscriptionPage() {
   const router = useRouter();

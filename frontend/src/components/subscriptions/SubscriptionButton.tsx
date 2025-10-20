@@ -9,14 +9,14 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 
 interface SubscriptionButtonProps {
   variant?: 'default' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'lg'; // Remove 'md' as it's not valid for Button component
   className?: string;
   children?: React.ReactNode;
 }
 
 export const SubscriptionButton: React.FC<SubscriptionButtonProps> = ({
   variant = 'default',
-  size = 'md',
+  size = 'sm',
   className,
   children,
 }) => {

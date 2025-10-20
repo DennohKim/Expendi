@@ -1,21 +1,32 @@
 import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
 import { PrismaClient, Subscription } from '@prisma/client';
-import { createSubscriptionCharger } from './subscription-charger';
-import { createSubscriptionService } from './subscription-service';
+import { CustomSubscriptionService } from './custom-subscription-service';
+import { BlockchainService } from './blockchain-service';
 
 export interface SubscriptionJobData {
   subscriptionId: string;
   scheduledTime: string; // ISO string
   retryCount?: number;
+  payerAddress?: string;
+  recipientAddress?: string;
+  amount?: string;
 }
 
 export class BullMQScheduler {
   private queue: Queue;
   private worker: Worker;
   private redis: Redis;
+  private customSubscriptionService: CustomSubscriptionService;
+  private blockchainService: BlockchainService;
 
   constructor(private prisma: PrismaClient) {
+    // Initialize services
+    this.customSubscriptionService = new CustomSubscriptionService();
+    this.blockchainService = new BlockchainService();
+    
+    // Start event monitoring
+    this.customSubscriptionService.startEventMonitoring();
     // Redis connection configuration
     const redisConfig = {
       host: process.env.REDIS_HOST || 'localhost',
@@ -88,17 +99,28 @@ export class BullMQScheduler {
     }
 
     const now = new Date();
-    const scheduleTime = subscription.nextChargeDate;
-    const delay = scheduleTime.getTime() - now.getTime();
+    const scheduleTime = subscription.nextChargeTimestamp || subscription.customBillingDate;
+    
+    if (!scheduleTime) {
+      console.error(`No schedule time found for subscription ${subscription.subscriptionId}`);
+      return;
+    }
+
+    const delay = new Date(scheduleTime).getTime() - now.getTime();
+
+    const jobData: SubscriptionJobData = {
+      subscriptionId: subscription.subscriptionId,
+      scheduledTime: new Date(scheduleTime).toISOString(),
+      payerAddress: subscription.payerAddress,
+      recipientAddress: subscription.recipientAddress || '',
+      amount: subscription.recurringAmount.toString(),
+    };
 
     if (delay <= 0) {
       // Should be processed immediately
       await this.queue.add(
         'process-subscription',
-        {
-          subscriptionId: subscription.id,
-          scheduledTime: scheduleTime.toISOString(),
-        },
+        jobData,
         { priority: 10 } // High priority for immediate processing
       );
       return;
@@ -107,18 +129,15 @@ export class BullMQScheduler {
     // Schedule for exact time using delay
     await this.queue.add(
       'process-subscription',
-      {
-        subscriptionId: subscription.id,
-        scheduledTime: scheduleTime.toISOString(),
-      },
+      jobData,
       {
         delay,
-        jobId: `subscription-${subscription.id}`, // Unique job ID to prevent duplicates
+        jobId: `subscription-${subscription.subscriptionId}`, // Unique job ID to prevent duplicates
         priority: 5, // Normal priority for scheduled payments
       }
     );
 
-    console.log(`📅 Scheduled subscription ${subscription.id} for ${scheduleTime.toISOString()} (delay: ${delay}ms)`);
+    console.log(`📅 Scheduled subscription ${subscription.subscriptionId} for ${new Date(scheduleTime).toISOString()} (delay: ${delay}ms)`);
   }
 
   async scheduleAllCustomSubscriptions(): Promise<void> {
@@ -126,9 +145,18 @@ export class BullMQScheduler {
       where: {
         isActive: true,
         periodInDays: 0, // Custom date subscriptions
-        nextChargeDate: {
-          gt: new Date(), // Future payments only
-        },
+        OR: [
+          {
+            nextChargeTimestamp: {
+              gt: new Date(), // Future payments only
+            },
+          },
+          {
+            customBillingDate: {
+              gt: new Date(), // Future custom billing dates
+            },
+          },
+        ],
       },
     });
 
@@ -138,7 +166,7 @@ export class BullMQScheduler {
         await this.scheduleSubscription(subscription);
         scheduledCount++;
       } catch (error) {
-        console.error(`Failed to schedule subscription ${subscription.id}:`, error);
+        console.error(`Failed to schedule subscription ${subscription.subscriptionId}:`, error);
       }
     }
 
@@ -151,8 +179,7 @@ export class BullMQScheduler {
     try {
       // Get fresh subscription data
       const subscription = await this.prisma.subscription.findUnique({
-        where: { id: subscriptionId },
-        include: { user: true },
+        where: { subscriptionId: subscriptionId },
       });
 
       if (!subscription) {
@@ -164,18 +191,70 @@ export class BullMQScheduler {
         return;
       }
 
+      if (subscription.isPaused) {
+        console.log(`⏸️ Skipping paused subscription ${subscriptionId}`);
+        return;
+      }
+
       console.log(`⏰ Processing scheduled payment for subscription ${subscriptionId} (scheduled: ${scheduledTime})`);
       
-      const subscriptionService = createSubscriptionService(this.prisma);
-      const charger = createSubscriptionCharger(this.prisma, subscriptionService);
+      // Security check: Validate user can spend before processing
+      if (subscription.payerAddress) {
+        const canSpend = await this.customSubscriptionService.canUserSpend(
+          subscription.payerAddress, 
+          subscription.recurringAmount.toString()
+        );
+        
+        if (!canSpend) {
+          console.warn(`⚠️ Security limit check failed for user ${subscription.payerAddress}, amount: ${subscription.recurringAmount} USDC`);
+          
+          // Get spending info for logging
+          try {
+            const spendingInfo = await this.customSubscriptionService.getDailySpendingInfo(subscription.payerAddress);
+            console.warn(`Daily spending: ${spendingInfo.spentToday}/${spendingInfo.dailyLimit} USDC`);
+          } catch (error) {
+            console.error('Failed to get spending info:', error);
+          }
+          
+          // Don't process payment, but don't fail the job entirely
+          // This allows the subscription to be retried later
+          throw new Error(`User ${subscription.payerAddress} has reached spending limits`);
+        }
+      }
       
-      const result = await charger.processSubscription(subscription);
+      // Use custom subscription service to charge
+      const result = await this.customSubscriptionService.chargeSubscription({
+        subscriptionId
+      });
       
       if (!result.success) {
         throw new Error(result.error || 'Subscription processing failed');
       }
 
-      console.log(`✅ Successfully processed subscription ${subscriptionId}`);
+      console.log(`✅ Successfully processed subscription ${subscriptionId}. Amount: ${result.amount} USDC. TX: ${result.transactionHash}`);
+      
+      // Schedule next payment if recurring
+      if (subscription.periodInDays > 0) {
+        const nextChargeTime = new Date(Date.now() + subscription.periodInDays * 24 * 60 * 60 * 1000);
+        
+        // Update database with next charge time
+        await this.prisma.subscription.update({
+          where: { subscriptionId },
+          data: {
+            nextChargeTimestamp: nextChargeTime,
+            updatedAt: new Date()
+          }
+        });
+        
+        // Schedule next payment
+        await this.scheduleSubscription({
+          ...subscription,
+          nextChargeTimestamp: nextChargeTime
+        });
+        
+        console.log(`📅 Scheduled next payment for ${subscriptionId} at ${nextChargeTime.toISOString()}`);
+      }
+      
     } catch (error) {
       console.error(`❌ Failed to process subscription ${subscriptionId}:`, error);
       throw error; // Re-throw to trigger BullMQ retry mechanism
@@ -235,6 +314,7 @@ export class BullMQScheduler {
       await this.worker.close();
       await this.queue.close();
       await this.redis.quit();
+      await this.customSubscriptionService.close();
       console.log('🧹 BullMQ Scheduler cleanup completed');
     } catch (error) {
       console.error('❌ Error during BullMQ cleanup:', error);

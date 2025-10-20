@@ -1,0 +1,41 @@
+{
+  "network": "Base Sepolia Testnet",
+  "chainId": 84532,
+  "deployer": "0xAE609c3904C539aF2Ac11a86D0B030a77dB0a509",
+  "deploymentDate": "2025-01-20",
+  "contracts": {
+    "ExpendiBucketManager": {
+      "address": "0x4832FE3192f205F753F1C334916B7cfec7823D64",
+      "verified": true,
+      "verificationGUID": "4832fe3192f205f753f1c334916b7cfec7823d6468f58ea4"
+    },
+    "MockSubscriptionDataManager": {
+      "address": "0x0726E7052DAadD09548aBA2D5e72AD12BE8E787e",
+      "verified": true,
+      "verificationGUID": "0726e7052daadd09548aba2d5e72ad12be8e787e68f58ecb"
+    },
+    "MockSubscriptionPaymentProcessor": {
+      "address": "0x70Af29feA0438C3D4FfD38E23C01A26B8679c593",
+      "verified": true,
+      "verificationGUID": "70af29fea0438c3d4ffd38e23c01a26b8679c59368f58ed2"
+    },
+    "MockUSDC": {
+      "address": "0x316506500241C52c71B6116863D6d020a3054782",
+      "verified": true,
+      "verificationGUID": "316506500241c52c71b6116863d6d020a305478268f58eba"
+    }
+  },
+  "supportedTokens": {
+    "MockUSDC": "0x316506500241C52c71B6116863D6d020a3054782",
+    "BaseSepoliaUSDC": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+  },
+  "roles": {
+    "admin": "0xAE609c3904C539aF2Ac11a86D0B030a77dB0a509",
+    "subscriptionManager": "0xAE609c3904C539aF2Ac11a86D0B030a77dB0a509",
+    "emergencyManager": "0xAE609c3904C539aF2Ac11a86D0B030a77dB0a509"
+  },
+  "initialSetup": {
+    "deployerMintedUSDC": "1000000000000",
+    "deployerHasAllRoles": true
+  }
+}

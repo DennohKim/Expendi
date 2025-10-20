@@ -380,8 +380,8 @@ export function QuickSpendBucket({
                     id="recipient"
                     value={recipient}
                     onChange={(e) => setRecipient(e.target.value)}
-                    placeholder={recipientResolution.getPlaceholderText()}
-                    className={`${
+                    placeholder="alice.base.eth or 0x12...aB90"
+                    className={`placeholder:text-gray-400 ${
                       recipient && recipientResolution.validation 
                         ? recipientResolution.isValid 
                           ? 'border-green-500 focus:border-green-500' 
@@ -407,8 +407,8 @@ export function QuickSpendBucket({
                   )}
                 </div>
                 
-                <div className="text-sm text-muted-foreground">
-                  Enter a wallet address or Base ENS name (e.g., alice.base.eth) to send USDC to
+                <div className="text-xs text-muted-foreground">
+                  Enter a wallet address or Base ENS name
                 </div>
               </TabsContent>
               <TabsContent value="cash" className="space-y-3">

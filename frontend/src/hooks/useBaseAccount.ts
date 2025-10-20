@@ -1,7 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { parseUnits, Address, erc20Abi } from 'viem';
-import { BaseAccount } from '@base-org/account';
+import { 
+  subscribe, 
+  getSubscriptionStatus as getBaseSubscriptionStatus,
+  prepareCharge as basePrepareCharge,
+  type SubscriptionOptions
+} from '@base-org/account';
 import { useSmartAccount } from '@/context/SmartAccountContext';
 import { getNetworkConfig } from '@/lib/contracts/config';
 
@@ -27,21 +32,10 @@ export const useBaseAccount = () => {
   const [error, setError] = useState<string | null>(null);
 
   const networkConfig = getNetworkConfig();
-  const isTestnet = process.env.NEXT_PUBLIC_RECURRING_PAYMENTS_TESTNET === 'true';
+  // Using Base mainnet only
+  const isTestnet = false;
 
-  // Initialize Base Account client
-  const initializeBaseAccount = useCallback(() => {
-    if (!smartAccountClient) {
-      throw new Error('Smart account not ready');
-    }
-
-    const baseAccount = new BaseAccount({
-      chain: smartAccountClient.chain,
-      apiKey: process.env.NEXT_PUBLIC_BASE_API_KEY, // Add this to your env vars
-    });
-
-    return baseAccount;
-  }, [smartAccountClient]);
+  // Base Account SDK doesn't need initialization - functions are used directly
 
   const createSubscription = useCallback(async (
     params: CreateSubscriptionParams
@@ -58,8 +52,6 @@ export const useBaseAccount = () => {
     setError(null);
 
     try {
-      const baseAccount = initializeBaseAccount();
-
       // Parse amount to proper units (USDC has 6 decimals)
       const parsedAmount = parseUnits(params.amount, 6);
       
@@ -77,26 +69,22 @@ export const useBaseAccount = () => {
         category: params.category
       });
 
-      // Use Base Account SDK to create subscription with spend permissions
-      const subscriptionResult = await baseAccount.subscription.subscribe({
-        payer: address,
-        recipient: params.recipient,
-        amount: parsedAmount,
-        period: intervalInSeconds, // Period in seconds
-        token: networkConfig.USDC_ADDRESS as `0x${string}`,
-        wallet: smartAccountClient, // Use smart account for sponsored transactions
-        metadata: {
-          name: params.name,
-          description: params.description || '',
-          category: params.category,
-        }
-      });
+      // Use Base Account SDK to create subscription with spend permissions (mainnet only)
+      const subscriptionOptions: SubscriptionOptions = {
+        recurringCharge: params.amount,
+        subscriptionOwner: params.recipient,
+        periodInDays: params.periodInDays,
+        walletUrl: process.env.NEXT_PUBLIC_WALLET_URL,
+        telemetry: true
+      };
+
+      const subscriptionResult = await subscribe(subscriptionOptions);
 
       console.log('Base subscription created successfully:', subscriptionResult);
 
       return {
-        subscriptionId: subscriptionResult.subscriptionId,
-        transactionHash: subscriptionResult.hash,
+        subscriptionId: subscriptionResult.id, // The subscription ID is in 'id' field
+        transactionHash: subscriptionResult.id, // Use ID as transaction reference
       };
     } catch (err) {
       console.error('Failed to create Base subscription:', err);
@@ -106,7 +94,7 @@ export const useBaseAccount = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, address, smartAccountClient, smartAccountReady, networkConfig, initializeBaseAccount]);
+  }, [isConnected, address, smartAccountClient, smartAccountReady, networkConfig]);
 
   const cancelSubscription = useCallback(async (subscriptionId: string): Promise<string> => {
     if (!isConnected || !address) {
@@ -121,18 +109,12 @@ export const useBaseAccount = () => {
     setError(null);
 
     try {
-      const baseAccount = initializeBaseAccount();
-
       console.log('Cancelling Base subscription:', subscriptionId);
 
-      // Use Base Account SDK to cancel subscription
-      const result = await baseAccount.subscription.cancel({
-        subscriptionId,
-        wallet: smartAccountClient, // Use smart account for sponsored transactions
-      });
-
-      console.log('Base subscription cancelled successfully:', result);
-      return result.hash;
+      // Note: The current Base Account SDK doesn't seem to have a cancel function
+      // You may need to implement this through direct contract interaction
+      // or wait for the SDK to add this functionality
+      throw new Error('Cancel subscription functionality not yet implemented in Base Account SDK');
     } catch (err) {
       console.error('Failed to cancel Base subscription:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to cancel subscription';
@@ -141,16 +123,17 @@ export const useBaseAccount = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, address, smartAccountClient, smartAccountReady, initializeBaseAccount]);
+  }, [isConnected, address, smartAccountClient, smartAccountReady]);
 
   const getSubscriptionStatus = useCallback(async (subscriptionId: string) => {
     try {
-      const baseAccount = initializeBaseAccount();
-
       console.log('Getting Base subscription status:', subscriptionId);
 
-      // Use Base Account SDK to get subscription status
-      const status = await baseAccount.subscription.getStatus(subscriptionId);
+      // Use Base Account SDK to get subscription status (mainnet)
+      const status = await getBaseSubscriptionStatus({ 
+        id: subscriptionId
+        // testnet defaults to false for mainnet
+      });
 
       console.log('Base subscription status:', status);
       return status;
@@ -160,7 +143,7 @@ export const useBaseAccount = () => {
       setError(errorMessage);
       throw new Error(errorMessage);
     }
-  }, [initializeBaseAccount]);
+  }, []);
 
   const approveUSDC = useCallback(async (amount: string, spender: Address): Promise<string> => {
     if (!isConnected || !address) {
@@ -185,6 +168,10 @@ export const useBaseAccount = () => {
       });
 
       // Use sponsored transaction via smart account for USDC approval
+      if (!smartAccountClient.account) {
+        throw new Error('Smart account not available');
+      }
+
       const txHash = await smartAccountClient.writeContract({
         address: networkConfig.USDC_ADDRESS as `0x${string}`,
         abi: erc20Abi,
@@ -208,12 +195,14 @@ export const useBaseAccount = () => {
 
   const prepareCharge = useCallback(async (subscriptionId: string) => {
     try {
-      const baseAccount = initializeBaseAccount();
-
       console.log('Preparing charge for subscription:', subscriptionId);
 
-      // Use Base Account SDK to prepare charge (for backend processing)
-      const chargeData = await baseAccount.subscription.prepareCharge(subscriptionId);
+      // Use Base Account SDK to prepare charge (for backend processing, mainnet)
+      const chargeData = await basePrepareCharge({ 
+        id: subscriptionId,
+        amount: 'max-remaining-charge' // Charge the maximum remaining amount
+        // testnet defaults to false for mainnet
+      });
 
       console.log('Charge prepared successfully:', chargeData);
       return chargeData;
@@ -223,7 +212,7 @@ export const useBaseAccount = () => {
       setError(errorMessage);
       throw new Error(errorMessage);
     }
-  }, [initializeBaseAccount]);
+  }, []);
 
   return {
     createSubscription,
@@ -239,6 +228,5 @@ export const useBaseAccount = () => {
     smartAccountAddress: smartAccountClient?.account?.address,
     smartAccountReady,
     networkConfig,
-    isTestnet,
   };
 };
