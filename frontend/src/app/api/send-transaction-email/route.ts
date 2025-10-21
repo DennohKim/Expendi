@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Expendi <onboarding@resend.dev>',
+      from: 'noreply@expendi.app',
       to: [userEmail],
       subject: `Transaction ${status === 'success' ? 'Completed' : 'Update'} - ${currency || 'USD'} ${amount} ${transactionType}`,
       html: generateTransactionEmailTemplate({

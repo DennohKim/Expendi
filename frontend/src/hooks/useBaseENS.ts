@@ -152,7 +152,7 @@ export function useRecipientResolution(recipient: string) {
   );
 
   const getPlaceholderText = useCallback((): string => {
-    return 'Enter wallet address or Base ENS name (e.g., alice.base.eth)';
+    return 'alice.base.eth or 0x123...aB45';
   }, []);
 
   const getHelperText = useCallback((currentRecipient: string): string => {

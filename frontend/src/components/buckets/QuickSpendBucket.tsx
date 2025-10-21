@@ -408,7 +408,7 @@ export function QuickSpendBucket({
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
-                  Enter a wallet address or Base ENS name (e.g., alice.base.eth) to send USDC to
+                  Enter a wallet address or Base ENS name
                 </div>
               </TabsContent>
               <TabsContent value="cash" className="space-y-3">
