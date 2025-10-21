@@ -1,16 +1,16 @@
 // Privy configuration for wallet connection
-import { base } from 'viem/chains';
+import { baseSepolia } from 'viem/chains';
 import type { PrivyClientConfig } from '@privy-io/react-auth';
 
 export const privyConfig: PrivyClientConfig = {
   // Supported login methods - ONLY email, no wallet options
   loginMethods: ['email'],
   
-  // Supported chains - Base mainnet only
-  supportedChains: [base],
+  // Supported chains - Base Sepolia testnet only
+  supportedChains: [baseSepolia],
   
   // Default chain
-  defaultChain: base,
+  defaultChain: baseSepolia,
   
   // Appearance customization
   appearance: {
@@ -25,8 +25,17 @@ export const privyConfig: PrivyClientConfig = {
   embeddedWallets: {
     createOnLogin: "all-users", // Force embedded wallet for all users
     showWalletUIs: true, // Show embedded wallet UI
+    requireUserPasswordOnCreate: false, // Don't require password for wallet creation
+    noPromptOnSignature: false, // Prompt for signatures
   },
-  
+
+  // Smart wallet configuration - enable smart accounts with sponsored transactions
+  externalWallets: {
+    coinbaseWallet: {
+      connectionOptions: 'smartWalletOnly', // Use smart wallet only
+    },
+  },
+
   // MFA configuration
   mfa: {
     noPromptOnMfaRequired: false,

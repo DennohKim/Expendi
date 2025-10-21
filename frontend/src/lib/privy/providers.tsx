@@ -2,6 +2,7 @@
 'use client';
 
 import { PrivyProvider } from '@privy-io/react-auth';
+import { SmartWalletsProvider } from '@privy-io/react-auth/smart-wallets';
 import { WagmiProvider } from '@privy-io/wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { config } from './wagmi-config';
@@ -55,9 +56,11 @@ export function Providers({ children }: ProvidersProps) {
         config={privyConfig}
       >
         <QueryClientProvider client={queryClient}>
-          <WagmiProvider config={config} reconnectOnMount={false}>
-            {children}
-          </WagmiProvider>
+          <SmartWalletsProvider>
+            <WagmiProvider config={config} reconnectOnMount={false}>
+              {children}
+            </WagmiProvider>
+          </SmartWalletsProvider>
         </QueryClientProvider>
       </PrivyProvider>
     </PrivyErrorBoundary>

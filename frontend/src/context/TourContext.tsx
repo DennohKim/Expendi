@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 interface TourContextType {
   isTourOpen: boolean;
   currentStep: number;
-  tourType: 'onboarding' | 'dashboard' | 'buckets' | null;
-  startTour: (type: 'onboarding' | 'dashboard' | 'buckets') => void;
+  tourType: 'dashboard' | 'buckets' | null;
+  startTour: (type: 'dashboard' | 'buckets') => void;
   closeTour: () => void;
   nextStep: () => void;
   prevStep: () => void;
@@ -35,7 +35,7 @@ interface TourProviderProps {
 export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [tourType, setTourType] = useState<'onboarding' | 'dashboard' | 'buckets' | null>(null);
+  const [tourType, setTourType] = useState<'dashboard' | 'buckets' | null>(null);
   const [isFirstTimeUser, setIsFirstTimeUser] = useState(false);
   const router = useRouter();
 
@@ -74,16 +74,13 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     localStorage.setItem('expendi_tour_state', JSON.stringify(tourState));
   }, [isTourOpen, currentStep, tourType]);
 
-  const startTour = (type: 'onboarding' | 'dashboard' | 'buckets') => {
+  const startTour = (type: 'dashboard' | 'buckets') => {
     setTourType(type);
     setCurrentStep(0);
     setIsTourOpen(true);
     
     // Navigate to appropriate page based on tour type
     switch (type) {
-      case 'onboarding':
-        router.push('/');
-        break;
       case 'dashboard':
         router.push('/');
         break;
@@ -113,11 +110,6 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
   };
 
   const completeTour = () => {
-    if (tourType === 'onboarding') {
-      localStorage.setItem('expendi_onboarding_completed', 'true');
-      setIsFirstTimeUser(false);
-    }
-    
     localStorage.setItem('expendi_has_visited', 'true');
     localStorage.setItem(`expendi_${tourType}_completed`, 'true');
     closeTour();
@@ -125,7 +117,6 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
 
   const resetTours = () => {
     localStorage.removeItem('expendi_has_visited');
-    localStorage.removeItem('expendi_onboarding_completed');
     localStorage.removeItem('expendi_dashboard_completed');
     localStorage.removeItem('expendi_buckets_completed');
     localStorage.removeItem('expendi_tour_state');

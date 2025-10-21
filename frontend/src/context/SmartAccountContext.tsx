@@ -52,6 +52,8 @@ export const SmartAccountProvider = ({
   >();
   const [smartAccountReady, setSmartAccountReady] = useState(false);
 
+  const [initializationAttempted, setInitializationAttempted] = useState(false);
+
   useEffect(() => {
     if (!ready) return;
   }, [ready, embeddedWallet]);
@@ -60,74 +62,96 @@ export const SmartAccountProvider = ({
     // Creates a smart account given a Privy `ConnectedWallet` object representing
     // the  user's EOA.
     const createSmartWallet = async (eoa: ConnectedWallet) => {
+      // Skip if already attempted to prevent multiple signature prompts
+      if (initializationAttempted) {
+        console.log('⏩ Smart account initialization already attempted, skipping...');
+        return;
+      }
+      
+      setInitializationAttempted(true);
       console.log('🔧 Starting smart account initialization for:', eoa.address);
       setEoa(eoa);
       setSmartAccountReady(false); // Ensure it's false during initialization
       
       try {
-        // Get an EIP1193 provider and viem WalletClient for the EOA
-        const eip1193provider = await eoa.getEthereumProvider();
-        console.log('🔧 Creating wallet client...');
-        const privyClient = createWalletClient({
-          account: eoa.address as `0x${string}`,
-          chain: base,
-          transport: custom(eip1193provider),
-        });
+        // Add timeout to prevent indefinite waiting
+        const initPromise = (async () => {
+          // Get an EIP1193 provider and viem WalletClient for the EOA
+          const eip1193provider = await eoa.getEthereumProvider();
+          console.log('🔧 Creating wallet client...');
+          const privyClient = createWalletClient({
+            account: eoa.address as `0x${string}`,
+            chain: base,
+            transport: custom(eip1193provider),
+          });
 
-        console.log('🔧 Creating public client...');
-        const publicClient = createPublicClient({
-          chain: base,
-          transport: http(),
-        });
+          console.log('🔧 Creating public client...');
+          const publicClient = createPublicClient({
+            chain: base,
+            transport: http(),
+          });
 
-        // Create the Pimlico paymaster client
-        console.log('🔧 Creating Pimlico paymaster...');
-        const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`;
+          // Create the Pimlico paymaster client
+          console.log('🔧 Creating Pimlico paymaster...');
+          const pimlicoRpcUrl = `https://api.pimlico.io/v2/${base.id}/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`;
+          
+          const pimlicoPaymaster = createPimlicoClient({
+            transport: http(pimlicoRpcUrl),
+            entryPoint: {
+              address: entryPoint06Address,
+              version: "0.6",
+            },
+          });
+
+          // Create simple smart account - this step might trigger signing
+          console.log('🔧 Creating smart account (may require signature)...');
+          const simpleSmartAccount = await toSimpleSmartAccount({
+            client: publicClient,
+            owner: privyClient,
+            entryPoint: {
+              address: entryPoint06Address,
+              version: "0.6"
+            }
+          });
+
+          console.log('🔧 Creating smart account client...');
+          const smartAccountClient = createSmartAccountClient({
+            account: simpleSmartAccount,
+            chain: base,
+            bundlerTransport: http(pimlicoRpcUrl),
+            paymaster: pimlicoPaymaster,
+            userOperation: {
+              estimateFeesPerGas: async () => (await pimlicoPaymaster.getUserOperationGasPrice()).fast,
+            },
+          });
+
+          const smartAccountAddress = smartAccountClient.account?.address;
+          console.log('✅ Smart account initialized successfully!', smartAccountAddress);
+
+          return { smartAccountClient, smartAccountAddress };
+        })();
+
+        // Wait up to 30 seconds for initialization
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Smart account initialization timed out after 30s')), 30000)
+        );
+
+        const result = await Promise.race([initPromise, timeoutPromise]) as any;
         
-        const pimlicoPaymaster = createPimlicoClient({
-          transport: http(pimlicoRpcUrl),
-          entryPoint: {
-            address: entryPoint06Address,
-            version: "0.6",
-          },
-        });
-
-        // Create simple smart account - this step might trigger signing
-        console.log('🔧 Creating smart account (may require signature)...');
-        const simpleSmartAccount = await toSimpleSmartAccount({
-          client: publicClient,
-          owner: privyClient,
-          entryPoint: {
-            address: entryPoint06Address,
-            version: "0.6"
-          }
-        });
-
-        console.log('🔧 Creating smart account client...');
-        const smartAccountClient = createSmartAccountClient({
-          account: simpleSmartAccount,
-          chain: base,
-          bundlerTransport: http(pimlicoRpcUrl),
-          paymaster: pimlicoPaymaster,
-          userOperation: {
-            estimateFeesPerGas: async () => (await pimlicoPaymaster.getUserOperationGasPrice()).fast,
-          },
-        });
-
-        const smartAccountAddress = smartAccountClient.account?.address;
-        console.log('✅ Smart account initialized successfully!', smartAccountAddress);
-
-        setSmartAccountClient(smartAccountClient);
-        setSmartAccountAddress(smartAccountAddress);
+        setSmartAccountClient(result.smartAccountClient);
+        setSmartAccountAddress(result.smartAccountAddress);
         setSmartAccountReady(true);
       } catch (error) {
         console.error("Failed to initialize smart account:", error);
+        console.log("⚠️ Smart account initialization failed. Embedded wallet can still be used directly.");
         setSmartAccountReady(false);
+        // Set EOA even if smart account fails
+        setEoa(eoa);
       }
     };
 
     if (embeddedWallet) createSmartWallet(embeddedWallet);
-  }, [embeddedWallet?.address, embeddedWallet]);
+  }, [embeddedWallet?.address, embeddedWallet, initializationAttempted]);
 
   const contextValue = React.useMemo(() => ({
     smartAccountReady,

@@ -1,0 +1,26 @@
+{
+  "network": "Base Sepolia",
+  "chainId": 84532,
+  "deployer": "0xAE609c3904C539aF2Ac11a86D0B030a77dB0a509",
+  "deploymentDate": "2025-01-20",
+  "contracts": {
+    "ExpendiBucketManager": "0x4832FE3192f205F753F1C334916B7cfec7823D64",
+    "ExpendiBucketManagerAutomation": "0x373B8a2f3A0aBdD6654D199C60c1ad9fab6F25d7"
+  },
+  "automationConfig": {
+    "checkInterval": 300,
+    "maxBatchSize": 5
+  },
+  "chainlinkAutomation": {
+    "registryUrl": "https://automation.chain.link/",
+    "targetContract": "0x373B8a2f3A0aBdD6654D199C60c1ad9fab6F25d7",
+    "upkeepNeeded": true,
+    "triggerType": "Custom Logic",
+    "gasLimit": 2000000,
+    "checkData": "0x"
+  },
+  "roles": {
+    "ExpendiBucketManagerAutomation_SUBSCRIPTION_MANAGER_ROLE": "granted"
+  },
+  "status": "deployed_and_configured"
+}

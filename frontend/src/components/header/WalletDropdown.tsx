@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { usePrivy } from '@privy-io/react-auth';
-import { useWalletUser } from '@/hooks/useWalletUser';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -15,7 +14,6 @@ import Link from "next/link";
 export default function WalletDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const { ready, authenticated, user, login, logout } = usePrivy();
-  const { isConnected } = useWalletUser();
 
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.stopPropagation();
@@ -38,7 +36,7 @@ export default function WalletDropdown() {
   }
 
   // Not authenticated - show connect wallet button
-  if (!authenticated || !isConnected) {
+  if (!authenticated) {
     return (
       <Button
         onClick={login}

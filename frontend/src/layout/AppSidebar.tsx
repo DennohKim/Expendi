@@ -7,7 +7,7 @@ import {
   GridIcon,
   HorizontaLDots,
 } from "../icons/index";
-import { BadgeDollarSign, Wallet2Icon, BarChart3, TrendingUp, Calendar } from "lucide-react";
+import { BadgeDollarSign, Wallet2Icon, BarChart3, TrendingUp, Calendar, FolderOpen } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -22,11 +22,11 @@ const navItems: NavItem[] = [
     name: "Dashboard",
     path: "/",
   },
-  // {
-  //   icon: <Vault />,
-  //   name: "Buckets",
-  //   path: "/buckets",
-  // },
+  {
+    icon: <FolderOpen />,
+    name: "Buckets",
+    path: "/bucket-manager",
+  },
   {
     icon: <BadgeDollarSign />,
     name: "Transactions",

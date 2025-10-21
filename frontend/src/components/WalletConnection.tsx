@@ -2,17 +2,10 @@
 import React from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { Wallet, LogOut, User, Mail } from 'lucide-react';
-import { useWalletUser } from '@/hooks/useWalletUser';
-import { BudgetWalletCreationStatus } from './BudgetWalletCreationProgress';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 export function WalletConnection() {
   const { ready, authenticated, user, login, logout } = usePrivy();
-  const { 
-    isCreatingBudgetWallet, 
-    budgetWalletCreationStep, 
-    retryWalletCreation
-  } = useWalletUser();
   const { track } = useAnalytics();
 
   if (!ready) {
@@ -58,12 +51,6 @@ export function WalletConnection() {
         )}
       </div>
 
-      {/* Budget Wallet Creation Status */}
-      <BudgetWalletCreationStatus 
-        isCreating={isCreatingBudgetWallet}
-        step={budgetWalletCreationStep}
-        onRetry={retryWalletCreation}
-      />
 
       {/* Logout Button */}
       <button

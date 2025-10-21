@@ -1,0 +1,195 @@
+type UserEntity @entity(immutable: false) {
+  id: ID!
+  address: Bytes!
+  buckets: [BucketEntity!]! @derivedFrom(field: "user")
+  subscriptions: [SubscriptionEntity!]! @derivedFrom(field: "user")
+  payments: [PaymentEntity!]! @derivedFrom(field: "user")
+  deposits: [DepositEntity!]! @derivedFrom(field: "user")
+  withdrawals: [WithdrawalEntity!]! @derivedFrom(field: "user")
+  activities: [UserActivity!]! @derivedFrom(field: "user")
+  securityEvents: [SecurityEvent!]! @derivedFrom(field: "user")
+  totalBuckets: BigInt!
+  totalSubscriptions: BigInt!
+  isEmergencyPaused: Boolean!
+  createdAt: BigInt!
+  lastActivity: BigInt!
+}
+
+type BucketEntity @entity(immutable: false) {
+  id: ID! # user_address + bucket_name
+  user: UserEntity!
+  name: String!
+  monthlyLimit: BigInt!
+  currentBalance: BigInt!
+  monthlySpent: BigInt!
+  lastResetTimestamp: BigInt!
+  isActive: Boolean!
+  subscriptionCount: BigInt!
+  totalFunded: BigInt!
+  totalSpent: BigInt!
+  createdAt: BigInt!
+  lastActivity: BigInt!
+  subscriptions: [SubscriptionEntity!]! @derivedFrom(field: "bucket")
+  payments: [PaymentEntity!]! @derivedFrom(field: "bucket")
+  fundingEvents: [DepositEntity!]! @derivedFrom(field: "bucket")
+  balanceChanges: [BucketBalanceChange!]! @derivedFrom(field: "bucket")
+}
+
+type SubscriptionEntity @entity(immutable: false) {
+  id: ID! # user_address + subscription_id
+  user: UserEntity!
+  bucket: BucketEntity!
+  subscriptionId: BigInt!
+  amount: BigInt!
+  periodInDays: BigInt!
+  token: Bytes!
+  recipient: Bytes!
+  isActive: Boolean!
+  userConsent: Boolean!
+  totalCharged: BigInt!
+  chargeCount: BigInt!
+  nextChargeTimestamp: BigInt!
+  lastProcessedAt: BigInt!
+  metadata: String!
+  createdAt: BigInt!
+  cancelledAt: BigInt
+  charges: [SubscriptionCharge!]! @derivedFrom(field: "subscription")
+  analytics: [SubscriptionAnalytic!]! @derivedFrom(field: "subscription")
+}
+
+type PaymentEntity @entity(immutable: true) {
+  id: ID! # transaction_hash + log_index
+  user: UserEntity!
+  bucket: BucketEntity!
+  amount: BigInt!
+  token: Bytes!
+  recipient: Bytes!
+  description: String!
+  newBucketBalance: BigInt!
+  monthlySpent: BigInt!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type DepositEntity @entity(immutable: true) {
+  id: ID! # transaction_hash + log_index
+  user: UserEntity!
+  bucket: BucketEntity!
+  amount: BigInt!
+  token: Bytes!
+  newBalance: BigInt!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type WithdrawalEntity @entity(immutable: true) {
+  id: ID! # transaction_hash + log_index
+  user: UserEntity!
+  amount: BigInt!
+  token: Bytes!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type SubscriptionCharge @entity {
+  id: ID! # transaction_hash + log_index
+  subscription: SubscriptionEntity!
+  user: UserEntity!
+  bucket: BucketEntity!
+  amount: BigInt!
+  token: Bytes!
+  recipient: Bytes!
+  newBucketBalance: BigInt!
+  totalCharged: BigInt!
+  chargeCount: BigInt!
+  nextChargeTimestamp: BigInt!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type BucketBalanceChange @entity {
+  id: ID! # transaction_hash + log_index
+  user: UserEntity!
+  bucket: BucketEntity!
+  token: Bytes!
+  oldBalance: BigInt!
+  newBalance: BigInt!
+  amount: BigInt!
+  changeType: String! # "fund", "payment", "subscription", etc.
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type BucketMonthlySpendingUpdate @entity {
+  id: ID! # transaction_hash + log_index
+  user: UserEntity!
+  bucket: BucketEntity!
+  oldMonthlySpent: BigInt!
+  newMonthlySpent: BigInt!
+  monthlyLimit: BigInt!
+  utilizationPercentage: BigInt!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type UserActivity @entity {
+  id: ID! # transaction_hash + log_index
+  user: UserEntity!
+  activityType: String!
+  bucketName: String!
+  amount: BigInt!
+  token: Bytes!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type SecurityEvent @entity {
+  id: ID! # transaction_hash + log_index
+  user: UserEntity!
+  eventType: String!
+  description: String!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+type SubscriptionAnalytic @entity {
+  id: ID! # transaction_hash + log_index
+  subscription: SubscriptionEntity!
+  user: UserEntity!
+  bucketName: String!
+  totalCharged: BigInt!
+  chargeCount: BigInt!
+  periodInDays: BigInt!
+  recipient: Bytes!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  logIndex: BigInt!
+}
+
+# Global statistics
+type GlobalStats @entity {
+  id: ID! # "global"
+  totalUsers: BigInt!
+  totalBuckets: BigInt!
+  totalSubscriptions: BigInt!
+  totalPayments: BigInt!
+  totalVolume: BigInt!
+  lastUpdated: BigInt!
+}

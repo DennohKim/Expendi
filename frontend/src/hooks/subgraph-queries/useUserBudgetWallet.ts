@@ -1,93 +1,21 @@
-import { gql, useQuery } from '@apollo/client';
+import { useAccount } from 'wagmi';
+import { useSmartAccount } from '@/context/SmartAccountContext';
 
-const GET_USER_BUDGET_WALLET = gql`
-  query GetUserBudgetWallet($userAddress: ID!) {
-    user(id: $userAddress) {
-      id
-      address
-      totalBalance
-      totalSpent
-      bucketsCount
-      createdAt
-      updatedAt
-
-      # Wallet creation details
-      walletsCreated {
-        id
-        wallet
-        salt
-        timestamp
-        blockNumber
-        transactionHash
-      }
-
-      # All buckets for this user
-      buckets {
-        id
-        name
-        balance
-        monthlySpent
-        monthlyLimit
-        active
-        createdAt
-        updatedAt
-        lastResetTimestamp
-
-        # Token balances in each bucket
-        tokenBalances {
-          id
-          balance
-          updatedAt
-          token {
-            id
-            address
-            name
-            symbol
-            decimals
-          }
-        }
-
-        # Delegates for each bucket
-        delegates {
-          id
-          active
-          delegate {
-            id
-            address
-          }
-        }
-      }
-
-      # Recent transactions
-      transactions {
-        id
-        amount
-        timestamp
-        blockNumber
-        transactionHash
-        bucket {
-          name
-        }
-        token {
-          symbol
-          decimals
-        }
-      }
-    }
-  }
-`;
-
-export function useUserBudgetWallet(userAddress: string | undefined) {
-  // const chainId = useChainId();
+// Simplified hook that returns the smart account address directly
+// since we no longer need budget wallet logic
+export function useUserBudgetWallet(address?: string | null) {
+  const { address: eoaAddress } = useAccount();
+  const { smartAccountAddress, smartAccountReady } = useSmartAccount();
   
-  const queryResult = useQuery(GET_USER_BUDGET_WALLET, {
-    variables: { userAddress: userAddress?.toLowerCase() },
-    skip: !userAddress,
-    notifyOnNetworkStatusChange: true,
-    onError: (error) => {
-      console.error('GraphQL query error:', error);
-    }
-  });
-
-  return queryResult;
+  // Use smart account address if available, otherwise use EOA address
+  const userAddress = smartAccountReady && smartAccountAddress ? smartAccountAddress : (address || eoaAddress);
+  
+  return {
+    data: userAddress ? { user: { walletsCreated: [{ budgetWallet: { address: userAddress } }] } } : null,
+    loading: false,
+    error: null,
+    refetch: async () => ({ 
+      data: userAddress ? { user: { walletsCreated: [{ budgetWallet: { address: userAddress } }] } } : null 
+    })
+  };
 }

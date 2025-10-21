@@ -9,59 +9,7 @@ export interface TourStep {
   stepInteraction?: boolean;
 }
 
-export const tourSteps: Record<'onboarding' | 'dashboard' | 'buckets', TourStep[]> = {
-  onboarding: [
-    {
-      selector: '[data-tour="welcome"]',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Welcome to Expendi! 🎉</h3>
-          <p>Let&apos;s take a quick tour to get you started with managing your budget effectively.</p>
-        </div>
-      ),
-      position: 'center',
-    },
-    {
-      selector: '[data-tour="wallet-connect"]',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
-          <p>First, connect your wallet to access all the features. Click here to get started.</p>
-        </div>
-      ),
-      position: 'bottom',
-    },
-    {
-      selector: '[data-tour="dashboard-overview"]',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Your Dashboard</h3>
-          <p>This is your main dashboard where you can see your budget overview, recent transactions, and quick actions.</p>
-        </div>
-      ),
-      position: 'bottom',
-    },
-    {
-      selector: '[data-tour="create-account"]',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Create Budget Account</h3>
-          <p>Create your first budget account to start organizing your finances into different categories.</p>
-        </div>
-      ),
-      position: 'left',
-    },
-    {
-      selector: '[data-tour="navigation"]',
-      content: (
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Navigation Menu</h3>
-          <p>Use this sidebar to navigate between different sections of your budget management app.</p>
-        </div>
-      ),
-      position: 'right',
-    }
-  ],
+export const tourSteps: Record<'dashboard' | 'buckets', TourStep[]> = {
 
   dashboard: [
     {

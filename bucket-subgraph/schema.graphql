@@ -1,0 +1,240 @@
+type User @entity(immutable: false) {
+  id: ID! # User address
+  address: Bytes!
+  buckets: [Bucket!]! @derivedFrom(field: "user")
+  subscriptions: [BucketSubscription!]! @derivedFrom(field: "user")
+  payments: [Payment!]! @derivedFrom(field: "user")
+  deposits: [Deposit!]! @derivedFrom(field: "user")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "user")
+  activities: [UserActivity!]! @derivedFrom(field: "user")
+  securityEvents: [SecurityEvent!]! @derivedFrom(field: "user")
+  totalBuckets: BigInt!
+  totalSubscriptions: BigInt!
+  totalPayments: BigInt!
+  isEmergencyPaused: Boolean!
+  createdAt: BigInt!
+  lastActivityAt: BigInt!
+}
+
+type Bucket @entity(immutable: false) {
+  id: ID! # user_address + bucket_name
+  user: User!
+  name: String!
+  balance: BigInt!
+  monthlySpent: BigInt!
+  monthlyLimit: BigInt!
+  lastResetTimestamp: BigInt!
+  isActive: Boolean!
+  exists: Boolean!
+  subscriptionCount: BigInt!
+  
+  # Token balances
+  tokenBalances: [TokenBalance!]! @derivedFrom(field: "bucket")
+  
+  # Related entities
+  subscriptions: [BucketSubscription!]! @derivedFrom(field: "bucket")
+  payments: [Payment!]! @derivedFrom(field: "bucket")
+  balanceHistory: [BucketBalanceHistory!]! @derivedFrom(field: "bucket")
+  monthlySpendingHistory: [MonthlySpending!]! @derivedFrom(field: "bucket")
+  
+  createdAt: BigInt!
+  updatedAt: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokenBalance @entity(immutable: false) {
+  id: ID! # bucket_id + token_address
+  bucket: Bucket!
+  token: Bytes!
+  balance: BigInt!
+  updatedAt: BigInt!
+  blockNumber: BigInt!
+}
+
+type BucketSubscription @entity(immutable: false) {
+  id: ID! # user_address + subscription_id
+  user: User!
+  bucket: Bucket!
+  subscriptionId: BigInt!
+  amount: BigInt!
+  periodInDays: BigInt!
+  token: Bytes!
+  recipient: Bytes!
+  isActive: Boolean!
+  nextChargeTimestamp: BigInt!
+  totalCharged: BigInt!
+  chargeCount: BigInt!
+  userConsent: Boolean!
+  metadata: String!
+  
+  # Related entities
+  charges: [SubscriptionCharge!]! @derivedFrom(field: "subscription")
+  analytics: [SubscriptionAnalytics!]! @derivedFrom(field: "subscription")
+  
+  createdAt: BigInt!
+  lastProcessedAt: BigInt!
+  cancelledAt: BigInt
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type SubscriptionCharge @entity(immutable: false) {
+  id: ID! # subscription_id + charge_count
+  subscription: BucketSubscription!
+  user: User!
+  bucket: Bucket!
+  amount: BigInt!
+  token: Bytes!
+  recipient: Bytes!
+  newBucketBalance: BigInt!
+  totalCharged: BigInt!
+  chargeCount: BigInt!
+  nextChargeTimestamp: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type Payment @entity(immutable: false) {
+  id: ID! # transaction_hash + log_index
+  user: User!
+  bucket: Bucket!
+  amount: BigInt!
+  token: Bytes!
+  recipient: Bytes!
+  description: String!
+  newBucketBalance: BigInt!
+  monthlySpent: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type Deposit @entity(immutable: false) {
+  id: ID! # transaction_hash + log_index
+  user: User!
+  token: Bytes!
+  amount: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type Withdrawal @entity(immutable: false) {
+  id: ID! # transaction_hash + log_index
+  user: User!
+  token: Bytes!
+  amount: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type BucketBalanceHistory @entity(immutable: false) {
+  id: ID! # bucket_id + timestamp + token
+  bucket: Bucket!
+  user: User!
+  token: Bytes!
+  oldBalance: BigInt!
+  newBalance: BigInt!
+  changeAmount: BigInt!
+  changeType: String! # "fund", "payment", "subscription", "withdrawal"
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type MonthlySpending @entity(immutable: false) {
+  id: ID! # bucket_id + reset_timestamp
+  bucket: Bucket!
+  user: User!
+  oldMonthlySpent: BigInt!
+  newMonthlySpent: BigInt!
+  monthlyLimit: BigInt!
+  spendingPercentage: BigInt!
+  isReset: Boolean!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type UserActivity @entity(immutable: false) {
+  id: ID! # transaction_hash + log_index
+  user: User!
+  activityType: String! # "bucket_created", "subscription_created", "payment_made", etc.
+  bucketName: String!
+  amount: BigInt!
+  token: Bytes!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type SecurityEvent @entity(immutable: false) {
+  id: ID! # transaction_hash + log_index
+  user: User!
+  eventType: String!
+  details: String!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type SubscriptionAnalytics @entity(immutable: false) {
+  id: ID! # subscription_id + timestamp
+  subscription: BucketSubscription!
+  user: User!
+  bucket: Bucket!
+  totalCharged: BigInt!
+  chargeCount: BigInt!
+  periodInDays: BigInt!
+  recipient: Bytes!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type EmergencyPause @entity(immutable: false) {
+  id: ID! # transaction_hash + log_index
+  user: User!
+  paused: Boolean!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type MonthlyLimitReset @entity(immutable: false) {
+  id: ID! # bucket_id + reset_timestamp
+  bucket: Bucket!
+  user: User!
+  oldSpent: BigInt!
+  newLimit: BigInt!
+  resetTimestamp: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}
+
+type MonthlyLimitUpdate @entity(immutable: false) {
+  id: ID! # bucket_id + timestamp
+  bucket: Bucket!
+  user: User!
+  oldLimit: BigInt!
+  newLimit: BigInt!
+  
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+}

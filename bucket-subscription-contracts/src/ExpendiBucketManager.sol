@@ -282,6 +282,20 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(EMERGENCY_ROLE, msg.sender);
     }
 
+    // ============ HELPER FUNCTIONS ============
+    
+    /**
+     * @dev Get the actual sender address (works with both EOA and Account Abstraction)
+     * @notice For Account Abstraction, this uses a context variable pattern
+     * @notice For direct calls, this returns msg.sender
+     */
+    function _getActualSender() internal view returns (address) {
+        // For AA transactions, the actual smart wallet sender is msg.sender
+        // The bundler/relayer that submits the UserOp is not our concern
+        // Smart wallets will have deterministic addresses per user
+        return msg.sender;
+    }
+
     // ============ MODIFIERS ============
     
     modifier bucketExists(address user, string memory bucketName) {
@@ -300,11 +314,12 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
     }
     
     modifier rateLimited() {
+        address actualSender = _getActualSender();
         require(
-            block.timestamp >= lastOperationTimestamp[msg.sender] + MIN_OPERATION_INTERVAL,
+            block.timestamp >= lastOperationTimestamp[actualSender] + MIN_OPERATION_INTERVAL,
             "Operation too frequent"
         );
-        lastOperationTimestamp[msg.sender] = block.timestamp;
+        lastOperationTimestamp[actualSender] = block.timestamp;
         _;
     }
     
@@ -331,25 +346,26 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         uint256 monthlyLimit
     ) external 
         whenNotPaused 
-        notEmergencyPaused(msg.sender)
         rateLimited
         validBucketName(bucketName)
     {
-        require(!userBuckets[msg.sender][bucketName].exists, "Bucket already exists");
+        address actualSender = _getActualSender();
+        require(!emergencyPausedUsers[actualSender], "User is emergency paused");
+        require(!userBuckets[actualSender][bucketName].exists, "Bucket already exists");
         require(monthlyLimit <= 1000000e6, "Monthly limit too high"); // Max 1M USDC
         
-        Bucket storage newBucket = userBuckets[msg.sender][bucketName];
+        Bucket storage newBucket = userBuckets[actualSender][bucketName];
         newBucket.monthlyLimit = monthlyLimit;
         newBucket.lastResetTimestamp = block.timestamp;
         newBucket.exists = true;
         newBucket.active = true;
         newBucket.subscriptionCount = 0;
         
-        userBucketNames[msg.sender].push(bucketName);
+        userBucketNames[actualSender].push(bucketName);
         
-        emit BucketCreated(msg.sender, bucketName, monthlyLimit, block.timestamp, block.number);
-        emit UserActivity(msg.sender, "bucket_created", bucketName, 0, address(0), block.timestamp, block.number);
-        emit SecurityEvent(msg.sender, "BUCKET_CREATED", "Bucket created successfully", block.timestamp, block.number);
+        emit BucketCreated(actualSender, bucketName, monthlyLimit, block.timestamp, block.number);
+        emit UserActivity(actualSender, "bucket_created", bucketName, 0, address(0), block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "BUCKET_CREATED", "Bucket created successfully", block.timestamp, block.number);
     }
     
     /**
@@ -361,34 +377,35 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         uint256 amount,
         address token
     ) external 
-        bucketExists(msg.sender, bucketName)
         whenNotPaused
-        notEmergencyPaused(msg.sender)
         nonReentrant
     {
+        address actualSender = _getActualSender();
+        require(userBuckets[actualSender][bucketName].exists, "Bucket does not exist");
+        require(!emergencyPausedUsers[actualSender], "User is emergency paused");
         require(amount > 0, "Amount must be greater than 0");
         require(token != address(0), "Invalid token address");
         
         // Reset monthly limit if needed (30 days have passed)
-        _resetMonthlyLimitIfNeeded(msg.sender, bucketName);
+        _resetMonthlyLimitIfNeeded(actualSender, bucketName);
         
         // Security: Check for sufficient balance
-        require(userTokenBalances[msg.sender][token] >= amount, "Insufficient unallocated balance");
+        require(userTokenBalances[actualSender][token] >= amount, "Insufficient unallocated balance");
         
         // Effects: Update balances first (CEI pattern)
-        userTokenBalances[msg.sender][token] -= amount;
+        userTokenBalances[actualSender][token] -= amount;
         
         if (token == ETH_ADDRESS) {
-            userBuckets[msg.sender][bucketName].balance += amount;
+            userBuckets[actualSender][bucketName].balance += amount;
         } else {
-            userBuckets[msg.sender][bucketName].tokenBalances[token] += amount;
+            userBuckets[actualSender][bucketName].tokenBalances[token] += amount;
         }
         
-        uint256 newBalance = getBucketBalance(msg.sender, bucketName, token);
-        emit BucketFunded(msg.sender, bucketName, amount, token, newBalance, block.timestamp, block.number);
-        emit BucketBalanceChanged(msg.sender, bucketName, token, newBalance - amount, newBalance, amount, "fund", block.timestamp, block.number);
-        emit UserActivity(msg.sender, "bucket_funded", bucketName, amount, token, block.timestamp, block.number);
-        emit SecurityEvent(msg.sender, "BUCKET_FUNDED", "Bucket funded successfully", block.timestamp, block.number);
+        uint256 newBalance = getBucketBalance(actualSender, bucketName, token);
+        emit BucketFunded(actualSender, bucketName, amount, token, newBalance, block.timestamp, block.number);
+        emit BucketBalanceChanged(actualSender, bucketName, token, newBalance - amount, newBalance, amount, "fund", block.timestamp, block.number);
+        emit UserActivity(actualSender, "bucket_funded", bucketName, amount, token, block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "BUCKET_FUNDED", "Bucket funded successfully", block.timestamp, block.number);
     }
     
     /**
@@ -399,12 +416,14 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
     function deleteBucket(
         string memory bucketName
     ) external 
-        bucketExists(msg.sender, bucketName)
         whenNotPaused
-        notEmergencyPaused(msg.sender)
         nonReentrant
     {
-        Bucket storage bucket = userBuckets[msg.sender][bucketName];
+        address actualSender = _getActualSender();
+        require(userBuckets[actualSender][bucketName].exists, "Bucket does not exist");
+        require(!emergencyPausedUsers[actualSender], "User is emergency paused");
+        
+        Bucket storage bucket = userBuckets[actualSender][bucketName];
         
         // Security: Check if bucket has any funds
         require(bucket.balance == 0, "Cannot delete bucket with ETH funds");
@@ -425,14 +444,14 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         require(bucket.monthlySpent == 0, "Cannot delete bucket with pending monthly spending");
         
         // Remove bucket from user's bucket list
-        _removeBucketFromList(msg.sender, bucketName);
+        _removeBucketFromList(actualSender, bucketName);
         
         // Delete the bucket
-        delete userBuckets[msg.sender][bucketName];
+        delete userBuckets[actualSender][bucketName];
         
-        emit BucketDeleted(msg.sender, bucketName, block.timestamp, block.number);
-        emit UserActivity(msg.sender, "bucket_deleted", bucketName, 0, address(0), block.timestamp, block.number);
-        emit SecurityEvent(msg.sender, "BUCKET_DELETED", "Bucket deleted successfully", block.timestamp, block.number);
+        emit BucketDeleted(actualSender, bucketName, block.timestamp, block.number);
+        emit UserActivity(actualSender, "bucket_deleted", bucketName, 0, address(0), block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "BUCKET_DELETED", "Bucket deleted successfully", block.timestamp, block.number);
     }
     
     /**
@@ -525,21 +544,22 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         address recipient,
         string memory description
     ) external 
-        bucketExists(msg.sender, bucketName)
-        bucketActive(msg.sender, bucketName)
         whenNotPaused
-        notEmergencyPaused(msg.sender)
         nonReentrant
     {
+        address actualSender = _getActualSender();
+        require(userBuckets[actualSender][bucketName].exists, "Bucket does not exist");
+        require(userBuckets[actualSender][bucketName].active, "Bucket is inactive");
+        require(!emergencyPausedUsers[actualSender], "User is emergency paused");
         require(amount > 0, "Amount must be greater than 0");
         require(recipient != address(0), "Invalid recipient");
         
         // Check bucket balance
-        uint256 availableBalance = getBucketBalance(msg.sender, bucketName, token);
+        uint256 availableBalance = getBucketBalance(actualSender, bucketName, token);
         require(availableBalance >= amount, "Insufficient bucket balance");
         
         // Check monthly limit (but don't reset it)
-        Bucket storage bucket = userBuckets[msg.sender][bucketName];
+        Bucket storage bucket = userBuckets[actualSender][bucketName];
         if (bucket.monthlyLimit > 0) {
             uint256 newMonthlySpent = bucket.monthlySpent + amount;
             require(newMonthlySpent <= bucket.monthlyLimit, "Monthly limit exceeded");
@@ -560,9 +580,9 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
             IERC20(token).safeTransfer(recipient, amount);
         }
         
-        uint256 newBucketBalance = getBucketBalance(msg.sender, bucketName, token);
+        uint256 newBucketBalance = getBucketBalance(actualSender, bucketName, token);
         emit OneTimePaymentMade(
-            msg.sender,
+            actualSender,
             bucketName,
             amount,
             token,
@@ -573,10 +593,10 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
             block.timestamp,
             block.number
         );
-        emit BucketBalanceChanged(msg.sender, bucketName, token, newBucketBalance + amount, newBucketBalance, amount, "payment", block.timestamp, block.number);
-        emit BucketMonthlySpendingUpdated(msg.sender, bucketName, bucket.monthlySpent - amount, bucket.monthlySpent, bucket.monthlyLimit, (bucket.monthlySpent * 100) / bucket.monthlyLimit, block.timestamp, block.number);
-        emit UserActivity(msg.sender, "payment_made", bucketName, amount, token, block.timestamp, block.number);
-        emit SecurityEvent(msg.sender, "ONE_TIME_PAYMENT", "One-time payment made successfully", block.timestamp, block.number);
+        emit BucketBalanceChanged(actualSender, bucketName, token, newBucketBalance + amount, newBucketBalance, amount, "payment", block.timestamp, block.number);
+        emit BucketMonthlySpendingUpdated(actualSender, bucketName, bucket.monthlySpent - amount, bucket.monthlySpent, bucket.monthlyLimit, (bucket.monthlySpent * 100) / bucket.monthlyLimit, block.timestamp, block.number);
+        emit UserActivity(actualSender, "payment_made", bucketName, amount, token, block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "ONE_TIME_PAYMENT", "One-time payment made successfully", block.timestamp, block.number);
     }
 
     // ============ SUBSCRIPTION MANAGEMENT ============
@@ -594,14 +614,15 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         string memory metadata,
         bool userConsent // Explicit consent parameter
     ) external 
-        bucketExists(msg.sender, bucketName)
-        bucketActive(msg.sender, bucketName)
         whenNotPaused
-        notEmergencyPaused(msg.sender)
         nonReentrant
         rateLimited
         validSubscriptionAmount(amount)
     returns (uint256) {
+        address actualSender = _getActualSender();
+        require(userBuckets[actualSender][bucketName].exists, "Bucket does not exist");
+        require(userBuckets[actualSender][bucketName].active, "Bucket is inactive");
+        require(!emergencyPausedUsers[actualSender], "User is emergency paused");
         require(recipient != address(0), "Invalid recipient");
         require(token != address(0), "Invalid token");
         require(periodInDays >= 1 && periodInDays <= 365, "Invalid period");
@@ -609,18 +630,18 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         
         // Security: Rate limiting for subscription creation
         require(
-            block.timestamp >= lastSubscriptionCreation[msg.sender] + SUBSCRIPTION_CREATION_COOLDOWN,
+            block.timestamp >= lastSubscriptionCreation[actualSender] + SUBSCRIPTION_CREATION_COOLDOWN,
             "Subscription creation too frequent"
         );
-        lastSubscriptionCreation[msg.sender] = block.timestamp;
+        lastSubscriptionCreation[actualSender] = block.timestamp;
         
-        Bucket storage bucket = userBuckets[msg.sender][bucketName];
+        Bucket storage bucket = userBuckets[actualSender][bucketName];
         
         // Security: Limit subscriptions per bucket
         require(bucket.subscriptionCount < MAX_SUBSCRIPTIONS_PER_BUCKET, "Too many subscriptions");
         
         // Security: Check if bucket has sufficient balance for the subscription
-        uint256 availableBalance = getBucketBalance(msg.sender, bucketName, token);
+        uint256 availableBalance = getBucketBalance(actualSender, bucketName, token);
         require(availableBalance >= amount, "Insufficient bucket balance");
         
         // Security: Check monthly limit
@@ -632,7 +653,7 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         // Create subscription via external subscription service
         uint256 subscriptionId = ISubscriptionDataManager(SUBSCRIPTION_DATA_MANAGER)
             .createSubscription(
-                msg.sender,
+                actualSender,
                 amount,
                 periodInDays,
                 token,
@@ -641,7 +662,7 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
             );
         
         // Store subscription info
-        SubscriptionInfo storage subscription = userSubscriptions[msg.sender][subscriptionId];
+        SubscriptionInfo storage subscription = userSubscriptions[actualSender][subscriptionId];
         subscription.subscriptionId = subscriptionId;
         subscription.bucketName = bucketName;
         subscription.amount = amount;
@@ -657,10 +678,10 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         // Link subscription to bucket
         bucket.subscriptionIds.push(subscriptionId);
         bucket.subscriptionCount += 1;
-        userSubscriptionIds[msg.sender].push(subscriptionId);
+        userSubscriptionIds[actualSender].push(subscriptionId);
         
         emit BucketSubscriptionCreated(
-            msg.sender,
+            actualSender,
             bucketName,
             subscriptionId,
             amount,
@@ -673,9 +694,9 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
             block.timestamp,
             block.number
         );
-        emit SubscriptionAnalytics(msg.sender, subscriptionId, bucketName, 0, 0, periodInDays, recipient, block.timestamp, block.number);
-        emit UserActivity(msg.sender, "subscription_created", bucketName, amount, token, block.timestamp, block.number);
-        emit SecurityEvent(msg.sender, "SUBSCRIPTION_CREATED", "Subscription created successfully", block.timestamp, block.number);
+        emit SubscriptionAnalytics(actualSender, subscriptionId, bucketName, 0, 0, periodInDays, recipient, block.timestamp, block.number);
+        emit UserActivity(actualSender, "subscription_created", bucketName, amount, token, block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "SUBSCRIPTION_CREATED", "Subscription created successfully", block.timestamp, block.number);
         
         return subscriptionId;
     }
@@ -777,7 +798,8 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
      * @notice Only the subscription owner can cancel
      */
     function cancelBucketSubscription(uint256 subscriptionId) external {
-        SubscriptionInfo storage subscription = userSubscriptions[msg.sender][subscriptionId];
+        address actualSender = _getActualSender();
+        SubscriptionInfo storage subscription = userSubscriptions[actualSender][subscriptionId];
         require(subscription.isActive, "Subscription not active");
         
         // Cancel via external subscription service
@@ -788,11 +810,11 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
         subscription.isActive = false;
         
         // Remove from bucket's subscription list
-        Bucket storage bucket = userBuckets[msg.sender][subscription.bucketName];
+        Bucket storage bucket = userBuckets[actualSender][subscription.bucketName];
         bucket.subscriptionCount -= 1;
         
         emit BucketSubscriptionCancelled(
-            msg.sender,
+            actualSender,
             subscription.bucketName,
             subscriptionId,
             subscription.totalCharged,
@@ -800,7 +822,7 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
             block.timestamp,
             block.number
         );
-        emit SecurityEvent(msg.sender, "SUBSCRIPTION_CANCELLED", "Subscription cancelled successfully", block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "SUBSCRIPTION_CANCELLED", "Subscription cancelled successfully", block.timestamp, block.number);
     }
 
     // ============ MONTHLY LIMIT MANAGEMENT ============
@@ -829,8 +851,10 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
      * @notice Only the bucket owner can manually reset
      * @notice Monthly limits automatically reset every 30 days regardless of subscription activity
      */
-    function resetMonthlyLimit(string memory bucketName) external bucketExists(msg.sender, bucketName) {
-        _resetMonthlyLimitIfNeeded(msg.sender, bucketName);
+    function resetMonthlyLimit(string memory bucketName) external {
+        address actualSender = _getActualSender();
+        require(userBuckets[actualSender][bucketName].exists, "Bucket does not exist");
+        _resetMonthlyLimitIfNeeded(actualSender, bucketName);
     }
     
     /**
@@ -838,11 +862,12 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
      * @notice Useful for batch operations and maintenance
      */
     function resetAllBucketMonthlyLimits() external {
-        string[] memory bucketNames = userBucketNames[msg.sender];
+        address actualSender = _getActualSender();
+        string[] memory bucketNames = userBucketNames[actualSender];
         
         for (uint256 i = 0; i < bucketNames.length; i++) {
-            if (userBuckets[msg.sender][bucketNames[i]].exists) {
-                _resetMonthlyLimitIfNeeded(msg.sender, bucketNames[i]);
+            if (userBuckets[actualSender][bucketNames[i]].exists) {
+                _resetMonthlyLimitIfNeeded(actualSender, bucketNames[i]);
             }
         }
     }
@@ -964,19 +989,20 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
      * @notice Users can deposit tokens that can then be allocated to buckets
      */
     function depositTokens(address token, uint256 amount) external payable nonReentrant whenNotPaused {
+        address actualSender = _getActualSender();
         require(amount > 0, "Amount must be greater than 0");
         
         if (token == ETH_ADDRESS) {
             require(msg.value == amount, "ETH amount mismatch");
-            userTokenBalances[msg.sender][token] += amount;
+            userTokenBalances[actualSender][token] += amount;
         } else {
             require(msg.value == 0, "ETH sent with token deposit");
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-            userTokenBalances[msg.sender][token] += amount;
+            IERC20(token).safeTransferFrom(actualSender, address(this), amount);
+            userTokenBalances[actualSender][token] += amount;
         }
         
-        emit UserActivity(msg.sender, "tokens_deposited", "", amount, token, block.timestamp, block.number);
-        emit SecurityEvent(msg.sender, "TOKENS_DEPOSITED", "Tokens deposited successfully", block.timestamp, block.number);
+        emit UserActivity(actualSender, "tokens_deposited", "", amount, token, block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "TOKENS_DEPOSITED", "Tokens deposited successfully", block.timestamp, block.number);
     }
     
     /**
@@ -984,18 +1010,225 @@ contract ExpendiBucketManager is AccessControl, ReentrancyGuard, Pausable {
      * @notice Users can withdraw unallocated tokens
      */
     function withdrawTokens(address token, uint256 amount) external nonReentrant whenNotPaused {
+        address actualSender = _getActualSender();
         require(amount > 0, "Amount must be greater than 0");
-        require(userTokenBalances[msg.sender][token] >= amount, "Insufficient balance");
+        require(userTokenBalances[actualSender][token] >= amount, "Insufficient balance");
         
-        userTokenBalances[msg.sender][token] -= amount;
+        userTokenBalances[actualSender][token] -= amount;
         
         if (token == ETH_ADDRESS) {
-            payable(msg.sender).transfer(amount);
+            payable(actualSender).transfer(amount);
         } else {
-            IERC20(token).safeTransfer(msg.sender, amount);
+            IERC20(token).safeTransfer(actualSender, amount);
         }
         
-        emit UserActivity(msg.sender, "tokens_withdrawn", "", amount, token, block.timestamp, block.number);
-        emit SecurityEvent(msg.sender, "TOKENS_WITHDRAWN", "Tokens withdrawn successfully", block.timestamp, block.number);
+        emit UserActivity(actualSender, "tokens_withdrawn", "", amount, token, block.timestamp, block.number);
+        emit SecurityEvent(actualSender, "TOKENS_WITHDRAWN", "Tokens withdrawn successfully", block.timestamp, block.number);
     }
+
+    // ============ AUTOMATION HELPER FUNCTIONS ============
+    
+    /**
+     * @dev Get all active subscriptions for automation tracking
+     * @notice Used by Chainlink Automation to discover subscriptions
+     */
+    function getAllActiveSubscriptions() external view returns (
+        address[] memory users,
+        uint256[] memory subscriptionIds,
+        uint256[] memory nextChargeTimestamps
+    ) {
+        // Count total active subscriptions across all users
+        uint256 totalActive = 0;
+        
+        // First pass: count active subscriptions
+        // Note: This is not gas-efficient for large datasets, but works for automation discovery
+        for (uint256 i = 0; i < 1000; i++) { // Reasonable limit for scanning
+            address user = address(uint160(i + 1)); // Simple user enumeration
+            if (userSubscriptionIds[user].length > 0) {
+                uint256[] memory userSubs = userSubscriptionIds[user];
+                for (uint256 j = 0; j < userSubs.length; j++) {
+                    if (userSubscriptions[user][userSubs[j]].isActive) {
+                        totalActive++;
+                    }
+                }
+            }
+        }
+        
+        // Second pass: collect active subscriptions
+        users = new address[](totalActive);
+        subscriptionIds = new uint256[](totalActive);
+        nextChargeTimestamps = new uint256[](totalActive);
+        
+        uint256 index = 0;
+        for (uint256 i = 0; i < 1000 && index < totalActive; i++) {
+            address user = address(uint160(i + 1));
+            if (userSubscriptionIds[user].length > 0) {
+                uint256[] memory userSubs = userSubscriptionIds[user];
+                for (uint256 j = 0; j < userSubs.length && index < totalActive; j++) {
+                    if (userSubscriptions[user][userSubs[j]].isActive) {
+                        users[index] = user;
+                        subscriptionIds[index] = userSubs[j];
+                        nextChargeTimestamps[index] = userSubscriptions[user][userSubs[j]].nextChargeTimestamp;
+                        index++;
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * @dev Get subscriptions due for payment (more efficient for automation)
+     * @param maxResults Maximum number of results to return
+     */
+    function getSubscriptionsDue(uint256 maxResults) external view returns (
+        address[] memory dueUsers,
+        uint256[] memory dueSubscriptionIds
+    ) {
+        require(maxResults > 0 && maxResults <= 50, "Invalid maxResults");
+        
+        address[] memory tempUsers = new address[](maxResults);
+        uint256[] memory tempSubscriptionIds = new uint256[](maxResults);
+        uint256 dueCount = 0;
+        
+        // Scan for due subscriptions (limited scope for gas efficiency)
+        for (uint256 i = 0; i < 1000 && dueCount < maxResults; i++) {
+            address user = address(uint160(i + 1));
+            if (userSubscriptionIds[user].length > 0) {
+                uint256[] memory userSubs = userSubscriptionIds[user];
+                for (uint256 j = 0; j < userSubs.length && dueCount < maxResults; j++) {
+                    uint256 subscriptionId = userSubs[j];
+                    SubscriptionInfo memory subscription = userSubscriptions[user][subscriptionId];
+                    
+                    if (subscription.isActive && 
+                        block.timestamp >= subscription.nextChargeTimestamp &&
+                        subscription.userConsent) {
+                        tempUsers[dueCount] = user;
+                        tempSubscriptionIds[dueCount] = subscriptionId;
+                        dueCount++;
+                    }
+                }
+            }
+        }
+        
+        // Return properly sized arrays
+        dueUsers = new address[](dueCount);
+        dueSubscriptionIds = new uint256[](dueCount);
+        
+        for (uint256 i = 0; i < dueCount; i++) {
+            dueUsers[i] = tempUsers[i];
+            dueSubscriptionIds[i] = tempSubscriptionIds[i];
+        }
+    }
+    
+    /**
+     * @dev Batch process multiple subscription payments (gas optimized)
+     * @notice Only callable by SUBSCRIPTION_MANAGER_ROLE (automation contract)
+     */
+    function batchProcessSubscriptionPayments(
+        address[] calldata users,
+        uint256[] calldata subscriptionIds
+    ) external onlyRole(SUBSCRIPTION_MANAGER_ROLE) nonReentrant whenNotPaused returns (
+        bool[] memory results,
+        string[] memory errors
+    ) {
+        require(users.length == subscriptionIds.length, "Mismatched arrays");
+        require(users.length <= 10, "Batch too large");
+        
+        results = new bool[](users.length);
+        errors = new string[](users.length);
+        
+        for (uint256 i = 0; i < users.length; i++) {
+            try this.processSubscriptionPayment(users[i], subscriptionIds[i]) {
+                results[i] = true;
+                errors[i] = "";
+            } catch Error(string memory reason) {
+                results[i] = false;
+                errors[i] = reason;
+            } catch {
+                results[i] = false;
+                errors[i] = "Unknown error";
+            }
+        }
+    }
+    
+    /**
+     * @dev Check if subscription payment is due
+     * @notice Gas-efficient check for automation
+     */
+    function isSubscriptionPaymentDue(
+        address user,
+        uint256 subscriptionId
+    ) external view returns (bool isDue, uint256 nextChargeTimestamp) {
+        SubscriptionInfo memory subscription = userSubscriptions[user][subscriptionId];
+        
+        isDue = subscription.isActive && 
+                block.timestamp >= subscription.nextChargeTimestamp &&
+                subscription.userConsent;
+                
+        nextChargeTimestamp = subscription.nextChargeTimestamp;
+    }
+    
+    /**
+     * @dev Get subscription payment readiness (includes balance check)
+     * @notice Comprehensive check for automation decision making
+     */
+    function getSubscriptionPaymentReadiness(
+        address user,
+        uint256 subscriptionId
+    ) external view returns (
+        bool isReady,
+        string memory reason,
+        uint256 nextChargeTimestamp,
+        uint256 availableBalance,
+        uint256 requiredAmount
+    ) {
+        SubscriptionInfo memory subscription = userSubscriptions[user][subscriptionId];
+        
+        nextChargeTimestamp = subscription.nextChargeTimestamp;
+        requiredAmount = subscription.amount;
+        availableBalance = getBucketBalance(user, subscription.bucketName, subscription.token);
+        
+        if (!subscription.isActive) {
+            return (false, "Subscription not active", nextChargeTimestamp, availableBalance, requiredAmount);
+        }
+        
+        if (!subscription.userConsent) {
+            return (false, "No user consent", nextChargeTimestamp, availableBalance, requiredAmount);
+        }
+        
+        if (block.timestamp < subscription.nextChargeTimestamp) {
+            return (false, "Too early to charge", nextChargeTimestamp, availableBalance, requiredAmount);
+        }
+        
+        if (availableBalance < subscription.amount) {
+            return (false, "Insufficient bucket balance", nextChargeTimestamp, availableBalance, requiredAmount);
+        }
+        
+        // Check monthly limit
+        Bucket storage bucket = userBuckets[user][subscription.bucketName];
+        if (bucket.monthlyLimit > 0) {
+            uint256 projectedSpent = bucket.monthlySpent + subscription.amount;
+            if (projectedSpent > bucket.monthlyLimit) {
+                return (false, "Would exceed monthly limit", nextChargeTimestamp, availableBalance, requiredAmount);
+            }
+        }
+        
+        return (true, "Ready for payment", nextChargeTimestamp, availableBalance, requiredAmount);
+    }
+
+    // ============ AUTOMATION EVENTS ============
+    
+    event AutomationSubscriptionCreated(
+        address indexed user,
+        uint256 indexed subscriptionId,
+        string indexed bucketName,
+        uint256 nextChargeTimestamp,
+        address automationContract
+    );
+    
+    event AutomationSubscriptionCancelled(
+        address indexed user,
+        uint256 indexed subscriptionId,
+        address automationContract
+    );
 }

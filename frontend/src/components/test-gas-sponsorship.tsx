@@ -1,13 +1,13 @@
 "use client"
 
 import { useSmartAccount } from '@/context/SmartAccountContext';
-import { useWalletUser } from '@/hooks/useWalletUser';
+import { useAccount } from 'wagmi';
 import { useState } from 'react';
 import { Account } from 'viem';
 
 export const TestGasSponsorship = () => {
   const { smartAccountClient, smartAccountReady, smartAccountAddress } = useSmartAccount();
-  const { isConnected, address } = useWalletUser();
+  const { address, isConnected } = useAccount();
   const [testResult, setTestResult] = useState<string>('');
 
   const testSponsoredTransaction = async () => {
