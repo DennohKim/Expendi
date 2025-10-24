@@ -22,6 +22,8 @@ export function setupConsoleFilters() {
     /Received `true` for a non-boolean attribute `hideAnimations`/,
     /Warning: React does not recognize the `hideAnimations` prop/,
     /Warning: React does not recognize the `centered` prop/,
+    /In HTML, <div> cannot be a descendant of <p>/,
+    /This will cause a hydration error/,
     // Add more specific Privy patterns as needed
   ];
 
@@ -32,7 +34,9 @@ export function setupConsoleFilters() {
     const isPrivyWarning = suppressPatterns.some(pattern => pattern.test(message));
     const isFromPrivy = message.includes('@privy-io') || 
                        message.includes('privy-provider') ||
-                       message.includes('styled-components') && message.includes('button');
+                       message.includes('styled-components') && message.includes('button') ||
+                       message.includes('HelpTextContainer') ||
+                       message.includes('SignRequestScreen');
     
     if (!(isPrivyWarning && isFromPrivy)) {
       originalError.apply(console, args);
@@ -48,7 +52,9 @@ export function setupConsoleFilters() {
     // Check if this is a Privy-related React 19 warning we want to suppress
     const isPrivyWarning = suppressPatterns.some(pattern => pattern.test(message));
     const isFromPrivy = message.includes('@privy-io') || 
-                       message.includes('privy-provider');
+                       message.includes('privy-provider') ||
+                       message.includes('HelpTextContainer') ||
+                       message.includes('SignRequestScreen');
     
     if (!(isPrivyWarning && isFromPrivy)) {
       originalWarn.apply(console, args);

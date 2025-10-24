@@ -5,3 +5,9 @@
 [submodule "contracts/lib/openzeppelin-contracts"]
 	path = contracts/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "goalz-morpho/lib/openzeppelin-contracts"]
+	path = goalz-morpho/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "goalz-morpho/lib/metamorpho"]
+	path = goalz-morpho/lib/metamorpho
+	url = https://github.com/morpho-org/metamorpho

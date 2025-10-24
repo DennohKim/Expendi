@@ -55,7 +55,7 @@ export function Providers({ children }: ProvidersProps) {
         config={privyConfig}
       >
         <QueryClientProvider client={queryClient}>
-          <WagmiProvider config={config} reconnectOnMount={false}>
+          <WagmiProvider config={config} reconnectOnMount={true}>
             {children}
           </WagmiProvider>
         </QueryClientProvider>

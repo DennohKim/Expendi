@@ -15,7 +15,6 @@ import { useUserBuckets } from "@/hooks/subgraph-queries/getUserBuckets";
 
 
 
-
 export default function DashboardPage() {
   const {address: eoaAddress} = useAccount()
   const { smartAccountAddress, smartAccountReady } = useSmartAccount();
@@ -88,7 +87,7 @@ export default function DashboardPage() {
 
         {/* <TestGasSponsorship /> */}
 
-        
+        {/* Base ENS Testing Component */}
 
       </div>
     </div>

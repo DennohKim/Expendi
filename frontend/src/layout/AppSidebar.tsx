@@ -7,7 +7,7 @@ import {
   GridIcon,
   HorizontaLDots,
 } from "../icons/index";
-import { BadgeDollarSign, Wallet2Icon, BarChart3 } from "lucide-react";
+import { BadgeDollarSign, Wallet2Icon, BarChart3, TrendingUp, Target } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -37,6 +37,16 @@ const navItems: NavItem[] = [
     name: "Analytics",
     path: "/analytics",
     disabled: false,
+  },
+  {
+    icon: <TrendingUp />,
+    name: "Earn",
+    path: "/earn",
+  },
+  {
+    icon: <Target />,
+    name: "Target savings",
+    path: "/save",
   },
   {
     icon: <Wallet2Icon />,
