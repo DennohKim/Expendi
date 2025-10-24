@@ -1,4 +1,4 @@
-import { BigInt, Address, Bytes } from "@graphprotocol/graph-ts"
+import { BigInt, Address, Bytes, store } from "@graphprotocol/graph-ts"
 import {
   GoalCreated,
   GoalDeleted,
@@ -96,9 +96,15 @@ export function handleGoalDeleted(event: GoalDeleted): void {
     stats.totalActiveGoals = stats.totalActiveGoals.minus(BigInt.fromI32(1))
     stats.save()
 
-    // Remove the goal
-    // Note: In subgraphs, we typically don't delete entities but mark them as deleted
-    // For now, we'll keep it as is but you might want to add a 'deleted' field instead
+    // Remove any associated automated deposit
+    let autoDeposit = AutomatedDeposit.load(event.params.goalId.toString())
+    if (autoDeposit) {
+      store.remove("AutomatedDeposit", event.params.goalId.toString())
+    }
+
+    // Actually remove the goal entity from the subgraph
+    // This makes the goal completely unqueryable
+    store.remove("SavingsGoal", event.params.goalId.toString())
   }
 }
 

@@ -20,7 +20,7 @@ if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
 }
 
 const EXPENDI_SUBGRAPH_URL = "https://api.studio.thegraph.com/query/118246/expendi-base/version/latest"
-const GOALZ_SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1704348/goalz/v1.0.1"
+const GOALZ_SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1704348/goalz/v1.0.2"
 
 export function UnifiedApolloWrapper({
   children,

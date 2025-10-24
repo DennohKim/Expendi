@@ -88,7 +88,7 @@ contract Goalz is ERC721, ERC721Enumerable, AutomateTaskCreator, ReentrancyGuard
     }
 
     modifier goalExists(uint goalId) {
-        require(goalId < _tokenIdCounter, "Goal does not exist");
+        require(_ownerOf(goalId) != address(0), "Goal does not exist");
         _;
     }
 
