@@ -63,13 +63,13 @@ export function PortfolioSummary() {
     <div className="space-y-4">
       {/* Main Portfolio Summary Card */}
       <Card>
-        <CardHeader className="pb-4">
+        <CardHeader className="">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Wallet className="h-5 w-5" />
             Portfolio Summary
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-3 sm:p-6">
+        <CardContent className="">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Total Portfolio Value */}
             <div className="space-y-2 p-3 sm:p-0 rounded-lg bg-muted/30 sm:bg-transparent">
@@ -172,7 +172,7 @@ export function PortfolioSummary() {
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">Your Positions</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6">
+          <CardContent className="">
             <div className="space-y-3">
               {positions.map((position) => {
                 const positionEarning = positionEarnings.find(
