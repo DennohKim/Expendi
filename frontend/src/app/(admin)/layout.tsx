@@ -4,9 +4,10 @@ import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
-import { EnhancedOnboardingGateway } from "@/components/EnhancedOnboardingGateway";
+// import { EnhancedOnboardingGateway } from "@/components/EnhancedOnboardingGateway";
 import React from "react";
 import { usePathname } from "next/navigation";
+import { OnboardingGateway } from "@/components/OnboardingGateway";
 
 export default function AdminLayout({
   children,
@@ -27,7 +28,7 @@ export default function AdminLayout({
   const isOnboardingPage = pathname === '/onboarding';
 
   return (
-    <EnhancedOnboardingGateway requireMFA={true}>
+    <OnboardingGateway>
       {isOnboardingPage ? (
         children
       ) : (
@@ -46,6 +47,6 @@ export default function AdminLayout({
           </div>
         </div>
       )}
-    </EnhancedOnboardingGateway>
+    </OnboardingGateway>
   );
 }
