@@ -18,7 +18,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Goals</p>
@@ -30,7 +30,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active Goals</p>
@@ -42,7 +42,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Saved</p>
@@ -54,7 +54,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Interest Earned</p>
@@ -71,7 +71,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-2">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Goals</p>
@@ -83,7 +83,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
       </Card>
       
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-2">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Goals</p>
@@ -95,7 +95,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
       </Card>
       
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-2">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Saved</p>
@@ -107,7 +107,7 @@ export function GoalStatsOverview({ userAddress }: GoalStatsOverviewProps) {
       </Card>
       
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-2">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Interest Earned</p>

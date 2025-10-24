@@ -185,8 +185,8 @@ export default function VaultDetailPage() {
       </Button>
 
       {/* Header Card */}
-      <Card className="border-2 shadow-sm">
-        <CardContent className="p-4 sm:p-6 lg:p-8">
+      <Card className="border-1 shadow-sm">
+        <CardContent className="">
           {/* Mobile & Tablet Layout (< lg) */}
           <div className="lg:hidden space-y-4">
             {/* Top Section - Vault Info */}
@@ -336,7 +336,7 @@ export default function VaultDetailPage() {
       {/* Vault Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="hover:border-gray-400 dark:hover:border-gray-600 transition-colors">
-          <CardHeader className="pb-3">
+          <CardHeader className="">
             <CardDescription className="text-xs uppercase tracking-wide font-medium">
               Share Price
             </CardDescription>
@@ -349,7 +349,7 @@ export default function VaultDetailPage() {
         </Card>
         
         <Card className="hover:border-gray-400 dark:hover:border-gray-600 transition-colors">
-          <CardHeader className="pb-3">
+          <CardHeader className="">
             <CardDescription className="text-xs uppercase tracking-wide font-medium">
               Total Supply
             </CardDescription>
