@@ -36,11 +36,7 @@ export function GoalsList({ userAddress }: GoalsListProps) {
     setSelectedGoalId(goalId);
     setWithdrawSheetOpen(true);
   };
-  
-  const handleViewDetails = (goalId: bigint) => {
-    // TODO: Navigate to goal details page
-    console.log('View details for goal:', goalId);
-  };
+
 
   if (!userAddress) {
     return (
@@ -125,7 +121,6 @@ export function GoalsList({ userAddress }: GoalsListProps) {
               goalCard={goalCard}
               onDeposit={handleDeposit}
               onWithdraw={handleWithdraw}
-              onViewDetails={handleViewDetails}
             />
           ))}
         </div>

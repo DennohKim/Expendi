@@ -35,6 +35,7 @@ export function GoalCard({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   const { id, goal, progress, interestEarned } = goalCard;
+  console.log("id", id)
   const progressPercentage = formatProgress(progress.progressPercentage);
   const daysRemaining = getDaysRemaining(goal.deadline);
   const status = getGoalStatus(goal, progress);
