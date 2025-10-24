@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {  formatUnits, parseUnits, encodeFunctionData } from 'viem';
 import { useBalance, useAccount } from 'wagmi';
@@ -59,6 +59,12 @@ const WalletPage = () => {
   console.log("Query address being used:", data?.queryAddress);
 
   console.log("Wallet balance:", walletBalance);
+
+  const { data: eoaWalletBalance, refetch: refetchEoaWalletBalance } = useBalance({
+    address:eoaAddress,
+    token: usdcAddress,
+  });
+  console.log("Eoa wallet balance:", eoaWalletBalance);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -307,283 +313,536 @@ const WalletPage = () => {
   if (!data || !userData || !userData.walletsCreated?.[0]?.wallet) {
     return (
       <div className="container mx-auto p-6">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Budget Account
-            </h1>
-          </div>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center space-y-4">
-                <div className="text-gray-400">
-                  <svg
-                    className="mx-auto h-12 w-12 mb-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 10h11M9 21V3m0 0l4-4M9 3L5 7"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  No Budget Account Found
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  You don&apos;t have a budget account yet. Create one to get started.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Wallet
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your accounts and view balance information
+          </p>
         </div>
+        
+        <Tabs defaultValue="checking" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="checking">Checking Account</TabsTrigger>
+            <TabsTrigger value="savings">Savings & Investment</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="checking">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center space-y-4">
+                    <div className="text-gray-400">
+                      <svg
+                        className="mx-auto h-12 w-12 mb-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 10h11M9 21V3m0 0l4-4M9 3L5 7"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      No Budget Account Found
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400">
+                      You don&apos;t have a budget account yet. Create one to get started.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="savings">
+            <div className="max-w-2xl mx-auto space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold">
+                    Savings & Investment Account
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        EOA Wallet Address
+                      </span>
+                      <Badge variant="primary" className="text-sm">
+                        USDC on Base
+                      </Badge>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                      <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white">
+                        {eoaAddress ? formatAddress(eoaAddress) : 'Not connected'}
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(eoaAddress || '')}
+                        className="shrink-0"
+                        disabled={!eoaAddress}
+                      >
+                        {copied ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 4v12a2 2 0 002 2h8a2 2 0 002-2V7.242a2 2 0 00-.602-1.43L16.083 2.57A2 2 0 0014.685 2H10a2 2 0 00-2 2z" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M16 18v2a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2h2" stroke="currentColor" strokeWidth="2"/>
+                          </svg>
+                        )}
+                        <span className="ml-1">{copied ? 'Copied' : 'Copy'}</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Balance
+                    </span>
+                    
+                    <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 rounded-lg">
+                      <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                        Available Balance
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                        {walletBalanceLoading ? (
+                          <span className="animate-pulse">Loading...</span>
+                        ) : (
+                          `${walletBalance ? formatBalance(walletBalance.value) : '0.00'} USDC`
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Your personal wallet
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => {
+                        refetchWalletBalance();
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
+                      </svg>
+                      Refresh Balance
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
 
   return (
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Wallet
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Manage your accounts and view balance information
+        </p>
+      </div>
+      
+      <Tabs defaultValue="checking" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="checking">Checking Account</TabsTrigger>
+          <TabsTrigger value="savings">Savings & Investment</TabsTrigger>
+        </TabsList>
+        
+      <TabsContent value="checking">
+        <div className="grid grid-cols-12 gap-4 md:gap-6">
+          {/* Budget Account - Left side */}
+          <div className="col-span-12 h-auto mb-4 w-full xl:col-span-8 xl:h-[calc(100vh-120px)] xl:mb-0 overflow-y-auto pr-2">
+            {/* Header */}
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Checking Account
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Your budget account for daily spending and expense management
+              </p>
+            </div>
 
-         {/* Quick Spend Tab - Above buckets on small/medium, right side on large */}
-      <div className="col-span-12 h-auto mb-4 w-full xl:col-span-8 xl:h-[calc(100vh-120px)] xl:mb-0 overflow-y-auto pr-2">
-        {/* Header */}
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Budget Account
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Manage your budget account and view balance information
-          </p>
-        </div>
-
-        {/* Wallet Information Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-semibold">
-              Wallet Details
-            </CardTitle>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => {
-                refetch();
-                refetchWalletBalance();
-              }}
-              className="h-8 w-8"
-              title="Refresh wallet data"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
-              </svg>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Smart Account Address */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Smart Account Address
-                </span>
-                <Badge variant="primary" className="text-sm">
-                  USDC on Base
-                </Badge>
-              </div>
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white">
-                  {displayAddress ? formatAddress(displayAddress) : 'Not connected'}
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(smartAccountAddress || eoaAddress || '')}
-                  className="shrink-0"
-                  disabled={!smartAccountAddress && !eoaAddress}
+            {/* Budget Wallet Information Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xl font-semibold">
+                  Budget Wallet Details
+                </CardTitle>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => {
+                    refetch();
+                    refetchWalletBalance();
+                  }}
+                  className="h-8 w-8"
+                  title="Refresh wallet data"
                 >
-                  {copied ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 4v12a2 2 0 002 2h8a2 2 0 002-2V7.242a2 2 0 00-.602-1.43L16.083 2.57A2 2 0 0014.685 2H10a2 2 0 00-2 2z" stroke="currentColor" strokeWidth="2"/>
-                      <path d="M16 18v2a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2h2" stroke="currentColor" strokeWidth="2"/>
-                    </svg>
-                  )}
-                  <span className="ml-1">{copied ? 'Copied' : 'Copy'}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
+                  </svg>
                 </Button>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Smart Account Address */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Smart Account Address
+                    </span>
+                    <Badge variant="primary" className="text-sm">
+                      USDC on Base
+                    </Badge>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                    <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white">
+                      {displayAddress ? formatAddress(displayAddress) : 'Not connected'}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(smartAccountAddress || eoaAddress || '')}
+                      className="shrink-0"
+                      disabled={!smartAccountAddress && !eoaAddress}
+                    >
+                      {copied ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M8 4v12a2 2 0 002 2h8a2 2 0 002-2V7.242a2 2 0 00-.602-1.43L16.083 2.57A2 2 0 0014.685 2H10a2 2 0 00-2 2z" stroke="currentColor" strokeWidth="2"/>
+                          <path d="M16 18v2a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2h2" stroke="currentColor" strokeWidth="2"/>
+                        </svg>
+                      )}
+                      <span className="ml-1">{copied ? 'Copied' : 'Copy'}</span>
+                    </Button>
+                  </div>
+                </div>
 
-            {/* Balance Section */}
-            <div className="space-y-4">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                Balance Overview
-              </span>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
- {/* Budget Wallet Balance */}
- <div className="text-center p-6 bg-[#ff7e5f]/10 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Budget Account
+                {/* Balance Section */}
+                <div className="space-y-4">
+                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Balance Overview
+                  </span>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Budget Wallet Balance */}
+                    <div className="text-center p-6 bg-[#ff7e5f]/10 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg">
+                      <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                        Budget Account
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                        {formatBalance(actualTotalBalance)} USDC
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Available for budgeting
+                      </div>
+                    </div>
+                    
+                    {/* Smart Account Balance */}
+                    <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 rounded-lg">
+                      <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                        Smart Account Balance
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                        {walletBalanceLoading ? (
+                          <span className="animate-pulse">Loading...</span>
+                        ) : (
+                          `${walletBalance ? formatBalance(walletBalance.value) : '0.00'} USDC`
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Available to deposit
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                  {formatBalance(actualTotalBalance)} USDC
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Available for budgeting
-                </div>
-              </div>
-              
-              {/* User Wallet Balance */}
-              <div className="text-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Your Wallet Balance
-                </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                  {walletBalanceLoading ? (
-                    <span className="animate-pulse">Loading...</span>
-                  ) : (
-                    `${walletBalance ? formatBalance(walletBalance.value) : '0.00'} USDC`
-                  )}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Available to deposit
-                </div>
-              </div>
-              </div>
-             
-            </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-3">
-             
-              
-              <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
-                <DialogTrigger asChild>
+                {/* Quick Actions */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="primary" 
+                        className="w-full"
+                        disabled={!walletBalance || walletBalance.value === BigInt(0)}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
+                          <path d="M12 5v14m7-7H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Deposit
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Allocate Funds for Budgeting</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="amount">Amount (USDC)</Label>
+                          <Input
+                            id="amount"
+                            type="number"
+                            placeholder="0.00"
+                            value={depositAmount}
+                            onChange={(e) => setDepositAmount(e.target.value)}
+                            step="0.01"
+                            min="0"
+                          />
+                          {walletBalance && (
+                            <p className="text-sm text-gray-500">
+                              Available: {formatBalance(walletBalance.value)} USDC
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => setIsDepositDialogOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            className="flex-1"
+                            variant="primary"
+                            onClick={handleDialogDeposit}
+                            disabled={isDepositing || !depositAmount}
+                          >
+                            {isDepositing ? 'Processing...' : 'Deposit'}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
                   <Button 
-                    variant="primary" 
+                    variant="outline" 
                     className="w-full"
-                    disabled={!walletBalance || walletBalance.value === BigInt(0)}
+                    onClick={() => {
+                      refetch();
+                      refetchWalletBalance();
+                    }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-                      <path d="M12 5v14m7-7H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
                     </svg>
-                    Deposit
+                    Refresh
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Allocate Funds for Budgeting</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">Amount (USDC)</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        placeholder="0.00"
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
-                        step="0.01"
-                        min="0"
-                      />
-                      {walletBalance && (
-                        <p className="text-sm text-gray-500">
-                          Available: {formatBalance(walletBalance.value)} USDC
-                        </p>
-                      )}
+                </div>
+
+                {/* Additional Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Unallocated
+                    </p>
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {formatBalance(unallocatedBalance)} USDC
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                      Allocated
+                    </p>
+                    <p className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {formatBalance(allocatedBalance)} USDC
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Control Funds section for checking account */}
+          <div className="col-span-12 h-[calc(100vh-120px)]  xl:col-span-4">
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+               Control Funds 
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Allocate or withdraw funds from your budget account
+              </p>
+            </div>
+            <AllocateFunds 
+              walletBalance={walletBalance?.value || BigInt(0)} 
+              unallocatedBalance={unallocatedBalance || BigInt(0)}
+              handleDeposit={handleDeposit} 
+              isDepositing={isDepositing}
+              userAddress={smartAccountAddress}
+              onDepositSuccess={() => {
+                // Refresh balances after successful deposit
+                setTimeout(() => {
+                  refetch();
+                  refetchWalletBalance();
+                }, 1000);
+              }}
+            />
+          </div>
+        </div>
+        </TabsContent>
+        
+        <TabsContent value="savings">
+          <div className="grid grid-cols-12 gap-4 md:gap-6">
+            {/* EOA Wallet - Left side */}
+            <div className="col-span-12 h-auto mb-4 w-full xl:col-span-8 xl:h-[calc(100vh-120px)] xl:mb-0 overflow-y-auto pr-2">
+              {/* Header */}
+              <div className="mb-4">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Savings & Investment
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Your personal wallet for earning interest and target savings
+                </p>
+              </div>
+
+              {/* EOA Wallet Information Card */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xl font-semibold">
+                    Personal Wallet Details
+                  </CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => {
+                      refetchWalletBalance();
+                    }}
+                    className="h-8 w-8"
+                    title="Refresh wallet data"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
+                    </svg>
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* EOA Address */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        EOA Wallet Address
+                      </span>
+                      <Badge variant="primary" className="text-sm">
+                        USDC on Base
+                      </Badge>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                      <code className="flex-1 text-sm font-mono text-gray-900 dark:text-white">
+                        {eoaAddress ? formatAddress(eoaAddress) : 'Not connected'}
+                      </code>
                       <Button
                         variant="outline"
-                        className="flex-1"
-                        onClick={() => setIsDepositDialogOpen(false)}
+                        size="sm"
+                        onClick={() => copyToClipboard(eoaAddress || '')}
+                        className="shrink-0"
+                        disabled={!eoaAddress}
                       >
-                        Cancel
-                      </Button>
-                      <Button
-                        className="flex-1"
-                        variant="primary"
-                        onClick={handleDialogDeposit}
-                        disabled={isDepositing || !depositAmount}
-                      >
-                        {isDepositing ? 'Processing...' : 'Deposit'}
+                        {copied ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        ) : (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 4v12a2 2 0 002 2h8a2 2 0 002-2V7.242a2 2 0 00-.602-1.43L16.083 2.57A2 2 0 0014.685 2H10a2 2 0 00-2 2z" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M16 18v2a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2h2" stroke="currentColor" strokeWidth="2"/>
+                          </svg>
+                        )}
+                        <span className="ml-1">{copied ? 'Copied' : 'Copy'}</span>
                       </Button>
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
-              
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => {
-                  refetch();
-                  refetchWalletBalance();
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-                  <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
-                </svg>
-                Refresh
-              </Button>
-            </div>
 
-            {/* Additional Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Unallocated
-                </p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {formatBalance(unallocatedBalance)} USDC
-                </p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 text-center">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Allocated
-                </p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {formatBalance(allocatedBalance)} USDC
-                </p>
-              </div>
+                  {/* Balance Section */}
+                  <div className="space-y-4">
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Balance Overview
+                    </span>
+                    
+                    <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 rounded-lg">
+                      <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                        Available Balance
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                        {walletBalanceLoading ? (
+                          <span className="animate-pulse">Loading...</span>
+                        ) : (
+                          `${eoaWalletBalance? formatBalance(eoaWalletBalance.value) : '0.00'} USDC`
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Available for savings and earning interest
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-1 gap-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => {
+                        refetchWalletBalance();
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="currentColor"/>
+                      </svg>
+                      Refresh Balance
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      </div>
       
-      {/* User Buckets Grid - Below QuickSpend on small/medium, left side on large */}
-      <div className="col-span-12 h-[calc(100vh-120px)]  xl:col-span-4">
-      <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-           Control Funds 
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Allocate or withdraw funds from your budget account
-          </p>
-        </div>
-        <AllocateFunds 
-          walletBalance={walletBalance?.value || BigInt(0)} 
-          unallocatedBalance={unallocatedBalance || BigInt(0)}
-          handleDeposit={handleDeposit} 
-          isDepositing={isDepositing}
-          userAddress={smartAccountAddress || eoaAddress}
-          onDepositSuccess={() => {
-            // Refresh balances after successful deposit
-            setTimeout(() => {
-              refetch();
-              refetchWalletBalance();
-            }, 1000);
-          }}
-        />
-      </div>
-        
-      </div>
-
+            {/* Control Funds section for savings tab */}
+            <div className="col-span-12 h-[calc(100vh-120px)]  xl:col-span-4">
+              <div className="mb-4">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                 Control Funds 
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Fund your wallet to earn yield and save for your goals
+                </p>
+              </div>
+              <AllocateFunds 
+                walletBalance={walletBalance?.value || BigInt(0)} 
+                unallocatedBalance={unallocatedBalance || BigInt(0)}
+                handleDeposit={handleDeposit} 
+                isDepositing={isDepositing}
+                userAddress={eoaAddress}
+                onDepositSuccess={() => {
+                  // Refresh balances after successful deposit
+                  setTimeout(() => {
+                    refetch();
+                    refetchEoaWalletBalance();
+                  }, 1000);
+                }}
+              />
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

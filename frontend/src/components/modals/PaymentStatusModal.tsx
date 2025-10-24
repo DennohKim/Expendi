@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
+import { useTransactionEmail } from "@/hooks/useTransactionEmail";
 import Lottie from "lottie-react";
 import successAnimation from "../../../public/Success.json";
 
@@ -44,11 +45,13 @@ export function PaymentStatusModal({
   userAddress // Add user address parameter
 }: PaymentStatusModalProps) {
   const paymentStatus = usePaymentStatus(userAddress);
+  const { sendTransactionEmail } = useTransactionEmail();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const maxPollingAttempts = 20; // 20 attempts = 2 minutes of polling
   const pollingAttemptsRef = useRef(0);
   const isPollingRef = useRef(false);
   const currentStatusRef = useRef<string | null>(null);
+  const emailSentRef = useRef(false); // Track if email has been sent
 
   // Clear polling interval on unmount
   useEffect(() => {
@@ -60,12 +63,37 @@ export function PaymentStatusModal({
     };
   }, []);
 
-  // Update current status ref when data changes (without causing re-renders)
+  // Update current status ref and send email when transaction completes
   useEffect(() => {
     if (paymentStatus.data?.data?.status) {
       currentStatusRef.current = paymentStatus.data.data.status;
+      
+      // Send email notification when transaction completes successfully
+      if (
+        paymentStatus.data.data.status === 'COMPLETE' && 
+        !emailSentRef.current &&
+        paymentStatus.data.data
+      ) {
+        emailSentRef.current = true;
+        const { baseAmount } = calculateAmountBreakdown(paymentStatus.data.data.amount);
+        
+        sendTransactionEmail({
+          transactionType: 'payment',
+          amount: baseAmount,
+          currency: paymentStatus.data.data.currency_code,
+          status: 'success',
+          timestamp: paymentStatus.data.data.created_at,
+          shortcode: paymentStatus.data.data.shortcode,
+          receiptNumber: paymentStatus.data.data.receipt_number,
+          publicName: paymentStatus.data.data.public_name,
+          accountNumber: paymentStatus.data.data.account_number || undefined,
+        }).catch(error => {
+          console.error('Failed to send transaction email:', error);
+          // Don't reset emailSentRef on error to avoid spam
+        });
+      }
     }
-  }, [paymentStatus.data]);
+  }, [paymentStatus.data, sendTransactionEmail]);
 
   // Memoized polling function to prevent recreation
   const startPolling = useCallback(() => {
@@ -113,6 +141,9 @@ export function PaymentStatusModal({
     if (isOpen && transactionCode) {
       console.log('PaymentStatusModal useEffect triggered:', { isOpen, transactionCode, currency });
       console.log('Triggering payment status mutation with:', { transaction_code: transactionCode, currency });
+      
+      // Reset email sent flag when modal opens
+      emailSentRef.current = false;
       
       // Initial status check
       paymentStatus.mutate({ transaction_code: transactionCode, currency });

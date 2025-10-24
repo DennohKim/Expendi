@@ -38,6 +38,15 @@ contracts/broadcast/*/31337/
 contracts/broadcast/**/dry-run/
 contracts/docs/
 
+# Goalz Morpho specific
+goalz-morpho/cache/
+goalz-morpho/broadcast/*/31337/
+goalz-morpho/broadcast/**/dry-run/
+goalz-morpho/docs/
+goalz-morpho/script/
+
+# goalz-morpho/test/
+
 # Frontend specific (Next.js)
 frontend/.next/
 frontend/out/

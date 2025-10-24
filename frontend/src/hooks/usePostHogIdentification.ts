@@ -17,8 +17,7 @@ export function usePostHogIdentification() {
         user_id: user.id,
         created_at: user.createdAt.toISOString(),
         auth_method: user.linkedAccounts?.[0]?.type || 'unknown',
-        wallet_type: user.wallet?.walletClientType,
-        chain_id: user.wallet?.chainId
+        wallet_type: user.wallet?.walletClientType
       })
 
       // Set additional user properties

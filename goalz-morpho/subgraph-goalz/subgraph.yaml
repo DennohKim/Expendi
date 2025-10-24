@@ -1,0 +1,42 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Goalz
+    network: base
+    source:
+      address: "0x7cb746234f93726d5a70bb21aa5a39a97d1ce88f"
+      abi: Goalz
+      startBlock: 37199704
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - SavingsGoal
+        - GoalzToken
+        - Deposit
+        - Withdrawal
+        - AutomatedDeposit
+      abis:
+        - name: Goalz
+          file: ./abis/Goalz.json
+      eventHandlers:
+        - event: GoalCreated(indexed address,indexed uint256,string,string,uint256,uint256,address)
+          handler: handleGoalCreated
+        - event: GoalDeleted(indexed address,indexed uint256)
+          handler: handleGoalDeleted
+        - event: GoalzTokenCreated(indexed address,indexed address)
+          handler: handleGoalzTokenCreated
+        - event: DepositMade(indexed address,indexed uint256,uint256,uint256)
+          handler: handleDepositMade
+        - event: WithdrawMade(indexed address,indexed uint256,uint256)
+          handler: handleWithdrawMade
+        - event: AutomatedDepositCreated(indexed address,indexed uint256,uint256,uint256)
+          handler: handleAutomatedDepositCreated
+        - event: AutomatedDepositCanceled(indexed address,indexed uint256)
+          handler: handleAutomatedDepositCanceled
+        - event: GoalCompleted(indexed address,indexed uint256,uint256)
+          handler: handleGoalCompleted
+      file: ./src/goalz.ts

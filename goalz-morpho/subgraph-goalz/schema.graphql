@@ -1,0 +1,101 @@
+type SavingsGoal @entity(immutable: false) {
+  id: ID! # goalId
+  owner: User! # address
+  what: String!
+  why: String!
+  targetAmount: BigInt!
+  currentAmount: BigInt!
+  targetDate: BigInt!
+  depositToken: Bytes! # address
+  complete: Boolean!
+  shareBalance: BigInt!
+  createdAt: BigInt!
+  createdTx: Bytes!
+  
+  # Relations
+  deposits: [Deposit!]! @derivedFrom(field: "goal")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "goal")
+  automatedDeposit: AutomatedDeposit @derivedFrom(field: "goal")
+}
+
+type GoalzToken @entity(immutable: true) {
+  id: ID! # depositToken address
+  address: Bytes! # goalzToken address
+  depositToken: Bytes! # original token address
+  name: String
+  symbol: String
+  createdAt: BigInt!
+  createdTx: Bytes!
+}
+
+type Deposit @entity(immutable: true) {
+  id: ID! # tx hash + log index
+  goal: SavingsGoal!
+  depositor: User! # address
+  amount: BigInt!
+  shares: BigInt!
+  timestamp: BigInt!
+  transaction: Bytes!
+  blockNumber: BigInt!
+}
+
+type Withdrawal @entity(immutable: true) {
+  id: ID! # tx hash + log index
+  goal: SavingsGoal!
+  withdrawer: User! # address
+  amount: BigInt!
+  timestamp: BigInt!
+  transaction: Bytes!
+  blockNumber: BigInt!
+}
+
+type AutomatedDeposit @entity(immutable: false) {
+  id: ID! # goalId
+  goal: SavingsGoal!
+  amount: BigInt!
+  frequency: BigInt!
+  creator: User! # address
+  active: Boolean!
+  createdAt: BigInt!
+  createdTx: Bytes!
+  canceledAt: BigInt
+  canceledTx: Bytes
+}
+
+type GoalCompletion @entity(immutable: true) {
+  id: ID! # tx hash + log index
+  goal: SavingsGoal!
+  owner: User! # address
+  targetAmount: BigInt!
+  timestamp: BigInt!
+  transaction: Bytes!
+  blockNumber: BigInt!
+}
+
+# Global statistics
+type GlobalStats @entity(immutable: false) {
+  id: ID! # "global"
+  totalGoals: BigInt!
+  totalCompletedGoals: BigInt!
+  totalActiveGoals: BigInt!
+  totalDeposits: BigInt!
+  totalWithdrawals: BigInt!
+  totalValueLocked: BigInt!
+  totalUsers: BigInt!
+}
+
+type User @entity(immutable: false) {
+  id: ID! # user address
+  address: Bytes!
+  goalsCreated: BigInt!
+  goalsCompleted: BigInt!
+  totalDeposited: BigInt!
+  totalWithdrawn: BigInt!
+  firstGoalAt: BigInt!
+  lastActivityAt: BigInt!
+  
+  # Relations
+  goals: [SavingsGoal!]! @derivedFrom(field: "owner")
+  deposits: [Deposit!]! @derivedFrom(field: "depositor")
+  withdrawals: [Withdrawal!]! @derivedFrom(field: "withdrawer")
+}

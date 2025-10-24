@@ -8,7 +8,7 @@ import { Providers } from '@/lib/privy/providers';
 import { Metadata } from 'next';
 import { SmartAccountProvider } from '@/context/SmartAccountContext';
 import { Toaster } from "@/components/ui/sonner"
-import { ApolloWrapper } from '@/lib/services/apollo-wrapper';
+import { UnifiedApolloWrapper } from '@/lib/services/unified-apollo-wrapper';
 import { AppTour } from '@/components/tour/AppTour';
 import { cookies } from 'next/headers';
 import { PostHogProvider } from '@/context/PostHogContext';
@@ -64,10 +64,10 @@ export default async function RootLayout({
                 <SidebarProvider>
                   <TourProvider>
                     <AppTour>
-                      <ApolloWrapper delay={delay}>
+                      <UnifiedApolloWrapper delay={delay}>
                         {children}
                         <PWAInstaller />
-                      </ApolloWrapper>
+                      </UnifiedApolloWrapper>
                     </AppTour>
                   </TourProvider>
                   <Toaster position="top-right" richColors />

@@ -4,6 +4,51 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
   
+  // Image optimization configuration
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.morpho.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.morpho.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ipfs.io',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.ipfs.io',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cloudflare-ipfs.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        pathname: '/**',
+      },
+    ],
+    // Allow optimization of images from any HTTPS source
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+  
   // Suppress specific React warnings in development
   logging: {
     fetches: {
