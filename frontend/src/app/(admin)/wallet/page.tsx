@@ -821,7 +821,7 @@ const WalletPage = () => {
                  Control Funds 
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Select which address to fund via onramp or transfer
+                  Fund your wallet to earn yield and save for your goals
                 </p>
               </div>
               <AllocateFunds 
