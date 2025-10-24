@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { parseUnits } from "viem";
-import { useReadContract, useWriteContract, useConfig, useChainId } from "wagmi";
+import { useReadContract, useWriteContract, useChainId } from "wagmi";
 import { useWallets } from "@privy-io/react-auth";
 import { base } from "wagmi/chains";
 import { ERC20_ABI, ERC4626_ABI } from "./ABIs";
@@ -27,7 +27,6 @@ export function   useVaultOperations(
   
   // Privy wallet management
   const { wallets } = useWallets();
-  const config = useConfig();
   const chainId = useChainId();
   
   // Check if wallet is properly connected

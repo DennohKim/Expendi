@@ -6,8 +6,8 @@ import { useVaultsList } from "@/lib/morpho/useVaultsList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VaultImage } from "@/components/vault";
-import { TrendingUp, User, Eye, Grid3x3, List } from "lucide-react";
-import Image from "next/image";
+import { PortfolioSummary } from "@/components/portfolio";
+import { TrendingUp, Eye, Grid3x3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type ViewMode = "grid" | "list";
@@ -123,6 +123,9 @@ export default function EarnPage() {
           </div>
         </div>
       </div>
+
+      {/* Portfolio Summary */}
+      <PortfolioSummary />
 
       {/* Vaults Grid/List */}
       {vaults.length > 0 ? (

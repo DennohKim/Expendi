@@ -65,7 +65,6 @@ export default function VaultDetailPage() {
     isWalletReady,
     maxWithdrawAmount,
     previewDepositShares,
-    previewWithdrawShares,
     convertToSharesAmount,
   } = useVaultOperations(address, vaultInfo);
 
@@ -186,20 +185,97 @@ export default function VaultDetailPage() {
       </Button>
 
       {/* Header Card */}
-      <Card className="border-2">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            {/* Left Section - Vault Info */}
-            <div className="flex items-start gap-4">
-              <VaultImage 
-                imageUrl={vault.metadata?.image} 
-                vaultName={vault.name}
-                size="lg"
-                className="shadow-md"
-              />
-              <div className="space-y-2">
+      <Card className="border-2 shadow-sm">
+        <CardContent className="p-4 sm:p-6 lg:p-8">
+          {/* Mobile & Tablet Layout (< lg) */}
+          <div className="lg:hidden space-y-4">
+            {/* Top Section - Vault Info */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="shrink-0">
+                <VaultImage 
+                  imageUrl={vault.metadata?.image} 
+                  vaultName={vault.name}
+                  size="md"
+                  className="w-16 h-16 sm:w-20 sm:h-20"
+                />
+              </div>
+              <div className="flex-1 min-w-0 space-y-2.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight">
+                    {vault.name}
+                  </h1>
+                  {vault.whitelisted && (
+                    <Badge variant="default" className="bg-blue-600 text-white text-xs shrink-0">
+                      Whitelisted
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
+              {vault.description}
+            </p>
+
+            {/* Badges Row */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <Badge variant="secondary" className="text-xs sm:text-sm font-semibold">
+                {vault.asset}
+              </Badge>
+              {vault.metadata?.curators && vault.metadata.curators.length > 0 && (
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  <User className="h-3.5 w-3.5 shrink-0" />
+                  <span>Curated by {vault.metadata.curators[0].name}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-200 dark:border-gray-700"></div>
+
+            {/* Bottom Section - Key Metrics */}
+            <div className="grid grid-cols-2 gap-6 pt-2">
+              {/* APY Display */}
+              <div className="flex flex-col space-y-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Net APY
+                </span>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-500 shrink-0" />
+                  <span className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-500 tabular-nums">
+                    {vault.netApy}
+                  </span>
+                </div>
+              </div>
+              
+              {/* TVL Display */}
+              <div className="flex flex-col space-y-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Total Value Locked
+                </span>
+                <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tabular-nums">
+                  {vault.tvl}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Layout (>= lg) */}
+          <div className="hidden lg:flex lg:items-start lg:gap-8">
+            {/* Left Section - Vault Info */}
+            <div className="flex items-start gap-4 xl:gap-5 flex-1 min-w-0">
+              <div className="shrink-0">
+                <VaultImage 
+                  imageUrl={vault.metadata?.image} 
+                  vaultName={vault.name}
+                  size="md"
+                  className="w-20 h-20 xl:w-24 xl:h-24"
+                />
+              </div>
+              <div className="flex-1 min-w-0 space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                     {vault.name}
                   </h1>
                   {vault.whitelisted && (
@@ -208,7 +284,7 @@ export default function VaultDetailPage() {
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl">
+                <p className="text-sm xl:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
                   {vault.description}
                 </p>
                 <div className="flex items-center gap-3 flex-wrap">
@@ -216,8 +292,8 @@ export default function VaultDetailPage() {
                     {vault.asset}
                   </Badge>
                   {vault.metadata?.curators && vault.metadata.curators.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                      <User className="h-3.5 w-3.5" />
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <User className="h-4 w-4" />
                       <span>Curated by {vault.metadata.curators[0].name}</span>
                     </div>
                   )}
@@ -225,27 +301,30 @@ export default function VaultDetailPage() {
               </div>
             </div>
 
+            {/* Vertical Divider */}
+            <div className="h-auto w-px bg-gray-200 dark:bg-gray-700 self-stretch"></div>
+
             {/* Right Section - Key Metrics */}
-            <div className="flex flex-row md:flex-col gap-4 md:gap-3 md:items-end">
+            <div className="flex flex-col gap-8 shrink-0 min-w-[280px] xl:min-w-[320px]">
               {/* APY Display */}
-              <div className="flex flex-col items-start md:items-end">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+              <div className="flex flex-col items-end space-y-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Net APY
                 </span>
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-500" />
-                  <span className="text-2xl md:text-3xl font-bold text-green-600 dark:text-green-500">
+                  <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-500" />
+                  <span className="text-4xl xl:text-5xl font-bold text-green-600 dark:text-green-500 tabular-nums">
                     {vault.netApy}
                   </span>
                 </div>
               </div>
               
               {/* TVL Display */}
-              <div className="flex flex-col items-start md:items-end">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+              <div className="flex flex-col items-end space-y-2">
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Total Value Locked
                 </span>
-                <span className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                <span className="text-4xl xl:text-5xl font-bold text-gray-900 dark:text-white tabular-nums">
                   {vault.tvl}
                 </span>
               </div>
@@ -282,31 +361,7 @@ export default function VaultDetailPage() {
           </CardContent>
         </Card>
 
-        <Card className="hover:border-gray-400 dark:hover:border-gray-600 transition-colors">
-          <CardHeader className="pb-3">
-            <CardDescription className="text-xs uppercase tracking-wide font-medium">
-              Base APY
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-500">
-              {vault.apy}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:border-gray-400 dark:hover:border-gray-600 transition-colors">
-          <CardHeader className="pb-3">
-            <CardDescription className="text-xs uppercase tracking-wide font-medium">
-              Created
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-lg font-semibold text-gray-900 dark:text-white">
-              {vault.creationTimestamp}
-            </div>
-          </CardContent>
-        </Card>
+       
       </div>
 
       {/* Main Content Grid */}

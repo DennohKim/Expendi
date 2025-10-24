@@ -11,7 +11,7 @@ interface CuratorCardProps {
   allocators?: Allocator[];
 }
 
-export function CuratorCard({ metadata, allocators }: CuratorCardProps) {
+export function CuratorCard({ metadata }: CuratorCardProps) {
   if (!metadata?.curators || metadata.curators.length === 0) {
     return null;
   }
@@ -88,30 +88,6 @@ export function CuratorCard({ metadata, allocators }: CuratorCardProps) {
               <ExternalLink className="h-4 w-4" />
               Discuss on Forum
             </a>
-          </div>
-        )}
-
-        {/* Allocators */}
-        {allocators && allocators.length > 0 && (
-          <div className="pt-3 border-t">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-              Allocators ({allocators.length})
-            </p>
-            <div className="space-y-1">
-              {allocators.slice(0, 3).map((allocator, index) => (
-                <div
-                  key={index}
-                  className="text-xs font-mono text-gray-600 dark:text-gray-400 truncate"
-                >
-                  {allocator.address}
-                </div>
-              ))}
-              {allocators.length > 3 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  +{allocators.length - 3} more
-                </p>
-              )}
-            </div>
           </div>
         )}
       </CardContent>

@@ -19,16 +19,13 @@ if (process.env.NEXT_PUBLIC_NODE_ENV === 'development') {
   loadErrorMessages()
 }
 
-const SUBGRAPH_URL = "https://api.studio.thegraph.com/query/118246/expendi-base/version/latest"
+const EXPENDI_SUBGRAPH_URL = "https://api.studio.thegraph.com/query/118246/expendi-base/version/latest"
+const GOALZ_SUBGRAPH_URL = "https://api.studio.thegraph.com/query/1704348/goalz/v1.0.1"
 
-export function ApolloWrapper({
+export function UnifiedApolloWrapper({
   children,
   delay: delayProp,
 }: React.PropsWithChildren<{
-  // this will be passed in from a RSC that can read cookies
-  // on the client we want to read the cookie instead
-  // but in SSR we don't have access to cookies, so
-  // we have to use this weird workaround
   delay: number;
 }>) {
   return (
@@ -38,10 +35,23 @@ export function ApolloWrapper({
   )
 
   function makeClient() {
-    const httpLink = new HttpLink({
-      uri: SUBGRAPH_URL,
+    // Create separate HTTP links for each subgraph
+    const expendiLink = new HttpLink({
+      uri: EXPENDI_SUBGRAPH_URL,
       fetchOptions: { cache: 'no-store' },
     })
+
+    const goalzLink = new HttpLink({
+      uri: GOALZ_SUBGRAPH_URL,
+      fetchOptions: { cache: 'no-store' },
+    })
+
+    // Route queries to the correct subgraph based on context
+    const directionalLink = ApolloLink.split(
+      (operation) => operation.getContext().subgraph === 'goalz',
+      goalzLink,
+      expendiLink // default to Expendi
+    )
 
     const delayLink = new ApolloLink((operation, forward) => {
       const delay =
@@ -59,6 +69,7 @@ export function ApolloWrapper({
 
       return forward(operation)
     })
+
     const link =
       typeof window === 'undefined'
         ? ApolloLink.from([
@@ -67,9 +78,9 @@ export function ApolloWrapper({
               cutoffDelay: 100,
             }),
             delayLink,
-            httpLink,
+            directionalLink,
           ])
-        : ApolloLink.from([delayLink, httpLink])
+        : ApolloLink.from([delayLink, directionalLink])
 
     return new ApolloClient({
       cache: new InMemoryCache(),
@@ -77,3 +88,4 @@ export function ApolloWrapper({
     })
   }
 }
+

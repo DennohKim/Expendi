@@ -1,0 +1,20 @@
+{
+  "name": "goalz-subgraph",
+  "version": "1.0.0",
+  "description": "Subgraph for Goalz Morpho savings contract",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --product hosted-service chizaa/goalz",
+    "create-local": "graph create --node http://localhost:8020/ chizaa/goalz",
+    "remove-local": "graph remove --node http://localhost:8020/ chizaa/goalz",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 chizaa/goalz"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.56.0",
+    "@graphprotocol/graph-ts": "0.30.0"
+  },
+  "devDependencies": {
+    "matchstick-as": "0.5.0"
+  }
+}
