@@ -63,23 +63,23 @@ export function PortfolioSummary() {
     <div className="space-y-4">
       {/* Main Portfolio Summary Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Wallet className="h-5 w-5" />
             Portfolio Summary
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <CardContent className="p-3 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Total Portfolio Value */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 sm:p-0 rounded-lg bg-muted/30 sm:bg-transparent">
               <div className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Total Portfolio Value
                 </p>
               </div>
-              <p className="text-2xl font-bold">
+              <p className="text-xl sm:text-2xl font-bold break-all">
                 ${totalValueUsd.toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -88,19 +88,19 @@ export function PortfolioSummary() {
             </div>
 
             {/* Total PnL */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 sm:p-0 rounded-lg bg-muted/30 sm:bg-transparent">
               <div className="flex items-center gap-2">
                 {isPositivePnl ? (
                   <TrendingUp className="h-4 w-4 text-green-600" />
                 ) : (
                   <TrendingDown className="h-4 w-4 text-red-600" />
                 )}
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Total P&L
                 </p>
               </div>
               <div className="space-y-1">
-                <p className={`text-2xl font-bold ${
+                <p className={`text-xl sm:text-2xl font-bold break-all ${
                   isPositivePnl ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                 }`}>
                   {isPositivePnl ? '+' : ''}${totalPnlUsd.toLocaleString(undefined, {
@@ -109,7 +109,7 @@ export function PortfolioSummary() {
                   })}
                 </p>
                 {totalRoeUsd !== null && (
-                  <p className={`text-sm ${
+                  <p className={`text-xs sm:text-sm font-medium ${
                     totalRoeUsd >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                   }`}>
                     ROE: {totalRoeUsd >= 0 ? '+' : ''}{(totalRoeUsd * 100).toFixed(4)}%
@@ -119,19 +119,19 @@ export function PortfolioSummary() {
             </div>
 
             {/* Daily Earnings */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 sm:p-0 rounded-lg bg-muted/30 sm:bg-transparent">
               <div className="flex items-center gap-2">
                 {isPositiveEarnings ? (
                   <TrendingUp className="h-4 w-4 text-green-600" />
                 ) : (
                   <TrendingDown className="h-4 w-4 text-red-600" />
                 )}
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Daily Earnings (Est.)
                 </p>
               </div>
               <div className="space-y-1">
-                <p className={`text-2xl font-bold ${
+                <p className={`text-xl sm:text-2xl font-bold break-all ${
                   isPositiveEarnings ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                 }`}>
                   {isPositiveEarnings ? '+' : ''}${totalDailyEarnings.toLocaleString(undefined, {
@@ -139,7 +139,7 @@ export function PortfolioSummary() {
                     maximumFractionDigits: 2,
                   })}
                 </p>
-                <p className={`text-sm ${
+                <p className={`text-xs sm:text-sm font-medium ${
                   isPositiveEarnings ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                 }`}>
                   {isPositiveEarnings ? '+' : ''}{dailyEarningsPercentage.toFixed(3)}%
@@ -148,17 +148,17 @@ export function PortfolioSummary() {
             </div>
 
             {/* Active Positions */}
-            <div className="space-y-2">
+            <div className="space-y-2 p-3 sm:p-0 rounded-lg bg-muted/30 sm:bg-transparent">
               <div className="flex items-center gap-2">
                 <PieChart className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs sm:text-sm font-medium text-muted-foreground">
                   Active Positions
                 </p>
               </div>
-              <p className="text-2xl font-bold">
+              <p className="text-xl sm:text-2xl font-bold">
                 {totalPositions}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {totalPositions === 1 ? 'vault' : 'vaults'}
               </p>
             </div>
@@ -170,9 +170,9 @@ export function PortfolioSummary() {
       {positions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Your Positions</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">Your Positions</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6">
             <div className="space-y-3">
               {positions.map((position) => {
                 const positionEarning = positionEarnings.find(
@@ -185,34 +185,38 @@ export function PortfolioSummary() {
                 return (
                   <div
                     key={position.vault.address}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-3"
                   >
-                    <div className="flex items-center gap-3 flex-1">
+                    {/* Left Section: Vault Info */}
+                    <div className="flex items-start sm:items-center gap-3 flex-1 min-w-0">
                       <VaultImage 
                         imageUrl={position.vault.metadata?.image} 
                         vaultName={position.vault.name}
                         size="sm"
+                        className="flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-sm truncate">
+                        {/* Title and Badge Row */}
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <h4 className="font-semibold text-sm sm:text-base truncate max-w-[180px] sm:max-w-none">
                             {position.vault.name}
                           </h4>
                           {position.whitelisted && (
-                            <Badge variant="default" className="text-xs bg-blue-600 text-white">
+                            <Badge variant="default" className="text-xs bg-blue-600 text-white flex-shrink-0">
                               Whitelisted
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        {/* Metrics Row */}
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="secondary" className="text-xs">
                             {position.vault.asset}
                           </Badge>
-                          <span className="text-xs text-green-600 dark:text-green-500">
+                          <span className="text-xs sm:text-sm text-green-600 dark:text-green-500 font-medium">
                             {position.vault.netApy}
                           </span>
                           {position.roeUsd !== null && (
-                            <span className={`text-xs ${
+                            <span className={`text-xs sm:text-sm font-medium ${
                               position.roeUsd >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                             }`}>
                               ROE: {position.roeUsd >= 0 ? '+' : ''}{(position.roeUsd * 100).toFixed(2)}%
@@ -222,20 +226,21 @@ export function PortfolioSummary() {
                       </div>
                     </div>
 
-                    <div className="text-right space-y-1">
-                      <p className="font-semibold text-sm">
+                    {/* Right Section: Value and P&L */}
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 text-right sm:ml-4 flex-shrink-0">
+                      <p className="font-bold text-base sm:text-lg order-1 sm:order-none">
                         ${position.currentValueUsd.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </p>
-                      <div className="flex flex-col gap-0.5">
-                        <p className={`text-xs ${
+                      <div className="flex sm:flex-col gap-2 sm:gap-0.5 order-2 sm:order-none">
+                        <p className={`text-xs sm:text-sm font-medium whitespace-nowrap ${
                           isPnlPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                         }`}>
                           P&L: {isPnlPositive ? '+' : ''}${position.pnlUsd.toFixed(6)}
                         </p>
-                        <p className={`text-xs ${
+                        <p className={`text-xs sm:text-sm font-medium whitespace-nowrap ${
                           isDailyPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                         }`}>
                           Est: {isDailyPositive ? '+' : ''}${dailyEarning.toFixed(2)}/day

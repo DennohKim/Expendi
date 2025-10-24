@@ -59,7 +59,17 @@ const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
 
-  const isActive = useCallback((path: string) => path === pathname, [pathname]);
+  const isActive = useCallback(
+    (path: string) => {
+      // For root path, use strict equality to avoid matching everything
+      if (path === "/") {
+        return pathname === "/";
+      }
+      // For other paths, check if current pathname starts with the nav path
+      return pathname === path || pathname.startsWith(path + "/");
+    },
+    [pathname]
+  );
 
   const renderMenuItems = (navItems: NavItem[]) => (
     <ul className="flex flex-col gap-4">
