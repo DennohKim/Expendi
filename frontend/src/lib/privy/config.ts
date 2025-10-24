@@ -27,11 +27,6 @@ export const privyConfig: PrivyClientConfig = {
     showWalletUIs: true, // Show embedded wallet UI
   },
   
-  // MFA configuration
-  mfa: {
-    noPromptOnMfaRequired: false,
-  },
-  
   // Legal configuration
   legal: {
     termsAndConditionsUrl: 'https://yourdomain.com/terms',
