@@ -24,16 +24,14 @@ abstract contract AutomateTaskCreator is AutomateReady {
         address _sponsor
     ) internal {
         if (_token == ETH) {
-            ///@dev Only deposit ETH on goerli for now.
-            require(block.chainid == 5, "Only deposit ETH on goerli");
             gelato1Balance.depositNative{value: _amount}(_sponsor);
         } else {
-            ///@dev Only deposit USDC on polygon for now.
+            // Support USDC on Base
             require(
-                block.chainid == 137 &&
+                block.chainid == 8453 &&
                     _token ==
-                    address(0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174),
-                "Only deposit USDC on polygon"
+                    address(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913),
+                "Only deposit USDC on Base"
             );
             IERC20(_token).approve(address(gelato1Balance), _amount);
             gelato1Balance.depositToken(_sponsor, _token, _amount);
