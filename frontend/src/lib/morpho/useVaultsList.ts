@@ -257,16 +257,16 @@ export function useVaultsList(
         const formattedVaults: Vault[] = vaultItems.map(
           (vault: VaultApiResponse) => {
             // Format APY values
-            const apy = vault.state?.apy
+            const apy = (vault.state?.apy != null && typeof vault.state.apy === 'number')
               ? `${(vault.state.apy * 100).toFixed(2)}%`
               : "N/A";
 
-            const netApy = vault.state?.netApy
+            const netApy = (vault.state?.netApy != null && typeof vault.state.netApy === 'number')
               ? `${(vault.state.netApy * 100).toFixed(2)}%`
               : apy; // Fallback to regular APY if net APY not available
 
             // Format TVL
-            const tvl = vault.state?.totalAssetsUsd
+            const tvl = (vault.state?.totalAssetsUsd != null && typeof vault.state.totalAssetsUsd === 'number')
               ? `$${(vault.state.totalAssetsUsd / 1e6).toFixed(1)}M`
               : "N/A";
 
@@ -282,7 +282,7 @@ export function useVaultsList(
               : "N/A";
 
             // Format share price
-            const sharePrice = vault.state?.sharePriceUsd
+            const sharePrice = (vault.state?.sharePriceUsd != null && typeof vault.state.sharePriceUsd === 'number')
               ? `$${vault.state.sharePriceUsd.toFixed(6)}`
               : "N/A";
 
@@ -290,7 +290,7 @@ export function useVaultsList(
             const rewards: Reward[] = (vault.state?.rewards || []).map(
               (reward) => ({
                 asset: reward.asset?.symbol || "Unknown",
-                supplyApr: reward.supplyApr
+                supplyApr: (reward.supplyApr != null && typeof reward.supplyApr === 'number')
                   ? `${(reward.supplyApr * 100).toFixed(2)}%`
                   : "N/A",
                 yearlySupplyTokens: reward.yearlySupplyTokens || "N/A",

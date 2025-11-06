@@ -143,8 +143,16 @@ export function useMarketsData(address: string | undefined): MarketsData {
 
           setBorrowed(borrowedAmount);
           setSupplied(suppliedAmount);
-          setBorrowedUsd(`$${marketPosition.state.borrowAssetsUsd.toFixed(2)}`);
-          setSuppliedUsd(`$${marketPosition.state.supplyAssetsUsd.toFixed(2)}`);
+          setBorrowedUsd(
+            marketPosition.state.borrowAssetsUsd != null 
+              ? `$${marketPosition.state.borrowAssetsUsd.toFixed(2)}` 
+              : null
+          );
+          setSuppliedUsd(
+            marketPosition.state.supplyAssetsUsd != null 
+              ? `$${marketPosition.state.supplyAssetsUsd.toFixed(2)}` 
+              : null
+          );
 
           // Format collateral amount
           const collateralAmount6 = formatUnits(
@@ -154,14 +162,18 @@ export function useMarketsData(address: string | undefined): MarketsData {
 
           // Use the correct format - if 5000000 should be 5 collateral, use 6 decimals
           setCollateral(collateralAmount6);
-          setCollateralUsd(`$${marketPosition.state.collateralUsd.toFixed(2)}`);
+          setCollateralUsd(
+            marketPosition.state.collateralUsd != null 
+              ? `$${marketPosition.state.collateralUsd.toFixed(2)}` 
+              : null
+          );
 
           // Calculate health factor using collateral
           const borrowedUsdValue = marketPosition.state.borrowAssetsUsd;
           const collateralUsdValue = marketPosition.state.collateralUsd;
           let healthFactor = null;
 
-          if (collateralUsdValue > 0 && borrowedUsdValue > 0) {
+          if (collateralUsdValue != null && borrowedUsdValue != null && collateralUsdValue > 0 && borrowedUsdValue > 0) {
             const ltv = borrowedUsdValue / collateralUsdValue;
             const maxLtv = 0.85; // 85% LTV
             healthFactor = (maxLtv / ltv).toFixed(2);

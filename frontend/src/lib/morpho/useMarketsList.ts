@@ -148,10 +148,12 @@ export function useMarketsList() {
         const formattedMarkets: Market[] = validMarkets.map((market) => {
           // Calculate TVL from supply assets
           const tvlUsd = market.state.supplyAssetsUsd;
-          const tvlFormatted =
-            tvlUsd >= 1000000
-              ? `$${(tvlUsd / 1000000).toFixed(1)}M`
-              : `$${(tvlUsd / 1000).toFixed(0)}K`;
+          const tvlFormatted = 
+            tvlUsd != null
+              ? tvlUsd >= 1000000
+                ? `$${(tvlUsd / 1000000).toFixed(1)}M`
+                : `$${(tvlUsd / 1000).toFixed(0)}K`
+              : "N/A";
 
           // Use default LTV since it's not available in the API
           // In a real implementation, this would come from the smart contract or another API

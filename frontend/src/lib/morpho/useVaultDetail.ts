@@ -213,16 +213,16 @@ export function useVaultDetail(vaultId: string | undefined) {
         }
 
         // Format APY values
-        const apy = vaultData.state?.apy
+        const apy = (vaultData.state?.apy != null && typeof vaultData.state.apy === 'number')
           ? `${(vaultData.state.apy * 100).toFixed(2)}%`
           : "N/A";
 
-        const netApy = vaultData.state?.netApy
+        const netApy = (vaultData.state?.netApy != null && typeof vaultData.state.netApy === 'number')
           ? `${(vaultData.state.netApy * 100).toFixed(2)}%`
           : apy;
 
         // Format TVL
-        const tvl = vaultData.state?.totalAssetsUsd
+        const tvl = (vaultData.state?.totalAssetsUsd != null && typeof vaultData.state.totalAssetsUsd === 'number')
           ? `$${(vaultData.state.totalAssetsUsd / 1e6).toFixed(1)}M`
           : "N/A";
 
@@ -238,12 +238,12 @@ export function useVaultDetail(vaultId: string | undefined) {
           : "N/A";
 
         // Format share price
-        const sharePrice = vaultData.state?.sharePriceUsd
+        const sharePrice = (vaultData.state?.sharePriceUsd != null && typeof vaultData.state.sharePriceUsd === 'number')
           ? `$${vaultData.state.sharePriceUsd.toFixed(6)}`
           : "N/A";
 
         // Format fee
-        const fee = vaultData.state?.fee
+        const fee = (vaultData.state?.fee != null && typeof vaultData.state.fee === 'number')
           ? `${(vaultData.state.fee * 100).toFixed(2)}%`
           : "N/A";
 
@@ -263,7 +263,7 @@ export function useVaultDetail(vaultId: string | undefined) {
         const rewards: Reward[] = (vaultData.state?.rewards || []).map(
           (reward) => ({
             asset: reward.asset?.symbol || "Unknown",
-            supplyApr: reward.supplyApr
+            supplyApr: (reward.supplyApr != null && typeof reward.supplyApr === 'number')
               ? `${(reward.supplyApr * 100).toFixed(2)}%`
               : "N/A",
             yearlySupplyTokens: reward.yearlySupplyTokens || "N/A",

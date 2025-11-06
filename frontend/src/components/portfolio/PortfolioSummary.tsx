@@ -238,12 +238,12 @@ export function PortfolioSummary() {
                         <p className={`text-xs sm:text-sm font-medium whitespace-nowrap ${
                           isPnlPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                         }`}>
-                          P&L: {isPnlPositive ? '+' : ''}${position.pnlUsd.toFixed(6)}
+                          P&L: {isPnlPositive ? '+' : ''}${(position.pnlUsd ?? 0).toFixed(6)}
                         </p>
                         <p className={`text-xs sm:text-sm font-medium whitespace-nowrap ${
                           isDailyPositive ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
                         }`}>
-                          Est: {isDailyPositive ? '+' : ''}${dailyEarning.toFixed(2)}/day
+                          Est: {isDailyPositive ? '+' : ''}${(dailyEarning ?? 0).toFixed(2)}/day
                         </p>
                       </div>
                     </div>
