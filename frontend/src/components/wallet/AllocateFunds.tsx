@@ -224,7 +224,7 @@ const AllocateFunds = ({
               </Button>
               
               <p className="text-xs text-gray-500 text-center">
-                Minimum: 20 KES • Maximum: 250,000 KES
+                Minimum: 100 KES • Maximum: 250,000 KES
               </p>
             </TabsContent>
           </Tabs>
